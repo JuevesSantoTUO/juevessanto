@@ -87,3 +87,12 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('Error al registrar el Service Worker', err));
   });
 }
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Usamos './sw.js' en lugar de '/sw.js'
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado', reg))
+      .catch(err => console.log('Error SW', err));
+  });
+}
