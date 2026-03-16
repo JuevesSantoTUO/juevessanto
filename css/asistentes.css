@@ -1,0 +1,240 @@
+/* --- TÍTULOS Y SECCIONES --- */
+.subtitulo-seccion {
+    color: var(--color-acento);
+    text-align: center;
+    margin: 40px 0 20px 0;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--color-hdad);
+    display: inline-block;
+    width: 100%;
+    padding-bottom: 10px;
+}
+
+/* --- GRID DE TUNAS (ESCUDOS) --- */
+.grid-tunas {
+    /* Cambiamos el minmax para que quepan al menos 3 en 1000px */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+    gap: 40px; /* Más espacio entre escudos para que luzcan */
+    padding: 20px 0;
+}
+
+.tuna-card {
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.tuna-card:hover {
+    transform: scale(1.1);
+}
+
+.escudo-img {
+    width: 150px; /* Un poco más grandes en PC ya que hay espacio */
+    height: 150px;
+}
+
+.tuna-card p {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #d4af37;
+}
+
+/* --- TABLA DE TUNOS --- */
+.tabla-contenedor {
+    overflow-x: auto; /* Permite scroll lateral en móviles si la tabla es ancha */
+    margin-bottom: 50px;
+}
+
+.tabla-tunos {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tabla-tunos th, .tabla-tunos td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.tabla-tunos th {
+    background-color: var(--color-acento);
+    color: black;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.tabla-tunos tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.tabla-tunos tr:hover {
+    background-color: rgba(212, 175, 55, 0.05);
+}
+
+.tabla-tunos td {
+    color: white;
+}
+
+/* --- ESTILOS DE PESTAÑAS --- */
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.tab-btn {
+    background: transparent;
+    color: var(--color-acento);
+    border: 2px solid var(--color-acento);
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.tab-btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.tab-btn.activo {
+    background-color: var(--color-acento);
+    color: black;
+}
+
+/* --- CONTROL DE VISIBILIDAD --- */
+.tab-pane {
+    display: none; /* Oculto por defecto */
+}
+
+.tab-pane.activo {
+    display: block; /* Solo se muestra el activo */
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- MANTENEMOS EL GRID DE 3 EN PC --- */
+@media (min-width: 768px) {
+    .grid-tunas {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 50px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .tabla-contenedor {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+
+/* --- CORRECCIÓN DE VISUALIZACIÓN EN PC --- */
+@media (min-width: 768px) {
+    
+    /* 1. Forzamos que la sección ocupe todo el ancho del contenedor */
+    .seccion-asistentes {
+        grid-column: 1 / -1 !important; 
+        width: 100% !important;
+        display: block; /* Rompemos el flex si lo hubiera */
+        margin: 40px auto;
+    }
+
+        /* Aseguramos que el título también ocupe todo el ancho y esté centrado */
+    .titulo-pagina {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* 2. Forzamos las 3 columnas para los escudos */
+    .grid-tunas {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 columnas exactas */
+        gap: 50px;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px 0;
+    }
+
+    .escudo-img {
+        width: 160px; /* Un poco más grandes para llenar el espacio */
+        height: 160px;
+    }
+
+    /* 3. Centramos la tabla de tunos también */
+    .tabla-contenedor {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Forzamos que tanto los botones como el contenido ocupen las dos columnas del grid general */
+    .tabs-container, 
+    .tab-pane {
+        grid-column: 1 / -1 !important; 
+        width: 100%;
+    }
+
+    /* Aseguramos que los botones se mantengan pequeños y centrados, no estirados */
+    .tabs-container {
+        display: flex !important;
+        flex-direction: row !important; /* Asegura que sean horizontales */
+        justify-content: center;
+        align-items: center;
+        height: auto !important; /* Evita que se estiren verticalmente */
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .tab-btn {
+        flex: 0 1 auto; /* No permite que el botón crezca para llenar espacio */
+        min-width: 150px;
+        height: 50px; /* Altura fija para los botones */
+        border-radius: 25px; /* Bordes redondeados como los de la captura */
+    }
+}
+
+/* --- ESTILO DE LOS BOTONES (Basado en tu imagen) --- */
+.tab-btn {
+    background-color: transparent;
+    color: var(--color-acento);
+    border: 2px solid var(--color-acento);
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.activo {
+    background-color: var(--color-acento);
+    color: black;
+}
+.tab-btn:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+/* --- COLORES POR TUNA EN LA TABLA --- */
+.tabla-tunos td {
+    text-align: center;
+    padding: 12px;
+}
+
+/* Colores de las Tunas en la tabla */
+.tuna-tuo { background-color: #179558; color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-antigua { background-color: #000000; color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-femenina { background-color: #37c0f7; color: #000000; font-weight: bold; text-align: center; }
+.tuna-santander { background-color: #8b0a0a; color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-leon { background-color: #0f9b2e; color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-burgos { background: linear-gradient(90deg, #422704, #d11313); color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-laspalmas { background-color: #d61a1a; color: #f1c232; font-weight: bold; text-align: center; }
+.tuna-lugo { background-color: #10b935; color: #f1c232; font-weight: bold; text-align: center; }

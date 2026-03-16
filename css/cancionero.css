@@ -1,0 +1,107 @@
+/* --- ESTILOS DEL CANCIONERO --- */
+.lista-canciones {
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
+
+.cancion-item {
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    margin-bottom: 10px;
+    background: var(--color-gris-oscuro);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cancion-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 20px;
+    color: var(--color-acento);
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.cancion-header:hover {
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.icono-flecha {
+    font-size: 0.8rem;
+    transition: transform 0.3s;
+}
+
+/* Estado abierto */
+.cancion-item.activo .icono-flecha {
+    transform: rotate(180deg);
+}
+
+.cancion-contenido {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+    padding: 0 20px;
+}
+
+.cancion-item.activo .cancion-contenido {
+    max-height: 1500px; /* Suficiente para letras largas */
+    padding-bottom: 30px;
+}
+
+/* REPRODUCTOR */
+.reproductor-box {
+    padding: 10px 0 20px 0;
+}
+
+audio {
+    width: 100%;
+    height: 40px;
+    /* Efecto para que el reproductor tienda al dorado */
+    filter: sepia(80%) saturate(150%) hue-rotate(10deg) brightness(90%);
+}
+
+.letra {
+    color: white;
+    text-align: center;
+    font-style: italic;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    border-top: 1px solid var(--color-hdad);
+    padding-top: 20px;
+}
+
+.letra p {
+    margin-bottom: 5px;
+}
+
+/* --- AJUSTE DE CENTRADO PARA CANCIONERO --- */
+@media (min-width: 768px) {
+    /* Forzamos que la lista ignore las dos columnas y ocupe todo el ancho */
+    .lista-canciones {
+        grid-column: 1 / -1; 
+        max-width: 800px;    /* Un ancho máximo para que no se estire demasiado en monitores grandes */
+        margin: 0 auto;      /* Centra el bloque horizontalmente */
+        width: 100%;
+    }
+
+    /* Aseguramos que el título también ocupe todo el ancho y esté centrado */
+    .titulo-pagina {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+}
+
+/* Ajuste general para asegurar que la lista esté centrada también en móviles */
+.lista-canciones {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}

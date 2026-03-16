@@ -1,0 +1,334 @@
+/* ==========================================================================
+   VARIABLES DE COLOR Y CONFIGURACIÓN GLOBAL
+   ========================================================================== */
+:root {
+    --color-primario: #000000; /* Negro Tuna */
+    --color-acento: #d4af37;   /* Dorado Oro */
+    --color-fondo: #000000;
+    --color-texto: #d4af37;
+    --color-hdad: #5f0514;     /* Color Burdeos */
+    --color-gris-oscuro: #1a1a1a;
+    --fuente-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--fuente-principal);
+    line-height: 1.6;
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    overflow-x: hidden; /* Evita scroll horizontal por el menú lateral */
+}
+
+.contenedor {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   NAVEGACIÓN (MENÚ HAMBURGUESA UNIVERSAL)
+   ========================================================================== */
+.navbar {
+    background-color: var(--color-primario);
+    border-bottom: 3px solid var(--color-acento);
+    padding: 0.8rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo y Escudo unidos */
+.logo-union {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.logo-img {
+    height: 50px;
+    width: auto;
+    display: block;
+}
+
+.logo-texto {
+    color: var(--color-acento);
+    font-weight: bold;
+    font-size: 1.5rem;
+    white-space: nowrap;
+}
+
+.logo-texto span {
+    font-size: 0.8rem;
+    vertical-align: super;
+    margin-left: 2px;
+    font-weight: normal;
+}
+
+/* Botón Hamburguesa */
+.menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: block; /* Siempre visible según lo solicitado */
+    z-index: 1001;
+}
+
+.bar {
+    display: block;
+    width: 30px;
+    height: 3px;
+    margin: 6px auto;
+    background-color: var(--color-acento);
+    transition: 0.3s;
+}
+
+/* Panel Lateral (Drawer) */
+.nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%; /* Oculto por defecto */
+    width: 300px;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.98);
+    backdrop-filter: blur(10px);
+    border-left: 2px solid var(--color-acento);
+    display: flex;
+    flex-direction: column;
+    padding-top: 60px;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    list-style: none;
+    z-index: 1000;
+
+    /* --- LA SOLUCIÓN AQUÍ --- */
+    overflow-y: auto; /* Permite scroll si hay muchos enlaces */
+    scrollbar-width: thin; /* Para que la barra de scroll no sea fea en PC */
+    scrollbar-color: var(--color-acento) transparent;
+}
+
+.nav-links.activo {
+    right: 0; /* Entra en pantalla */
+}
+
+.nav-links li a {
+    display: block;
+    padding: 0.9rem 2rem; /* Reducimos de 1.2rem a 0.9rem */
+    color: white;
+    text-decoration: none;
+    font-size: 1rem; /* Un pelín más pequeña para ganar espacio */
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    transition: 0.3s;
+}
+
+.nav-links li a:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+    color: var(--color-acento);
+    padding-left: 2.5rem;
+}
+
+/* ==========================================================================
+   PÁGINA DE INICIO (CONTADOR Y VÍDEOS)
+   ========================================================================== */
+.contador-container {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.contador-container h2 {
+    color: var(--color-acento);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    font-size: 1.2rem;
+}
+
+.countdown {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.tiempo {
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    min-width: 75px;
+    border-bottom: 3px solid var(--color-acento);
+}
+
+.tiempo span {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-acento);
+}
+
+.tiempo p {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+/* Sección de Vídeos */
+.seccion-videos {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.video-card {
+    background: var(--color-gris-oscuro);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.video-card h3 {
+    color: var(--color-acento);
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.video-responsive {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.video-responsive iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.video-descripcion {
+    text-align: justify;
+    color: white;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+
+/* ==========================================================================
+   RESPONSIVIDAD Y GRID DE ESCRITORIO
+   ========================================================================== */
+@media (min-width: 768px) {
+    /* Mantenemos la hamburguesa visible en PC */
+    .menu-toggle {
+        display: block !important;
+    }
+
+    /* Grid para centrar elementos grandes */
+    main.contenedor {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+
+    /* Estos elementos ocupan siempre el 100% del ancho */
+    .contador-container, 
+    .seccion-itinerarios, 
+    .footer-principal {
+        grid-column: 1 / -1;
+    }
+
+    /* Vídeos en paralelo */
+    .seccion-videos {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        gap: 20px;
+    }
+
+    .video-card {
+        flex: 1;
+    }
+
+    .logo-img {
+        height: 60px;
+    }
+
+    .logo-texto {
+        font-size: 1.8rem;
+    }
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.footer-principal {
+    background-color: var(--color-primario);
+    color: var(--color-acento);
+    text-align: center;
+    padding: 3rem 0;
+    margin-top: 50px;
+    border-top: 3px solid var(--color-acento);
+}
+
+.footer-principal .lema {
+    font-style: italic;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.footer-principal .autor {
+    font-size: 0.95rem;
+    color: white;
+}
+
+.footer-principal .version {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: 10px;
+}
+
+/* --- UNIFICACIÓN DE TÍTULOS Y CENTRADO GLOBAL --- */
+
+/* Forzamos a que el título y las intros ocupen todo el ancho y se centren */
+.titulo-pagina, 
+.intro-prensa, 
+.intro-relacionado, 
+.intro-participa, 
+.intro-seccion,
+.tabs-container,
+.tabs-principal {
+    grid-column: 1 / -1 !important; /* Rompe las 2 columnas del grid */
+    text-align: center !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: block; /* Asegura que se comporte como bloque para centrar texto */
+}
+
+/* Ajuste específico para que el contenedor principal no "empuje" los títulos */
+main.contenedor {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+/* En móviles, el grid suele ser de 1 columna, pero esto no estorba */
+@media (max-width: 768px) {
+    main.contenedor {
+        grid-template-columns: 1fr;
+    }
+}
