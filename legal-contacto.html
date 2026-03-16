@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto y Legal - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/legal-contacto.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <h2 class="titulo-pagina">Información y Contacto</h2>
+
+        <div class="tabs-container">
+            <button class="tab-btn activo" onclick="abrirPestaña(event, 'contacto')">Contacto</button>
+            <button class="tab-btn" onclick="abrirPestaña(event, 'legal')">Aviso Legal</button>
+        </div>
+
+        <div id="contacto" class="tab-pane activo">
+            <p class="intro-seccion">¿Quieres hacernos alguna consulta o unirte a nuestra tradición?</p>
+            <div class="contacto-wrapper">
+                <form action="mailto:juevessanto.tuo@gmail.com" method="post" enctype="text/plain" class="contacto-form" class="contacto-form">
+                    <div class="input-group">
+                        <label>Nombre</label>
+                        <input type="text" placeholder="Escribe tu nombre..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Mensaje</label>
+                        <textarea rows="5" placeholder="¿En qué podemos ayudarte?"></textarea>
+                    </div>
+                    <button type="submit" class="btn-enviar">Enviar Mensaje</button>
+                </form>
+
+                <div class="rrss-contacto">
+                    <h3>Síguenos en Redes Sociales</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-icon">Instagram</a>
+                        <a href="#" class="social-icon">Facebook</a>
+                        <a href="#" class="social-icon">YouTube</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="legal" class="tab-pane">
+            <div class="legal-contenido">
+                <section>
+                    <h3>1. Información General</h3>
+                    <p>En cumplimiento con el deber de información dispuesto en la Ley 34/2002 de Servicios de la Sociedad de la Información, esta web es gestionada por la <strong>Tuna Universitaria de Oviedo</strong> en colaboración con la <strong>Hermandad de los Estudiantes</strong>.</p>
+                </section>
+
+                <section>
+                    <h3>2. Propiedad Intelectual</h3>
+                    <p>Todos los contenidos multimedia (fotografías, audios y vídeos) así como los textos del cancionero e historia son propiedad de sus respectivos autores o instituciones.</p>
+                </section>
+
+                <section>
+                    <h3>3. Protección de Datos</h3>
+                    <p>Esta aplicación no almacena datos personales de navegación. Los datos enviados por el formulario son exclusivamente para contacto directo.</p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/legal-contacto.js"></script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/galeria.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <h2 class="titulo-pagina">Archivo Multimedia</h2>
+
+        <div class="tabs-principal">
+            <button class="tab-main activo" onclick="cambiarTipo(event, 'seccion-fotos')">Fotografías</button>
+            <button class="tab-main" onclick="cambiarTipo(event, 'seccion-videos')">Vídeos</button>
+        </div>
+
+        <div id="seccion-fotos" class="tab-contenido-galeria activo">
+            <nav class="filtro-años">
+                <button class="btn-filtro activo" onclick="filtrarGaleria('todos')">Todos</button>
+                <button class="btn-filtro" onclick="filtrarGaleria('2025')">2025</button>
+                <button class="btn-filtro" onclick="filtrarGaleria('2024')">2024</button>
+                <button class="btn-filtro" onclick="filtrarGaleria('antiguas')">Archivo</button>
+            </nav>
+
+            <h3 class="subtitulo-galeria">Quedada (12:00)</h3>
+
+            <div class="galeria-grid" id="galeria-grid">
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada1.jpg" alt="Quedada 2025 - Foto 1">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada2.jpg" alt="Quedada 2025 - Foto 2">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada3.jpg" alt="Quedada 2025 - Foto 3">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada4.jpg" alt="Quedada 2025 - Foto 4">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada5.jpg" alt="Quedada 2025 - Foto 5">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/quedada6.jpg" alt="Quedada 2025 - Foto 6">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+            </div>
+
+            <h3 class="subtitulo-galeria">COMIDA (15:00)</h3>
+
+            <div class="galeria-grid" id="galeria-grid">
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida1.jpg" alt="Comida 2025 - Foto 1">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida2.jpg" alt="Comida 2025 - Foto 2">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida3.jpg" alt="Comida 2025 - Foto 3">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida4.jpg" alt="Comida 2025 - Foto 4">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida5.jpg" alt="Comida 2025 - Foto 5">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida6.jpg" alt="Comida 2025 - Foto 6">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida7.jpg" alt="Comida 2025 - Foto 7">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/comida8.jpg" alt="Comida 2025 - Foto 8">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+            </div>
+
+            <h3 class="subtitulo-galeria">RONDA (19:00)</h3>
+
+            <div class="galeria-grid" id="galeria-grid">
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda01.jpg" alt="Ronda 2025 - Foto 1">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda02.jpg" alt="Ronda 2025 - Foto 2">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda03.jpg" alt="Ronda 2025 - Foto 3">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda04.jpg" alt="Ronda 2025 - Foto 4">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda05.jpg" alt="Ronda 2025 - Foto 5">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda06.jpg" alt="Ronda 2025 - Foto 6">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda07.jpg" alt="Ronda 2025 - Foto 7">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda08.jpg" alt="Ronda 2025 - Foto 8">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda09.jpg" alt="Ronda 2025 - Foto 9">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda10.jpg" alt="Ronda 2025 - Foto 10">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda11.jpg" alt="Ronda 2025 - Foto 11">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda12.jpg" alt="Ronda 2025 - Foto 12">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda13.jpg" alt="Ronda 2025 - Foto 13">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda14.jpg" alt="Ronda 2025 - Foto 14">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+
+                <div class="foto-item 2025" onclick="abrirImagen(this)">
+                    <img src="img/galeria/2025/ronda15.jpg" alt="Ronda 2025 - Foto 15">
+                    <div class="foto-overlay"><span>Ver</span></div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div id="seccion-videos" class="tab-contenido-galeria">
+            <h3 class="titulo-año-video">Jueves Santo 2025</h3>
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-responsive">
+                        <iframe src="https://www.youtube.com/embed/tViE-x6yqEs" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <p class="video-caption">Ensayo después de comer</p>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-responsive">
+                        <iframe src="https://www.youtube.com/embed/Xfktn6GcOrs" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <p class="video-caption">Ronda al Señor de La Sentencia</p>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-responsive">
+                        <iframe src="https://www.youtube.com/embed/Mykmal7ZOfA" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <p class="video-caption">Entrega de fajines</p>
+                </div>
+
+                <div class="video-card">
+                    <iframe src="https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Foviedodepasion%2Fvideos%2F626434020419310%2F&show_text=false&width=560&t=0" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+                    <p class="video-caption">Santa Bárbara Bendita</p>
+                </div>
+                </div>
+        </div>
+    </main>
+
+    <div id="lightbox" class="lightbox" onclick="cerrarImagen()">
+        <span class="cerrar-lightbox">&times;</span>
+        <img id="img-full" src="" alt="Imagen a tamaño completo">
+    </div>
+
+    <div id="footer-container"></div>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/galeria.js"></script>
+</body>
+</html>

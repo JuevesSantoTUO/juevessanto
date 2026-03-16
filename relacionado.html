@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relacionado - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/relacionado.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <h2 class="titulo-pagina">Relaciones y Actos</h2>
+
+        <div class="tabs-principal">
+            <button class="tab-main activo" onclick="cambiarTipoRel(event, 'instituciones')">Instituciones</button>
+            <button class="tab-main" onclick="cambiarTipoRel(event, 'actos')">Actos Especiales</button>
+        </div>
+
+        <div id="instituciones" class="tab-contenido-rel activo">
+            <p class="intro-relacionado">Portales oficiales de las instituciones vinculadas a nuestra tradición.</p>
+            <div class="relacionado-grid">
+                <a href="https://www.unioviedo.es/tuna/?page_id=33" target="_blank" class="entidad-card">
+                    <div class="logo-box"><img src="img/relacionado/logo-tuo.png" alt="Tuna de Oviedo"></div>
+                    <h3>Tuna Universitaria de Oviedo</h3>
+                    <p>Web oficial de la Tuna del distrito universitario.</p>
+                    <span class="link-label">Visitar portal ↗</span>
+                </a>
+
+                <a href="https://www.facebook.com/HermandadEstudiantesOviedo" target="_blank" class="entidad-card">
+                    <div class="logo-box"><img src="img/relacionado/logo-estudiantes.png" alt="Hermandad de los Estudiantes"></div>
+                    <h3>Hermandad de los Estudiantes</h3>
+                    <p>Sede de la Hermandad penitencial del Jueves Santo.</p>
+                    <span class="link-label">Visitar portal ↗</span>
+                </a>
+
+                <a href="https://www.oviedo.es/" target="_blank" class="entidad-card">
+                    <div class="logo-box"><img src="img/relacionado/logo-ayto.png" alt="Ayuntamiento de Oviedo"></div>
+                    <h3>Ayuntamiento de Oviedo</h3>
+                    <p>Información turística y municipal de la ciudad.</p>
+                    <span class="link-label">Visitar portal ↗</span>
+                </a>
+            </div>
+        </div>
+
+        <div id="actos" class="tab-contenido-rel">
+            <div class="actos-container">
+                <article class="acto-card">
+                    <div class="acto-fecha">
+                        <span class="dia">01</span>
+                        <span class="mes">Marzo</span>
+                        <span class="año">2026</span>
+                    </div>
+                    <div class="acto-info">
+                        <div class="tag-acto">Acto Principal</div>
+                        <h3>Función de Instituto 2026</h3>
+                        <p>Solemne Función Principal de Instituto de la Hermandad de los Estudiantes en la Parroquia de San Francisco Javier de Oviedo.</p>
+                        <button class="btn-abrir-acto" onclick="abrirModalActo('funcion-2026')">Ver Protocolo y Detalles</button>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div id="modal-acto" class="modal-interno">
+            <div class="modal-contenido">
+                <button class="cerrar-modal" onclick="cerrarModalActo()">✕</button>
+                <div id="detalle-acto">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/relacionado.js"></script>
+</body>
+</html>

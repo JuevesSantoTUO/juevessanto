@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itinerarios - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/itinerarios.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <section class="seccion-itinerarios">
+            <h2 class="titulo-pagina">Histórico de Itinerarios</h2>
+            <p class="intro">Selecciona un año para consultar los horarios y recorridos oficiales.</p>
+            
+            <div class="grid-años">
+                <button class="btn-año" onclick="abrirItinerario(2026)">2026</button>
+                <button class="btn-año" onclick="abrirItinerario(2025)">2025</button>
+                <button class="btn-año" onclick="abrirItinerario(2024)">2024</button>
+                <!--<button class="btn-año" onclick="abrirItinerario(2023)">2023</button> -->
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-itinerario" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            <div id="info-itinerario">
+                </div>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/itinerarios.js"></script>
+</body>
+</html>

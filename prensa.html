@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prensa - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/prensa.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <h2 class="titulo-pagina">Sala de Prensa</h2>
+        <p class="intro-prensa">Crónicas y reportajes que guardan la memoria de nuestra Madrugá.</p>
+
+        <div class="prensa-grid">
+            <article class="prensa-card">
+                <div class="medio-badge lne">LNE</div>
+                <div class="prensa-info">
+                    <span class="fecha-noticia">18 Abril 2025</span>
+                    <h3>"Santa Bárbara bendita" a sesenta voces</h3>
+                    <p>La Tuna Universitaria de Oviedo emociona en su tradicional ronda frente al edificio histórico...</p>
+                    <button onclick="abrirNoticia('https://www.lne.es/oviedo/2025/04/18/santa-barbara-bendita-sesenta-voces-116494043.html', 'La Nueva España')" class="btn-leer">
+                        Leer Crónica
+                    </button>
+                </div>
+            </article>
+
+            <article class="prensa-card">
+                <div class="medio-badge lne">LNE</div>
+                <div class="prensa-info">
+                    <span class="fecha-noticia">20 Abril 2025</span>
+                    <h3>La historia de Nico, el Tuno de 16 años...</h3>
+                    <p>"Me acordé de dos personas muy queridas que perdí este año y me puse en la piel de las familias de las víctimas de Cerredo"</p>
+                    <button onclick="abrirNoticia('https://www.lne.es/oviedo/2025/04/20/historia-nico-tuno-16-anos-116543896.html', 'La Nueva España')" class="btn-leer">
+                        Leer Crónica
+                    </button>
+                </div>
+            </article>
+
+            <article class="prensa-card">
+                <div class="medio-badge rtpa">TPA</div>
+                <div class="prensa-info">
+                    <span class="fecha-noticia">7 Abril 2023</span>
+                    <h3>Especial procesión de La Madrugá</h3>
+                    <p>"'Conexión Asturias' retransmite en directo la procesión de 'La Madrugá' de la Cofradía de los Estudiantes de Oviedo. Siente la Semana Santa de Asturias en TPA."</p>
+                    <button onclick="abrirNoticia('https://www.rtpa.es/video:Especial-procesion-de-La-Madruga_551680962739.html', 'TPA')" class="btn-leer">
+                        Leer Crónica
+                    </button>
+                </div>
+            </article>
+
+            <article class="prensa-card">
+                <div class="medio-badge comercio">El Comercio</div>
+                <div class="prensa-info">
+                    <span class="fecha-noticia">29 Marzo 2024</span>
+                    <h3>La procesión de La Madrugá desafía a la lluvia</h3>
+                    <p>"La Hermandad de Los Estudiantes homenajea durante el recorrido a los padres dominicos..."</p>
+                    <button onclick="abrirNoticia('https://www.elcomercio.es/oviedo/semana-santa-oviedo-procesion-madruga-desafia-lluvia-20240329132206-nt.html?ref=https%3A%2F%2Fwww.elcomercio.es%2Fhemeroteca%2FMadrug%C3%A1+Oviedo.html', 'El Comercio')" class="btn-leer">
+                        Leer Crónica
+                    </button>
+                </div>
+            </article>
+
+            <article class="prensa-card">
+                <div class="medio-badge comercio">El Comercio</div>
+                <div class="prensa-info">
+                    <span class="fecha-noticia">7 Abril 2023</span>
+                    <h3>Recepción a los tunos de la Madrugá</h3>
+                    <p>"La Hermandad de Los Estudiantes organizó durante el día de ayer varias actividades antes de celebrar..."</p>
+                    <button onclick="abrirNoticia('https://www.elcomercio.es/oviedo/recepcion-tunos-madruga-20230407004317-nt.html', 'El Comercio')" class="btn-leer">
+                        Leer Crónica
+                    </button>
+                </div>
+            </article>
+        </div>
+
+        <div id="visor-prensa" class="visor-modal">
+            <div class="visor-header">
+                <button class="btn-cerrar" onclick="cerrarNoticia()">✕ Volver a la App</button>
+            </div>
+            <div class="visor-cuerpo">
+                <div class="tarjeta-transicion">
+                    <div class="escudo-prensa">📰</div>
+                    <h3 id="visor-medio">Nombre del Medio</h3>
+                    <p id="visor-info-noticia">Estás a punto de abrir una crónica de nuestra hemeroteca externa.</p>
+                    
+                    <a id="link-externo" href="#" target="_blank" class="btn-ir-noticia" onclick="cerrarNoticia()">
+                        Continuar a la noticia ↗
+                    </a>
+
+                    <p class="nota-seguridad">Se abrirá en una pestaña segura para facilitar la lectura.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/prensa.js"></script>
+</body>
+</html>

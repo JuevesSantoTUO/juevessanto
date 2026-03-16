@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participa - Jueves Santo</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/participa.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="contenedor">
+        <h2 class="titulo-pagina">Inscripción Jueves Santo 2026</h2>
+        
+        <script type="text/javascript">var submitted=false;</script>
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" 
+                onload="if(submitted) {window.location='participa.html?estado=exito';}"></iframe>
+
+        <form action="https://docs.google.com/forms/d/e/1FAIpQLSdVkekWXQZWR1cOGs9mw2frVuMk8ak_fVKCWaPmzmkQJAgUDA/formResponse" 
+              method="post" 
+              target="hidden_iframe" 
+              onsubmit="submitted=true;" 
+              class="form-invisible">
+
+            <div class="form-grid">
+                <div class="form-col">
+                    <div class="input-group">
+                        <label>Nombre</label>
+                        <input type="text" name="entry.1241962128" placeholder="Tu nombre" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Apellidos</label>
+                        <input type="text" name="entry.1060756175" placeholder="Tus apellidos" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Mote</label>
+                        <input type="text" name="entry.1822881454" placeholder="Tu mote de Tuna" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Tuna</label>
+                        <input type="text" name="entry.116043067" placeholder="Nombre completo de la Tuna" required>
+                    </div>
+                </div>
+
+                <div class="form-col">
+                    <div class="input-group">
+                        <label>Teléfono</label>
+                        <input type="tel" name="entry.731294455" placeholder="Ej: 600000000" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" name="entry.1693309551" placeholder="tu@email.com" required>
+                    </div>
+                    
+                    <div class="opciones-grid">
+                        <div class="input-group">
+                            <label>¿Es tu primer año?</label>
+                            <select name="entry.110546052">
+                                <option value="Sí">Sí</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>¿Vas a venir a la comida?</label>
+                            <select name="entry.823328778">
+                                <option value="Sí">Sí</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>¿Vas a venir a la Ronda?</label>
+                            <select name="entry.1807518330">
+                                <option value="Sí">Sí</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>¿Vas a venir a la Madrugá?</label>
+                            <select name="entry.1741566604">
+                                <option value="Sí">Sí</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-enviar-participa">Enviar Inscripción</button>
+            
+            <div id="mensaje-confirmacion" class="mensaje-exito" style="display:none;">
+                ¡Inscripción enviada con éxito! Nos vemos pronto.
+            </div>
+        </form>
+    </main>
+
+    <div id="footer-container"></div>
+    <script src="scripts/main.js"></script>
+    <script>
+        if(window.location.search.includes('estado=exito')) {
+            document.getElementById('mensaje-confirmacion').style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    </script>
+</body>
+</html>
