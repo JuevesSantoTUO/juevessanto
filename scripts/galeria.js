@@ -1,75 +1,68 @@
-// FILTRO DE CATEGORÍAS
-function filtrarGaleria(categoria) {
+let currentImgIndex = 0;
+let visibleImages = [];
+let touchStartX = 0;
+let touchEndX = 0;
+
+// Sincroniza las imágenes que se pueden navegar según el filtro
+function actualizarListaVisible() {
     const fotos = document.querySelectorAll('.foto-item');
-    const botones = document.querySelectorAll('.filtro-btn');
-
-    // Cambiar estado de botones
-    botones.forEach(btn => {
-        btn.classList.toggle('activo', btn.textContent.toLowerCase() === categoria || (categoria === 'todos' && btn.textContent === 'Todos'));
-    });
-
-    // Filtrar fotos con animación
-    fotos.forEach(foto => {
-        foto.style.opacity = '0';
-        foto.style.transform = 'scale(0.8)';
-        
-        setTimeout(() => {
-            if (categoria === 'todos' || foto.classList.contains(categoria)) {
-                foto.style.display = 'block';
-                setTimeout(() => {
-                    foto.style.opacity = '1';
-                    foto.style.transform = 'scale(1)';
-                }, 50);
-            } else {
-                foto.style.display = 'none';
-            }
-        }, 300);
-    });
+    visibleImages = Array.from(fotos)
+        .filter(f => f.style.display !== 'none')
+        .map(f => f.querySelector('img').src);
 }
 
-// LÓGICA DEL LIGHTBOX
 function abrirImagen(elemento) {
+    actualizarListaVisible();
     const src = elemento.querySelector('img').src;
-    const lightbox = document.getElementById('lightbox');
-    const imgFull = document.getElementById('img-full');
+    currentImgIndex = visibleImages.indexOf(src);
     
-    imgFull.src = src;
-    lightbox.style.display = 'flex';
+    mostrarImagen(currentImgIndex);
+    document.getElementById('lightbox').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function mostrarImagen(index) {
+    document.getElementById('img-full').src = visibleImages[index];
+}
+
+function cambiarImagen(dir) {
+    currentImgIndex += dir;
+    if (currentImgIndex >= visibleImages.length) currentImgIndex = 0;
+    if (currentImgIndex < 0) currentImgIndex = visibleImages.length - 1;
+    mostrarImagen(currentImgIndex);
 }
 
 function cerrarImagen() {
     document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = 'auto';
 }
 
-function cambiarTipo(evento, seccionId) {
-    // 1. Ocultar todas las secciones principales
-    document.querySelectorAll('.tab-contenido-galeria').forEach(tab => {
-        tab.classList.remove('activo');
-    });
+// --- GESTOS TÁCTILES ---
+const lb = document.getElementById('lightbox');
+lb.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+lb.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    if (touchStartX - touchEndX > 50) cambiarImagen(1);
+    if (touchEndX - touchStartX > 50) cambiarImagen(-1);
+});
 
-    // 2. Quitar activo de los botones principales
-    document.querySelectorAll('.tab-main').forEach(btn => {
-        btn.classList.remove('activo');
-    });
-
-    // 3. Activar lo seleccionado
-    document.getElementById(seccionId).classList.add('activo');
-    evento.currentTarget.classList.add('activo');
-}
-
+// --- FILTROS Y TABS ---
 function filtrarGaleria(año) {
     const fotos = document.querySelectorAll('.foto-item');
     const botones = document.querySelectorAll('.btn-filtro');
 
-    botones.forEach(btn => {
-        btn.classList.toggle('activo', btn.innerText.toLowerCase() === año || (año === 'todos' && btn.innerText === 'Todos'));
-    });
+    botones.forEach(btn => btn.classList.toggle('activo', btn.innerText.toLowerCase() === año || (año === 'todos' && btn.innerText === 'Todos')));
 
     fotos.forEach(foto => {
-        if (año === 'todos' || foto.classList.contains(año)) {
-            foto.style.display = 'block';
-        } else {
-            foto.style.display = 'none';
-        }
+        const mostrar = (año === 'todos' || foto.classList.contains(año));
+        foto.style.display = mostrar ? 'block' : 'none';
     });
+    actualizarListaVisible();
+}
+
+function cambiarTipo(evento, seccionId) {
+    document.querySelectorAll('.tab-contenido-galeria').forEach(tab => tab.classList.remove('activo'));
+    document.querySelectorAll('.tab-main').forEach(btn => btn.classList.remove('activo'));
+    document.getElementById(seccionId).classList.add('activo');
+    evento.currentTarget.classList.add('activo');
 }
