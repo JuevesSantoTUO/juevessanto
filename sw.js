@@ -1,5 +1,6 @@
 const CACHE_NAME = 'juevessanto-v1.8';
 const assets = [
+  './',
   'index.html',
   'cancionero.html',
   'itinerarios.html',
@@ -10,10 +11,11 @@ const assets = [
   'prensa.html',
   'relacionado.html',
   'legal-contacto.html',
+  'changelog.html',
   'assets/header.html',
   'assets/footer.html',
 
-  //estilos
+  // Estilos (sin barra inicial)
   'css/style.css',
   'css/asistentes.css',
   'css/prensa.css',
@@ -24,8 +26,9 @@ const assets = [
   'css/historia.css',
   'css/galeria.css',
   'css/cancionero.css',
+  'css/changelog.css',
   
-  //scripts
+  // Scripts (sin barra inicial)
   'scripts/main.js',
   'scripts/relacionado.js',
   'scripts/prensa.js',
@@ -35,7 +38,7 @@ const assets = [
   'scripts/cancionero.js',
   'scripts/asistentes.js',
 
-  //imágenes
+  // Imágenes
   'img/favicon.png'
 ];
 
@@ -43,7 +46,6 @@ const assets = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Cacheando activos principales...');
       return cache.addAll(assets);
     })
   );
@@ -60,7 +62,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Estrategia: Responder desde caché, pero actualizar en segundo plano
+// Estrategia: Responder desde caché o red
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(response => {
