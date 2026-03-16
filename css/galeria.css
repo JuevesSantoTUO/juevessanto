@@ -20,7 +20,6 @@
 .tab-contenido-galeria.activo { display: block; }
 
 /* --- FILTROS --- */
-.filtro-años { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
 .btn-filtro {
     background: transparent; border: 1px solid var(--color-acento);
     color: var(--color-acento); padding: 5px 15px; border-radius: 4px;
@@ -28,23 +27,46 @@
 }
 .btn-filtro.activo { background: var(--color-acento); color: black; }
 
-/* --- GRID DE FOTOS (Responsivo) --- */
+/* --- CONTENEDOR DE LA GALERÍA --- */
 .galeria-grid {
+    grid-column: 1 / -1 !important; /* Ocupa todo el ancho del PC */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 15px; padding: 20px;
+    /* En PC: Las columnas se ajustan solas. Mínimo 250px por foto */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    padding: 20px;
+    width: 100%;
+    margin: 0 auto;
 }
 
+/* --- LAS MINIATURAS (Foto-Item) --- */
 .foto-item {
-    position: relative; border-radius: 12px; overflow: hidden;
-    cursor: pointer; height: 250px; transition: 0.3s;
+    position: relative;
+    width: 100%;
+    height: 250px; /* Altura fija para que todas las filas sean iguales */
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: #1a1a1a; /* Fondo para mientras carga */
+    transition: transform 0.3s ease;
 }
 
-.foto-item img { width: 100%; height: 100%; object-fit: cover; }
+/* LA IMAGEN DENTRO DE LA MINIATURA */
+.foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* CLAVE: Escala y recorta la imagen para llenar el recuadro sin estirarse */
+    display: block;
+    transition: transform 0.5s ease;
+}
 .foto-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); display: flex; justify-content: center;
     align-items: center; opacity: 0; transition: 0.3s;
+}
+/* Efecto al pasar el ratón */
+.foto-item:hover img {
+    transform: scale(1.1);
 }
 .foto-item:hover .foto-overlay { opacity: 1; }
 .foto-overlay span { border: 1px solid var(--color-acento); color: var(--color-acento); padding: 5px 15px; }
@@ -71,9 +93,18 @@
 .prev { left: 10px; } .next { right: 10px; }
 .cerrar-lightbox { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
 
-@media (max-width: 768px) {
-    .galeria-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .nav-btn { display: none; } /* En móvil se usa el dedo */
+/* 3. GRID PARA PC / TABLET (Pantallas más grandes) */
+/* --- AJUSTE PARA MÓVIL (Smartphone) --- */
+@media (max-width: 600px) {
+    .galeria-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columnas exactas */
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .foto-item {
+        height: 180px; /* Un poco más bajitas en móvil */
+    }
 }
 
 /* --- CORRECCIÓN DE ALINEACIÓN GLOBAL EN GALERÍA --- */
@@ -84,26 +115,15 @@
     width: 100%;
 }
 
-/* Aseguramos que el contenedor de botones de años ocupe todo el ancho y centre su contenido */
+/* 4. CENTRADO DE BOTONES DE FILTRO */
 .filtro-años {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100%;
-    margin: 0 auto 30px auto;
-    flex-wrap: wrap; /* Para que en móviles no se corten los botones */
-    gap: 10px;
-}
-
-/* Centramos la rejilla de fotos respecto a la página */
-.galeria-grid {
     grid-column: 1 / -1 !important;
-    margin: 0 auto;
-    max-width: 1200px; /* Evita que en pantallas gigantes las fotos se estiren demasiado */
-    display: grid;
-    /* Mantenemos tu configuración de columnas responsivas */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 15px;
-    padding: 20px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+    width: 100%;
 }
 
 /* Centramos también el contenedor de vídeos */
