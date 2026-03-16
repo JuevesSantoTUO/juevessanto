@@ -26,27 +26,21 @@
                 <button class="btn-filtro activo" onclick="filtrarGaleria('todos')">Todos</button>
                 <button class="btn-filtro" onclick="filtrarGaleria('2025')">2025</button>
                 <button class="btn-filtro" onclick="filtrarGaleria('2024')">2024</button>
-                <button class="btn-filtro" onclick="filtrarGaleria('antiguas')">Archivo</button>
             </nav>
 
-            <h3 class="subtitulo-galeria">Quedada (12:00)</h3>
-
-            <div class="galeria-grid" id="galeria-grid">
+            <div class="galeria-grid" id="contenedor-fotos">
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/quedada1.jpg" alt="Quedada 2025 - Foto 1">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-                
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/quedada2.jpg" alt="Quedada 2025 - Foto 2">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-                
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/quedada3.jpg" alt="Quedada 2025 - Foto 3">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/quedada4.jpg" alt="Quedada 2025 - Foto 4">
                     <div class="foto-overlay"><span>Ver</span></div>
@@ -61,12 +55,7 @@
                     <img src="img/galeria/2025/quedada6.jpg" alt="Quedada 2025 - Foto 6">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-                
-            </div>
 
-            <h3 class="subtitulo-galeria">COMIDA (15:00)</h3>
-
-            <div class="galeria-grid" id="galeria-grid">
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/comida1.jpg" alt="Comida 2025 - Foto 1">
                     <div class="foto-overlay"><span>Ver</span></div>
@@ -106,12 +95,6 @@
                     <img src="img/galeria/2025/comida8.jpg" alt="Comida 2025 - Foto 8">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-                
-            </div>
-
-            <h3 class="subtitulo-galeria">RONDA (19:00)</h3>
-
-            <div class="galeria-grid" id="galeria-grid">
                 <div class="foto-item 2025" onclick="abrirImagen(this)">
                     <img src="img/galeria/2025/ronda01.jpg" alt="Ronda 2025 - Foto 1">
                     <div class="foto-overlay"><span>Ver</span></div>
@@ -186,48 +169,41 @@
                     <img src="img/galeria/2025/ronda15.jpg" alt="Ronda 2025 - Foto 15">
                     <div class="foto-overlay"><span>Ver</span></div>
                 </div>
-                
-            </div>
+                </div>
         </div>
 
         <div id="seccion-videos" class="tab-contenido-galeria">
-            <h3 class="titulo-año-video">Jueves Santo 2025</h3>
             <div class="video-grid">
-                <div class="video-card">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/tViE-x6yqEs" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <p class="video-caption">Ensayo después de comer</p>
-                </div>
-
                 <div class="video-card">
                     <div class="video-responsive">
                         <iframe src="https://www.youtube.com/embed/Xfktn6GcOrs" frameborder="0" allowfullscreen></iframe>
                     </div>
                     <p class="video-caption">Ronda al Señor de La Sentencia</p>
                 </div>
-
                 <div class="video-card">
                     <div class="video-responsive">
                         <iframe src="https://www.youtube.com/embed/Mykmal7ZOfA" frameborder="0" allowfullscreen></iframe>
                     </div>
                     <p class="video-caption">Entrega de fajines</p>
                 </div>
-
                 <div class="video-card">
-                    <iframe src="https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Foviedodepasion%2Fvideos%2F626434020419310%2F&show_text=false&width=560&t=0" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+                    <div class="video-responsive">
+                        <iframe src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Foviedodepasion%2Fvideos%2F626434020419310%2F&show_text=false&t=0" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+                    </div>
                     <p class="video-caption">Santa Bárbara Bendita</p>
                 </div>
-                </div>
+            </div>
         </div>
     </main>
 
-    <div id="lightbox" class="lightbox" onclick="cerrarImagen()">
-        <span class="cerrar-lightbox">&times;</span>
-        <img id="img-full" src="" alt="Imagen a tamaño completo">
+    <div id="lightbox" class="lightbox">
+        <span class="cerrar-lightbox" onclick="cerrarImagen()">×</span>
+        <button class="nav-btn prev" onclick="cambiarImagen(-1)">&#10094;</button>
+        <div class="lightbox-content">
+            <img id="img-full" src="" alt="Imagen a tamaño completo">
+        </div>
+        <button class="nav-btn next" onclick="cambiarImagen(1)">&#10095;</button>
     </div>
-
-    <div id="footer-container"></div>
 
     <script src="scripts/main.js"></script>
     <script src="scripts/galeria.js"></script>
