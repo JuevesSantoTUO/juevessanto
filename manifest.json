@@ -2,7 +2,7 @@
   "name": "Jueves Santo",
   "short_name": "Jueves Santo",
   "description": "App oficial de la Tuna Universitaria de Oviedo para la Madrugá del Jueves Santo.",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#d4af37",
