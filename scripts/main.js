@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- CONFIGURACIÓN DE FECHA OBJETIVO ---
-// Simplemente cambia esta fecha para futuros años (Formato: AAAA-MM-DD HH:MM:SS)
-const FECHA_OBJETIVO = new Date('April 2, 2026 00:00:00').getTime();
+// Formato ISO: AAAA-MM-DDTHH:MM:SS+02:00 (El +02:00 fija la hora de España en abril)
+const FECHA_OBJETIVO = new Date('2026-04-02T00:00:00+02:00').getTime();
 
 function actualizarContador() {
     const ahora = new Date().getTime();
