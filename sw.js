@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juevessanto-v1.8';
+const CACHE_NAME = 'juevessanto-v2.0';
 const assets = [
   './',
   'index.html',
