@@ -96,3 +96,45 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('Error SW', err));
   });
 }
+
+// --- BOTÓN DE LIMPIEZA DE CACHÉ (Mantenimiento) ---
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.querySelector('.cache-reset-btn')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div class="cache-reset-container">
+                <button onclick="limpiarCacheYRecargar()" class="cache-reset-btn">
+                    <span class="cache-icon">⚙️</span>
+                    <span class="cache-text">¿Falta información? Pulsa aquí para actualizar</span>
+                </button>
+            </div>
+        `);
+    }
+});
+
+// La función que hace la limpieza profunda
+function limpiarCacheYRecargar() {
+    if (confirm("Se va a actualizar la aplicación para mostrar los últimos cambios. ¿Continuar?")) {
+        // 1. Borrar todas las cachés de la PWA
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                for (let name of names) caches.delete(name);
+            });
+        }
+        
+        // 2. Desregistrar el Service Worker para que se descargue el nuevo
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+
+        // 3. Limpiar almacenamiento local (opcional, por si usas estados)
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // 4. Recarga forzada desde el servidor
+        window.location.reload(true);
+    }
+}
