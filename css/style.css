@@ -332,3 +332,47 @@ main.contenedor {
         grid-template-columns: 1fr;
     }
 }
+
+/* --- BOTÓN FLOTANTE LIMPIAR CACHÉ --- */
+.cache-reset-container {
+    position: fixed;
+    bottom: 30px;
+    left: 30px; /* Al lado opuesto de WhatsApp */
+    z-index: 9999;
+}
+
+.cache-reset-btn {
+    background: rgba(0, 0, 0, 0.8);
+    color: #888; /* Color discreto */
+    border: 1px solid #444;
+    border-radius: 30px;
+    padding: 8px 15px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.cache-reset-btn:hover {
+    color: var(--color-acento);
+    border-color: var(--color-acento);
+    background: #000;
+}
+
+.cache-icon { font-size: 1rem; }
+
+/* En móvil lo hacemos un poco más compacto */
+@media (max-width: 600px) {
+    .cache-reset-container {
+        bottom: 20px;
+        left: 20px;
+    }
+    .cache-text {
+        max-width: 120px;
+        line-height: 1.2;
+        text-align: left;
+    }
+}
