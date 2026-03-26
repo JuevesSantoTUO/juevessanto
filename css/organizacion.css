@@ -1,126 +1,179 @@
-/* Protocolo v1.8 - CSS Definitivo */
+/* Protocolo v1.8 - CSS Responsive Total */
+
+:root {
+    --color-fondo: #0a0a0a;
+    --color-gris-oscuro: #1a1a1a;
+    --color-acento: #d4af37;
+}
+
 .protocolo-body {
     background-color: var(--color-fondo) !important;
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+    color: white;
     height: 100vh;
-    overflow: hidden; /* El cuerpo no hace scroll, lo hacen sus hijos */
+    display: flex;
+    flex-direction: column;
 }
 
+/* Navbar */
+.navbar {
+    background: #000;
+    border-bottom: 1px solid var(--color-acento);
+    padding: 10px;
+    z-index: 1000;
+}
+
+.nav-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.nav-tools {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+/* Layout Principal */
 .layout-principal {
     display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 20px;
-    padding: 20px;
-    height: calc(100vh - 80px);
-    box-sizing: border-box;
+    grid-template-columns: 1fr 380px; /* PC: Formación a la izquierda, control a la derecha */
+    gap: 10px;
+    padding: 10px;
+    flex: 1;
+    overflow: hidden;
 }
 
-/* Área de Formación (Izquierda) */
+/* ZONA PIZARRA (Izquierda) */
 .zona-pizarra {
     background: var(--color-gris-oscuro);
     border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 12px;
-    overflow-y: auto; /* Permite bajar si hay muchas filas */
-    padding: 40px 20px;
+    overflow-y: auto;
+    padding: 20px 10px;
+    display: flex;
+    justify-content: center;
 }
 
 .pizarra-interna {
     width: 100%;
-    max-width: 850px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    max-width: 800px;
 }
 
-.cabecera-paso { text-align: center; margin-bottom: 40px; }
-.oro-texto { color: var(--color-acento); letter-spacing: 5px; margin: 10px 0; font-size: 2rem; }
-.meta-texto { color: #666; font-size: 0.8rem; letter-spacing: 2px; }
+.cabecera-paso { text-align: center; margin-bottom: 20px; }
+.oro-texto { color: var(--color-acento); letter-spacing: 3px; margin: 5px 0; font-size: 1.5rem; }
+.meta-texto { color: #666; font-size: 0.7rem; letter-spacing: 1px; }
 
-.filas-stack { display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+.filas-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
 
 .fila-tunos {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 8px;
     background: rgba(0,0,0,0.3);
-    padding: 15px 40px;
-    border-radius: 60px;
+    padding: 10px;
+    border-radius: 50px;
     border: 1px dashed #444;
-    min-width: 600px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0; /* Permite que se encoja */
 }
 
 .hueco-tuno {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    border: 2px solid #222;
-    background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 1px solid #333;
+    background: #050505;
+    flex-shrink: 1; /* Permite que los huecos se encojan en móvil */
 }
 
-/* Panel de Control (Derecha) */
+/* PANEL CONTROL (Derecha) */
 .panel-control {
     background: #080808;
     border: 1px solid var(--color-acento);
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
     overflow-y: auto;
 }
 
-.bloque-control { border-bottom: 1px solid #222; padding-bottom: 20px; }
-.oro-label { color: var(--color-acento); font-size: 0.85rem; font-weight: bold; display: block; margin-bottom: 10px; }
-
-/* Bolitas: AQUÍ ESTABA EL ERROR */
 .deposito-bolitas {
     display: flex;
-    flex-wrap: wrap; /* Para que ocupen el ancho del cajetín */
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
     justify-content: center;
-    padding: 15px 5px;
 }
 
 .tuno-ball {
-    width: 65px;
-    height: 65px;
-    border-radius: 50% !important;
+    width: 55px; /* Más pequeñas en móvil */
+    height: 55px;
+    border-radius: 50%;
     cursor: grab;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     color: white;
-    text-shadow: 1px 1px 2px #000;
     text-align: center;
-    padding: 5px;
-    flex-shrink: 0; /* Evita que se aplasten */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.8);
-    transition: transform 0.2s;
+    padding: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
 }
 
-/* Botones con estilo Tuna */
+/* BOTONES UI */
 .btn-tuna-ui {
     background: #000;
     color: var(--color-acento);
     border: 1px solid var(--color-acento);
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 5px;
-    font-weight: bold;
+    font-size: 0.7rem;
     cursor: pointer;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    transition: 0.3s;
+    font-weight: bold;
 }
 
-.btn-tuna-ui:hover { background: var(--color-acento); color: #000; }
-.btn-destacado { background: var(--color-acento); color: #000; }
 .full-width { width: 100%; }
+.tuna-input { background: #151515; border: 1px solid #333; color: white; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box;}
 
-.tuna-input { background: #151515; border: 1px solid #333; color: white; padding: 10px; border-radius: 4px; font-size: 0.8rem; }
-.input-inline { display: flex; gap: 8px; margin-bottom: 10px; }
-.nav-tools { display: flex; gap: 8px; }
+/* --- RESPONSIVE PARA SMARTPHONES --- */
+@media (max-width: 900px) {
+    .layout-principal {
+        grid-template-columns: 1fr; /* Una sola columna */
+        overflow-y: auto;
+    }
+
+    .protocolo-body {
+        overflow-y: auto;
+    }
+
+    .panel-control {
+        height: auto;
+        order: 2; /* El panel de control va debajo */
+    }
+
+    .zona-pizarra {
+        order: 1;
+        min-height: 400px;
+    }
+
+    .fila-tunos {
+        padding: 8px;
+    }
+
+    .hueco-tuno {
+        width: 50px; /* Huecos más pequeños en móvil */
+        height: 50px;
+    }
+}
