@@ -1,0 +1,126 @@
+/* Protocolo v1.8 - CSS Definitivo */
+.protocolo-body {
+    background-color: var(--color-fondo) !important;
+    height: 100vh;
+    overflow: hidden; /* El cuerpo no hace scroll, lo hacen sus hijos */
+}
+
+.layout-principal {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    padding: 20px;
+    height: calc(100vh - 80px);
+    box-sizing: border-box;
+}
+
+/* Área de Formación (Izquierda) */
+.zona-pizarra {
+    background: var(--color-gris-oscuro);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 12px;
+    overflow-y: auto; /* Permite bajar si hay muchas filas */
+    padding: 40px 20px;
+}
+
+.pizarra-interna {
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cabecera-paso { text-align: center; margin-bottom: 40px; }
+.oro-texto { color: var(--color-acento); letter-spacing: 5px; margin: 10px 0; font-size: 2rem; }
+.meta-texto { color: #666; font-size: 0.8rem; letter-spacing: 2px; }
+
+.filas-stack { display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+
+.fila-tunos {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.3);
+    padding: 15px 40px;
+    border-radius: 60px;
+    border: 1px dashed #444;
+    min-width: 600px;
+}
+
+.hueco-tuno {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #222;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Panel de Control (Derecha) */
+.panel-control {
+    background: #080808;
+    border: 1px solid var(--color-acento);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.bloque-control { border-bottom: 1px solid #222; padding-bottom: 20px; }
+.oro-label { color: var(--color-acento); font-size: 0.85rem; font-weight: bold; display: block; margin-bottom: 10px; }
+
+/* Bolitas: AQUÍ ESTABA EL ERROR */
+.deposito-bolitas {
+    display: flex;
+    flex-wrap: wrap; /* Para que ocupen el ancho del cajetín */
+    gap: 12px;
+    justify-content: center;
+    padding: 15px 5px;
+}
+
+.tuno-ball {
+    width: 65px;
+    height: 65px;
+    border-radius: 50% !important;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: white;
+    text-shadow: 1px 1px 2px #000;
+    text-align: center;
+    padding: 5px;
+    flex-shrink: 0; /* Evita que se aplasten */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    transition: transform 0.2s;
+}
+
+/* Botones con estilo Tuna */
+.btn-tuna-ui {
+    background: #000;
+    color: var(--color-acento);
+    border: 1px solid var(--color-acento);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    transition: 0.3s;
+}
+
+.btn-tuna-ui:hover { background: var(--color-acento); color: #000; }
+.btn-destacado { background: var(--color-acento); color: #000; }
+.full-width { width: 100%; }
+
+.tuna-input { background: #151515; border: 1px solid #333; color: white; padding: 10px; border-radius: 4px; font-size: 0.8rem; }
+.input-inline { display: flex; gap: 8px; margin-bottom: 10px; }
+.nav-tools { display: flex; gap: 8px; }
