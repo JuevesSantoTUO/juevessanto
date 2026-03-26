@@ -175,7 +175,8 @@
 /* --- RESPONSIVE PARA SMARTPHONES --- */
 @media (max-width: 900px) {
     .layout-principal {
-        grid-template-columns: 1fr; /* Una sola columna */
+        /* Cambiamos a 3 filas: formación, resizer y control */
+        grid-template-columns: 1fr !important;
         grid-template-rows: 60vh 15px auto; 
         height: calc(100vh - 80px);
         overflow: hidden;
@@ -187,11 +188,9 @@
 
     .panel-control {
         height: 100%;
-        order: 2; /* El panel de control va debajo */
     }
 
     .zona-pizarra {
-        order: 1;
         height: 100%;
         min-height: 100px; /* Evita que desaparezca al encoger */
     }
