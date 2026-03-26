@@ -12,6 +12,7 @@ const assets = [
   'relacionado.html',
   'legal-contacto.html',
   'changelog.html',
+  'organizacion.htm',
   'assets/header.html',
   'assets/footer.html',
 
@@ -27,6 +28,7 @@ const assets = [
   'css/galeria.css',
   'css/cancionero.css',
   'css/changelog.css',
+  'css/organizacion.css',
   
   // Scripts (sin barra inicial)
   'scripts/main.js',
@@ -37,6 +39,7 @@ const assets = [
   'scripts/galeria.js',
   'scripts/cancionero.js',
   'scripts/asistentes.js',
+  'scripts/organizacion.js',
 
   // Imágenes
   'img/favicon.png'
