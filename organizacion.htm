@@ -27,8 +27,9 @@
         </div>
     </nav>
 
-    <div class="layout-principal">
-        <section class="zona-pizarra">
+    <div class="layout-principal" id="layout-contenedor">
+        
+        <section class="zona-pizarra" id="panel-superior">
             <div id="area-de-captura" class="pizarra-interna">
                 <div class="cabecera-paso">
                     <svg width="100" height="70" viewBox="0 0 100 60">
@@ -43,7 +44,9 @@
             </div>
         </section>
 
-        <aside class="panel-control">
+        <div class="resizer-v" id="resizer-v"></div>
+
+        <aside class="panel-control" id="panel-inferior">
             <div class="bloque-control">
                 <button class="btn-tuna-ui full-width" onclick="document.getElementById('excel-input').click()">📁 Importar desde Excel</button>
                 <input type="file" id="excel-input" hidden accept=".xlsx, .xls">
