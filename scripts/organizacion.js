@@ -227,3 +227,34 @@ function exportarImagen() {
         a.download = "Formacion-Oficial.png"; a.href = c.toDataURL(); a.click();
     });
 }
+
+// --- LÓGICA DE RESIZER MÓVIL ---
+document.addEventListener('DOMContentLoaded', () => {
+    const resizer = document.getElementById('resizer-v');
+    const layout = document.getElementById('layout-contenedor');
+
+    if (resizer) {
+        resizer.addEventListener('touchstart', (e) => {
+            document.addEventListener('touchmove', redimensionar);
+            document.addEventListener('touchend', () => {
+                document.removeEventListener('touchmove', redimensionar);
+            });
+        });
+    }
+
+    function redimensionar(e) {
+        if (window.innerWidth > 900) return; // Solo actuar en móvil
+
+        const touchY = e.touches[0].clientY;
+        const layoutRect = layout.getBoundingClientRect();
+        
+        // Calculamos el porcentaje de altura para la zona superior
+        let relativeY = touchY - layoutRect.top;
+        let percentage = (relativeY / layoutRect.height) * 100;
+
+        // Limitamos para que no se "rompa" el diseño (entre 20% y 80%)
+        if (percentage > 20 && percentage < 80) {
+            layout.style.gridTemplateRows = `${percentage}% 15px 1fr`;
+        }
+    }
+});
