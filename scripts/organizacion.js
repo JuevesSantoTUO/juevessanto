@@ -228,33 +228,42 @@ function exportarImagen() {
     });
 }
 
-// --- LÓGICA DE RESIZER MÓVIL ---
+// --- LÓGICA DE RESIZER MÓVIL v1.8 ---
 document.addEventListener('DOMContentLoaded', () => {
     const resizer = document.getElementById('resizer-v');
     const layout = document.getElementById('layout-contenedor');
 
-    if (resizer) {
-        resizer.addEventListener('touchstart', (e) => {
-            document.addEventListener('touchmove', redimensionar);
-            document.addEventListener('touchend', () => {
-                document.removeEventListener('touchmove', redimensionar);
-            });
-        });
-    }
+    if (resizer && layout) {
+        const startResize = (e) => {
+            // Evitamos que el móvil intente hacer scroll mientras arrastramos
+            document.addEventListener('touchmove', resizing, { passive: false });
+            document.addEventListener('touchend', stopResize);
+        };
 
-    function redimensionar(e) {
-        if (window.innerWidth > 900) return; // Solo actuar en móvil
+        const resizing = (e) => {
+            if (window.innerWidth > 900) return;
+            
+            // Previene el scroll por defecto
+            e.preventDefault();
 
-        const touchY = e.touches[0].clientY;
-        const layoutRect = layout.getBoundingClientRect();
-        
-        // Calculamos el porcentaje de altura para la zona superior
-        let relativeY = touchY - layoutRect.top;
-        let percentage = (relativeY / layoutRect.height) * 100;
+            const touchY = e.touches[0].clientY;
+            const layoutRect = layout.getBoundingClientRect();
+            
+            // Calculamos cuánto espacio ocupa la parte superior
+            let relativeY = touchY - layoutRect.top;
+            let percentage = (relativeY / layoutRect.height) * 100;
 
-        // Limitamos para que no se "rompa" el diseño (entre 20% y 80%)
-        if (percentage > 20 && percentage < 80) {
-            layout.style.gridTemplateRows = `${percentage}% 15px 1fr`;
-        }
+            // Seguridad: Mínimo 15% y máximo 85% para no "perder" los paneles
+            if (percentage > 15 && percentage < 85) {
+                layout.style.gridTemplateRows = `${percentage}% 20px 1fr`;
+            }
+        };
+
+        const stopResize = () => {
+            document.removeEventListener('touchmove', resizing);
+            document.removeEventListener('touchend', stopResize);
+        };
+
+        resizer.addEventListener('touchstart', startResize);
     }
 });
