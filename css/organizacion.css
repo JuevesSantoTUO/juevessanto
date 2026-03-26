@@ -147,11 +147,38 @@
 .full-width { width: 100%; }
 .tuna-input { background: #151515; border: 1px solid #333; color: white; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box;}
 
+/* Estilo para el manillar de arrastre */
+.resizer-v {
+    display: none; /* Oculto en PC por defecto */
+    height: 15px;
+    background: #111;
+    border-top: 1px solid var(--color-acento);
+    border-bottom: 1px solid var(--color-acento);
+    cursor: row-resize;
+    position: relative;
+    z-index: 10;
+}
+
+/* Indicador visual en el centro del manillar */
+.resizer-v::after {
+    content: "";
+    width: 40px;
+    height: 4px;
+    background: var(--color-acento);
+    border-radius: 2px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 /* --- RESPONSIVE PARA SMARTPHONES --- */
 @media (max-width: 900px) {
     .layout-principal {
         grid-template-columns: 1fr; /* Una sola columna */
-        overflow-y: auto;
+        grid-template-rows: 60vh 15px auto; 
+        height: calc(100vh - 80px);
+        overflow: hidden;
     }
 
     .protocolo-body {
@@ -159,13 +186,14 @@
     }
 
     .panel-control {
-        height: auto;
+        height: 100%;
         order: 2; /* El panel de control va debajo */
     }
 
     .zona-pizarra {
         order: 1;
-        min-height: 400px;
+        height: 100%;
+        min-height: 100px; /* Evita que desaparezca al encoger */
     }
 
     .fila-tunos {
@@ -175,5 +203,9 @@
     .hueco-tuno {
         width: 50px; /* Huecos más pequeños en móvil */
         height: 50px;
+    }
+
+    .resizer-v {
+        display: block; /* Solo visible en móviles */
     }
 }
