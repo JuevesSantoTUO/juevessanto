@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protocolo de Formación - v1.8</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/organizacion.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="organizacion.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -19,7 +19,7 @@
             <div class="nav-tools">
                 <button class="btn-tuna-ui" onclick="añadirFila()">+ Fila</button>
                 <button class="btn-tuna-ui" onclick="limpiarFormacion()">🧹 Limpiar</button>
-                <button class="btn-tuna-ui btn-destacado" onclick="exportarImagen()">📸 Exportar PNG</button>
+                <button class="btn-tuna-ui btn-gold" onclick="exportarImagen()">📸 PNG</button>
                 <button class="btn-tuna-ui" onclick="exportarProyecto()">💾 Guardar Proy.</button>
                 <button class="btn-tuna-ui" onclick="document.getElementById('project-input').click()">📁 Cargar Proy.</button>
                 <input type="file" id="project-input" hidden accept=".json" onchange="cargarProyecto(event)">
@@ -45,7 +45,7 @@
 
         <aside class="panel-control">
             <div class="bloque-control">
-                <button class="btn-tuna-ui full-width" onclick="document.getElementById('excel-input').click()">📁 Importar desde Excel</button>
+                <button class="btn-tuna-ui full-width" onclick="document.getElementById('excel-input').click()">📁 Importar Excel</button>
                 <input type="file" id="excel-input" hidden accept=".xlsx, .xls">
             </div>
 
