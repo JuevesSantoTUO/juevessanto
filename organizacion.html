@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocolo de Formación - v1.8</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/organizacion.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="protocolo-body">
+
+    <nav class="navbar">
+        <div class="contenedor nav-flex">
+            <div class="logo-union">
+                <span class="logo-texto">PROTOCOLO<span>v1.8</span></span>
+            </div>
+            <div class="nav-tools">
+                <button class="btn-tuna-ui" onclick="añadirFila()">+ Fila</button>
+                <button class="btn-tuna-ui" onclick="limpiarFormacion()">🧹 Limpiar</button>
+                <button class="btn-tuna-ui btn-destacado" onclick="exportarImagen()">📸 Exportar PNG</button>
+                <button class="btn-tuna-ui" onclick="exportarProyecto()">💾 Guardar Proy.</button>
+                <button class="btn-tuna-ui" onclick="document.getElementById('project-input').click()">📁 Cargar Proy.</button>
+                <input type="file" id="project-input" hidden accept=".json" onchange="cargarProyecto(event)">
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout-principal">
+        <section class="zona-pizarra">
+            <div id="area-de-captura" class="pizarra-interna">
+                <div class="cabecera-paso">
+                    <svg width="100" height="70" viewBox="0 0 100 60">
+                        <path d="M10 50 L90 50 L80 10 L20 10 Z" fill="#d4af37" opacity="0.8"/>
+                        <rect x="5" y="50" width="90" height="5" fill="#d4af37"/>
+                    </svg>
+                    <h2 class="oro-texto">LA SENTENCIA</h2>
+                    <p class="meta-texto">FORMACIÓN OFICIAL - MADRUGÁ 2026</p>
+                </div>
+                <div id="grid-formacion" class="filas-stack">
+                    </div>
+            </div>
+        </section>
+
+        <aside class="panel-control">
+            <div class="bloque-control">
+                <button class="btn-tuna-ui full-width" onclick="document.getElementById('excel-input').click()">📁 Importar desde Excel</button>
+                <input type="file" id="excel-input" hidden accept=".xlsx, .xls">
+            </div>
+
+            <div class="bloque-control">
+                <label class="oro-label">Añadir Tuno Manual</label>
+                <div class="input-inline">
+                    <input type="text" id="m-nombre" placeholder="Nombre..." class="tuna-input">
+                    <select id="m-tuna" class="tuna-input">
+                        <option value="Universitaria Oviedo">U. Oviedo</option>
+                        <option value="Antigua Oviedo">Antiga Ov.</option>
+                        <option value="Industriales Gijón">Gijón</option>
+                        <option value="León">León</option>
+                        <option value="Salamanca">Salamanca</option>
+                        <option value="Santander">Santander</option>
+                        <option value="Derecho Ourense">Ourense</option>
+                    </select>
+                </div>
+                <button class="btn-tuna-ui full-width" onclick="añadirTunoManual()">Añadir a la lista</button>
+            </div>
+
+            <div id="cajon-tunos" class="deposito-bolitas">
+                </div>
+        </aside>
+    </div>
+
+    <script src="scripts/organizacion.js"></script>
+</body>
+</html>
