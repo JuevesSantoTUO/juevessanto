@@ -149,18 +149,21 @@
 
 /* Estilo para el manillar de arrastre */
 .resizer-v {
-    display: none; /* Oculto en PC por defecto */
-    height: 12px;
-    background: #111;
+    display: none; /* Oculto en PC por defecto, controlado por @media query */
+    height: 20px; /* Fácil de tocar con el dedo */
+    background: #111; /* Fondo oscuro por defecto */
     border-top: 1px solid var(--color-acento);
     border-bottom: 1px solid var(--color-acento);
     cursor: row-resize;
     position: relative;
     z-index: 10;
-    touch-action: none; /* <--- ESTO ES LO QUE FALTA PARA QUE NO SE BLOQUEE */
+    touch-action: none; /* Crucial para móviles */
+    
+    /* Nueva transición suave para el color y el brillo */
+    transition: background 0.2s ease, box-shadow 0.2s ease; 
 }
 
-/* Indicador visual en el centro del manillar */
+/* Indicador central (manillar visual con transición) */
 .resizer-v::after {
     content: "";
     width: 40px;
@@ -171,14 +174,16 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    
+    /* Transición suave para el color del manillar */
+    transition: background 0.2s ease;
 }
 
 /* --- RESPONSIVE PARA SMARTPHONES --- */
 @media (max-width: 900px) {
     .layout-principal {
-        /* Cambiamos a 3 filas: formación, resizer y control */
         grid-template-columns: 1fr !important;
-        grid-template-rows: 60vh 15px auto; 
+        grid-template-rows: 60vh 20px 1fr; /* Ajustado el alto del resizer */
         height: calc(100vh - 80px);
         overflow: hidden;
     }
@@ -191,10 +196,7 @@
         height: 100%;
     }
 
-    .zona-pizarra {
-        height: 100%;
-        min-height: 100px; /* Evita que desaparezca al encoger */
-    }
+    .zona-pizarra { height: 100%; min-height: 100px; }
 
     .fila-tunos {
         padding: 8px;
@@ -205,7 +207,18 @@
         height: 50px;
     }
 
-    .resizer-v {
-        display: block; /* Solo visible en móviles */
+    .resizer-v { display: block; } /* Visible en móvil */
+
+    /* --- LÓGICA DEL BRILLO PREMIUM --- */
+    
+    /* Cuando el usuario mantiene el dedo sobre la barra (:active) */
+    .resizer-v:active {
+        background: var(--color-acento) !important; /* Se vuelve dorada entera */
+        box-shadow: 0 0 25px var(--color-acento); /* Efecto resplandor/brillo */
+    }
+
+    /* Cambiamos el manillar central a negro para que contraste con el fondo dorado */
+    .resizer-v:active::after {
+        background: #000 !important;
     }
 }
