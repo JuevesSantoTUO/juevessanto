@@ -142,7 +142,9 @@ function dropToHueco(e) {
     const element = document.getElementById(id);
     if (e.currentTarget.children.length === 0) {
         e.currentTarget.appendChild(element);
-        element.style.width = "100%"; element.style.height = "100%";
+        // Quitamos los tamaños fijos para que el CSS mande
+        element.style.width = "90%"; 
+        element.style.height = "90%";
     }
 }
 
@@ -151,7 +153,9 @@ function dropToCajon(e) {
     const id = e.dataTransfer.getData('text');
     const element = document.getElementById(id);
     document.getElementById('cajon-tunos').appendChild(element);
-    element.style.width = "65px"; element.style.height = "65px";
+    // Volvemos al tamaño de bolita suelta
+    element.style.width = "55px"; 
+    element.style.height = "55px";
 }
 
 function añadirTunoManual() {
@@ -166,7 +170,8 @@ function limpiarFormacion() {
     const cajon = document.getElementById('cajon-tunos');
     document.querySelectorAll('.hueco-tuno .tuno-ball').forEach(ball => {
         cajon.appendChild(ball);
-        ball.style.width = "65px"; ball.style.height = "65px";
+        ball.style.width = "55px"; 
+        ball.style.height = "55px";
     });
 }
 
