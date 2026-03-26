@@ -150,13 +150,14 @@
 /* Estilo para el manillar de arrastre */
 .resizer-v {
     display: none; /* Oculto en PC por defecto */
-    height: 15px;
+    height: 12px;
     background: #111;
     border-top: 1px solid var(--color-acento);
     border-bottom: 1px solid var(--color-acento);
     cursor: row-resize;
     position: relative;
     z-index: 10;
+    touch-action: none; /* <--- ESTO ES LO QUE FALTA PARA QUE NO SE BLOQUEE */
 }
 
 /* Indicador visual en el centro del manillar */
