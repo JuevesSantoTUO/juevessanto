@@ -12,7 +12,7 @@ const assets = [
   'relacionado.html',
   'legal-contacto.html',
   'changelog.html',
-  'organizacion.htm',
+  'organizacion.html',
   'assets/header.html',
   'assets/footer.html',
 
