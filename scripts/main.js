@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- CONFIGURACIÓN DE FECHA OBJETIVO ---
 // Formato ISO: AAAA-MM-DDTHH:MM:SS+02:00 (El +02:00 fija la hora de España en abril)
-const FECHA_OBJETIVO = new Date('2026-04-02T00:00:00+02:00').getTime();
+const FECHA_OBJETIVO = new Date('2027-03-25T00:00:00+02:00').getTime();
 
 function actualizarContador() {
     const ahora = new Date().getTime();
