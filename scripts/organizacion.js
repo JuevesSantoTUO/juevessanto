@@ -1,111 +1,76 @@
-// LISTADO ESTÁTICO (Aparecen siempre)
+// Protocolo v1.8.2
 const TUNOS_PREDETERMINADOS = [
-    { Nombre: "Rumbito", Tuna: "TUO" },
-    { Nombre: "Cueva", Tuna: "TUO" },
-    { Nombre: "Tito", Tuna: "TUO" },
-    { Nombre: "Jacobo", Tuna: "TUO" },
-    { Nombre: "Javierin", Tuna: "TUO" },
-    { Nombre: "Pincelín", Tuna: "TUO" },
-    { Nombre: "Vizcaino", Tuna: "TUO" },
-    { Nombre: "Calentín", Tuna: "TUO" },
-    { Nombre: "Quimi", Tuna: "TUO" },
-    { Nombre: "CTLL", Tuna: "TUO" },
-    //{ Nombre: "Mudito", Tuna: "TUO" },
-    { Nombre: "Angustias", Tuna: "TUO" },
-    { Nombre: "Gavilan", Tuna: "TUO" },
-    { Nombre: "Elvis", Tuna: "TAUO" },
-    { Nombre: "Jose Carlos", Tuna: "TAUO" },
-    //{ Nombre: "Sabonis", Tuna: "TAUO" },
-    //{ Nombre: "Rambín", Tuna: "TAUO" },
-    { Nombre: "Negro", Tuna: "TAUO" },
-    { Nombre: "Gnomo", Tuna: "TAUO" },
-    //{ Nombre: "Luisma", Tuna: "TAUO" },
-    { Nombre: "Piñines", Tuna: "TAUO" },
-    { Nombre: "Laureano", Tuna: "TAUO" },
-    { Nombre: "Pascual", Tuna: "TAUO" },
-    { Nombre: "Odón", Tuna: "TAUO" },
-    { Nombre: "Bubu", Tuna: "TAUO" },
-    { Nombre: "Lobo", Tuna: "TAUO" },
-    { Nombre: "Samsonite", Tuna: "TAUO" },
-    { Nombre: "TomTom", Tuna: "TFUO" },
-    { Nombre: "Seño", Tuna: "TFUO" },
-    { Nombre: "Pelotari", Tuna: "TFUO" },
-    { Nombre: "Yoda", Tuna: "TUS" },
-    { Nombre: "Tomate", Tuna: "TUS" },
-    { Nombre: "Iguana", Tuna: "TUS" },
-    { Nombre: "Groot", Tuna: "TUS" },
-    { Nombre: "Fafifu", Tuna: "TIIG" },
-    { Nombre: "Epi", Tuna: "TIIG" },
-    { Nombre: "Cantelín", Tuna: "TIIG" },
-    { Nombre: "Pichi", Tuna: "TIIG" },
-    { Nombre: "Pipo", Tuna: "TIIG" },
-    { Nombre: "Loco", Tuna: "TULE" },
-    { Nombre: "Nena", Tuna: "TULE" },
-    { Nombre: "Otto", Tuna: "TULE" },
-    { Nombre: "Escroto", Tuna: "TULE" },
-    { Nombre: "Torrezno", Tuna: "TUSAL" },
-    { Nombre: "Atos", Tuna: "TUSAL" },
-    { Nombre: "Dobbycioso", Tuna: "TUSAL" },
-    { Nombre: "PinVIII", Tuna: "TUSAL" },
-    { Nombre: "Marilyn", Tuna: "TUSAL" },
-    { Nombre: "Orson", Tuna: "TVO" },
-    { Nombre: "Paquirrín", Tuna: "TVO" },
-    { Nombre: "Jami", Tuna: "TVO" },
-    { Nombre: "Piccolo", Tuna: "TVO" },
-    { Nombre: "Búho", Tuna: "CUBU" },
-    { Nombre: "Dulce", Tuna: "TDOU" },
-    { Nombre: "Piolín", Tuna: "TFDEUS" },
-    { Nombre: "Agonías", Tuna: "TFSANT" },
-    { Nombre: "Mota", Tuna: "TFUSAL" },
-    { Nombre: "Teclitas", Tuna: "TMAGBU" },
-    { Nombre: "Pablos", Tuna: "TMI" },
-    { Nombre: "Estríper", Tuna: "TPSAL" },
-    { Nombre: "Ramalazo", Tuna: "TULP" },
+    { Nombre: "Rumbito", Tuna: "TUO" }, { Nombre: "Cueva", Tuna: "TUO" }, { Nombre: "Tito", Tuna: "TUO" },
+    { Nombre: "Jacobo", Tuna: "TUO" }, { Nombre: "Javierin", Tuna: "TUO" }, { Nombre: "Pincelín", Tuna: "TUO" },
+    { Nombre: "Vizcaino", Tuna: "TUO" }, { Nombre: "Calentín", Tuna: "TUO" }, { Nombre: "Quimi", Tuna: "TUO" },
+    { Nombre: "CTLL", Tuna: "TUO" }, { Nombre: "Angustias", Tuna: "TUO" }, { Nombre: "Gavilan", Tuna: "TUO" },
+    { Nombre: "Elvis", Tuna: "TAUO" }, { Nombre: "Jose Carlos", Tuna: "TAUO" }, { Nombre: "Negro", Tuna: "TAUO" },
+    { Nombre: "Gnomo", Tuna: "TAUO" }, { Nombre: "Piñines", Tuna: "TAUO" }, { Nombre: "Laureano", Tuna: "TAUO" },
+    { Nombre: "Pascual", Tuna: "TAUO" }, { Nombre: "Odón", Tuna: "TAUO" }, { Nombre: "Bubu", Tuna: "TAUO" },
+    { Nombre: "Lobo", Tuna: "TAUO" }, { Nombre: "Samsonite", Tuna: "TAUO" }, { Nombre: "TomTom", Tuna: "TFUO" },
+    { Nombre: "Seño", Tuna: "TFUO" }, { Nombre: "Pelotari", Tuna: "TFUO" }, { Nombre: "Yoda", Tuna: "TUS" },
+    { Nombre: "Tomate", Tuna: "TUS" }, { Nombre: "Iguana", Tuna: "TUS" }, { Nombre: "Groot", Tuna: "TUS" },
+    { Nombre: "Fafifu", Tuna: "TIIG" }, { Nombre: "Epi", Tuna: "TIIG" }, { Nombre: "Cantelín", Tuna: "TIIG" },
+    { Nombre: "Pichi", Tuna: "TIIG" }, { Nombre: "Pipo", Tuna: "TIIG" }, { Nombre: "Loco", Tuna: "TULE" },
+    { Nombre: "Nena", Tuna: "TULE" }, { Nombre: "Otto", Tuna: "TULE" }, { Nombre: "Escroto", Tuna: "TULE" },
+    { Nombre: "Torrezno", Tuna: "TUSAL" }, { Nombre: "Atos", Tuna: "TUSAL" }, { Nombre: "Dobbycioso", Tuna: "TUSAL" },
+    { Nombre: "PinVIII", Tuna: "TUSAL" }, { Nombre: "Marilyn", Tuna: "TUSAL" }, { Nombre: "Orson", Tuna: "TVO" },
+    { Nombre: "Paquirrín", Tuna: "TVO" }, { Nombre: "Jami", Tuna: "TVO" }, { Nombre: "Piccolo", Tuna: "TVO" },
+    { Nombre: "Búho", Tuna: "CUBU" }, { Nombre: "Dulce", Tuna: "TDOU" }, { Nombre: "Piolín", Tuna: "TFDEUS" },
+    { Nombre: "Agonías", Tuna: "TFSANT" }, { Nombre: "Mota", Tuna: "TFUSAL" }, { Nombre: "Teclitas", Tuna: "TMAGBU" },
+    { Nombre: "Pablos", Tuna: "TMI" }, { Nombre: "Estríper", Tuna: "TPSAL" }, { Nombre: "Ramalazo", Tuna: "TULP" },
     { Nombre: "Husky", Tuna: "TVLU" }
 ];
 
 const COLORES_TUNA = {
-    "TUO": "#179558",
-    "TAUO": "#000000",
-    "TFUO": "#37c0f7",
-    "TUS": "#8b0a0a",
-    "TIIG": "#8b0707",
-    "TULE": "#0f9b2e",
-    "CUBU": "#d11313",
-    "TULP": "#d61a1a",
-    "TVLU": "#10b935",
-    "TVO": "#083988",
-    "TMI": "#a167e0",
-    "TFUSAL": "#4c0b0b",
-    "TFMG": "#ffea00",
-    "TPSAL": "#f5f50a",
-    "TUSAL": "#620a0a",
-    "TUPON": "#052681",
-    "TDOU": "#d11313",
-    "TFSANT": "#860f9b",
-    "TMAGBU": "#cd2929",
+    "TUO": "#179558", "TAUO": "#000000", "TFUO": "#37c0f7", "TUS": "#8b0a0a",
+    "TIIG": "#8b0707", "TULE": "#0f9b2e", "CUBU": "#d11313", "TULP": "#d61a1a",
+    "TVLU": "#10b935", "TVO": "#083988", "TMI": "#a167e0", "TFUSAL": "#4c0b0b",
+    "TFMG": "#ffea00", "TPSAL": "#f5f50a", "TUSAL": "#620a0a", "TUPON": "#052681",
+    "TDOU": "#d11313", "TFSANT": "#860f9b", "TMAGBU": "#cd2929"
 };
 
 let bID = 100;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Crear filas de formación
-    for(let i=0; i<5; i++) añadirFila();
-    
-    // 2. Cargar tunos iniciales
+    for(let i=0; i<6; i++) añadirFila();
     renderBolitas(TUNOS_PREDETERMINADOS);
     
-    // 3. Setup de la zona de retorno (cajón)
     const cajon = document.getElementById('cajon-tunos');
-    cajon.addEventListener('dragover', e => e.preventDefault());
-    cajon.addEventListener('drop', dropToCajon);
+    cajon?.addEventListener('dragover', e => e.preventDefault());
+    cajon?.addEventListener('drop', dropToCajon);
+
+    // Inicializar Resizer Móvil
+    const resizer = document.getElementById('resizer-v');
+    const layout = document.getElementById('layout-contenedor');
+
+    if (resizer && layout) {
+        resizer.addEventListener('touchstart', () => {
+            const resizing = (e) => {
+                if (window.innerWidth > 900) return;
+                e.preventDefault();
+                let relativeY = e.touches[0].clientY - layout.getBoundingClientRect().top;
+                let percentage = (relativeY / layout.getBoundingClientRect().height) * 100;
+                if (percentage > 15 && percentage < 85) {
+                    layout.style.gridTemplateRows = `${percentage}% 20px 1fr`;
+                }
+            };
+            const stopResize = () => {
+                document.removeEventListener('touchmove', resizing);
+                document.removeEventListener('touchend', stopResize);
+            };
+            document.addEventListener('touchmove', resizing, { passive: false });
+            document.addEventListener('touchend', stopResize);
+        });
+    }
 });
 
 function añadirFila() {
     const grid = document.getElementById('grid-formacion');
+    if(!grid) return;
     const fila = document.createElement('div');
     fila.className = 'fila-tunos';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) { // Obligatoriamente 6 huecos
         const hueco = document.createElement('div');
         hueco.className = 'hueco-tuno';
         hueco.addEventListener('dragover', e => e.preventDefault());
@@ -117,6 +82,7 @@ function añadirFila() {
 
 function renderBolitas(lista) {
     const container = document.getElementById('cajon-tunos');
+    if(!container) return;
     lista.forEach(t => {
         const color = COLORES_TUNA[t.Tuna] || "#444";
         const ball = document.createElement('div');
@@ -126,11 +92,10 @@ function renderBolitas(lista) {
         ball.style.backgroundColor = color;
         if(t.Tuna === "Salamanca") ball.style.border = "2px solid #d4af37";
         
-        // Guardamos datos en el elemento para el guardado de proyecto
         ball.dataset.nombre = t.Nombre;
         ball.dataset.tuna = t.Tuna;
 
-        ball.innerHTML = `<span>${t.Nombre}<br><small style="font-size:0.5rem">${t.Tuna}</small></span>`;
+        ball.innerHTML = `<span>${t.Nombre}<br><small style="font-size:0.55rem">${t.Tuna}</small></span>`;
         ball.addEventListener('dragstart', e => e.dataTransfer.setData('text', e.target.id));
         container.appendChild(ball);
     });
@@ -140,9 +105,8 @@ function dropToHueco(e) {
     e.preventDefault();
     const id = e.dataTransfer.getData('text');
     const element = document.getElementById(id);
-    if (e.currentTarget.children.length === 0) {
+    if (e.currentTarget.children.length === 0 && element) {
         e.currentTarget.appendChild(element);
-        // Quitamos los tamaños fijos para que el CSS mande
         element.style.width = "90%"; 
         element.style.height = "90%";
     }
@@ -152,10 +116,11 @@ function dropToCajon(e) {
     e.preventDefault();
     const id = e.dataTransfer.getData('text');
     const element = document.getElementById(id);
-    document.getElementById('cajon-tunos').appendChild(element);
-    // Volvemos al tamaño de bolita suelta
-    element.style.width = "55px"; 
-    element.style.height = "55px";
+    if (element) {
+        document.getElementById('cajon-tunos').appendChild(element);
+        element.style.width = "55px"; 
+        element.style.height = "55px";
+    }
 }
 
 function añadirTunoManual() {
@@ -175,7 +140,6 @@ function limpiarFormacion() {
     });
 }
 
-// PROYECTOS (JSON)
 function exportarProyecto() {
     const filas = document.querySelectorAll('.fila-tunos');
     let proy = [];
@@ -199,20 +163,20 @@ function cargarProyecto(e) {
         const data = JSON.parse(evt.target.result);
         const grid = document.getElementById('grid-formacion');
         data.forEach(item => {
-            // Buscamos la bolita en el cajón (renderizamos si no existe)
             let ball = Array.from(document.querySelectorAll('.tuno-ball')).find(b => b.dataset.nombre === item.n);
             if(!ball) { renderBolitas([{Nombre: item.n, Tuna: item.t}]); ball = document.getElementById(`tuno-b-${bID-1}`); }
             
-            const target = grid.children[item.f].children[item.h];
-            target.appendChild(ball);
-            ball.style.width = "100%"; ball.style.height = "100%";
+            const target = grid.children[item.f]?.children[item.h];
+            if(target) {
+                target.appendChild(ball);
+                ball.style.width = "90%"; ball.style.height = "90%";
+            }
         });
     };
     reader.readAsText(e.target.files[0]);
 }
 
-// EXCEL E IMAGEN
-document.getElementById('excel-input').addEventListener('change', (e) => {
+document.getElementById('excel-input')?.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
         const wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
@@ -227,43 +191,3 @@ function exportarImagen() {
         a.download = "Formacion-Oficial.png"; a.href = c.toDataURL(); a.click();
     });
 }
-
-// --- LÓGICA DE RESIZER MÓVIL v1.8 ---
-document.addEventListener('DOMContentLoaded', () => {
-    const resizer = document.getElementById('resizer-v');
-    const layout = document.getElementById('layout-contenedor');
-
-    if (resizer && layout) {
-        const startResize = (e) => {
-            // Evitamos que el móvil intente hacer scroll mientras arrastramos
-            document.addEventListener('touchmove', resizing, { passive: false });
-            document.addEventListener('touchend', stopResize);
-        };
-
-        const resizing = (e) => {
-            if (window.innerWidth > 900) return;
-            
-            // Previene el scroll por defecto
-            e.preventDefault();
-
-            const touchY = e.touches[0].clientY;
-            const layoutRect = layout.getBoundingClientRect();
-            
-            // Calculamos cuánto espacio ocupa la parte superior
-            let relativeY = touchY - layoutRect.top;
-            let percentage = (relativeY / layoutRect.height) * 100;
-
-            // Seguridad: Mínimo 15% y máximo 85% para no "perder" los paneles
-            if (percentage > 15 && percentage < 85) {
-                layout.style.gridTemplateRows = `${percentage}% 20px 1fr`;
-            }
-        };
-
-        const stopResize = () => {
-            document.removeEventListener('touchmove', resizing);
-            document.removeEventListener('touchend', stopResize);
-        };
-
-        resizer.addEventListener('touchstart', startResize);
-    }
-});
