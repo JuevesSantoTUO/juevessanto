@@ -1,55 +1,19 @@
-/* Protocolo v1.8 - CSS Responsive Total */
-
-:root {
-    --color-fondo: #0a0a0a;
-    --color-gris-oscuro: #1a1a1a;
-    --color-acento: #d4af37;
-}
-
+/* Protocolo v1.8 - CSS Definitivo Responsive con Resizer */
 .protocolo-body {
     background-color: var(--color-fondo) !important;
-    margin: 0;
-    padding: 0;
-    font-family: 'Montserrat', sans-serif;
-    color: white;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Navbar */
-.navbar {
-    background: #000;
-    border-bottom: 1px solid var(--color-acento);
-    padding: 10px;
-    z-index: 1000;
-}
-
-.nav-flex {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.nav-tools {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-}
-
-/* Layout Principal */
-.layout-principal {
-    display: grid;
-    grid-template-columns: 1fr 380px; /* PC: Formación a la izquierda, control a la derecha */
-    gap: 10px;
-    padding: 10px;
-    flex: 1;
     overflow: hidden;
 }
 
-/* ZONA PIZARRA (Izquierda) */
+.layout-principal {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 15px;
+    padding: 15px;
+    height: calc(100vh - 80px);
+    box-sizing: border-box;
+}
+
 .zona-pizarra {
     background: var(--color-gris-oscuro);
     border: 1px solid rgba(212, 175, 55, 0.2);
@@ -60,21 +24,12 @@
     justify-content: center;
 }
 
-.pizarra-interna {
-    width: 100%;
-    max-width: 800px;
-}
-
+.pizarra-interna { width: 100%; max-width: 900px; }
 .cabecera-paso { text-align: center; margin-bottom: 20px; }
-.oro-texto { color: var(--color-acento); letter-spacing: 3px; margin: 5px 0; font-size: 1.5rem; }
-.meta-texto { color: #666; font-size: 0.7rem; letter-spacing: 1px; }
+.oro-texto { color: var(--color-acento); letter-spacing: 3px; margin: 5px 0; font-size: 1.8rem; }
+.meta-texto { color: #666; font-size: 0.75rem; letter-spacing: 1px; }
 
-.filas-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-}
+.filas-stack { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
 
 .fila-tunos {
     display: flex;
@@ -86,19 +41,20 @@
     border: 1px dashed #444;
     width: 100%;
     box-sizing: border-box;
-    min-width: 0; /* Permite que se encoja */
 }
 
 .hueco-tuno {
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     border-radius: 50%;
     border: 1px solid #333;
     background: #050505;
-    flex-shrink: 1; /* Permite que los huecos se encojan en móvil */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 1;
 }
 
-/* PANEL CONTROL (Derecha) */
 .panel-control {
     background: #080808;
     border: 1px solid var(--color-acento);
@@ -110,60 +66,48 @@
     overflow-y: auto;
 }
 
+.bloque-control { border-bottom: 1px solid #222; padding-bottom: 15px; }
+.oro-label { color: var(--color-acento); font-size: 0.85rem; font-weight: bold; display: block; margin-bottom: 8px; }
+
 .deposito-bolitas {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+    padding: 10px 5px;
 }
 
 .tuno-ball {
-    width: 55px; /* Más pequeñas en móvil */
+    width: 55px;
     height: 55px;
-    border-radius: 50%;
+    border-radius: 50% !important;
     cursor: grab;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     font-size: 0.55rem;
     color: white;
+    text-shadow: 1px 1px 2px #000;
     text-align: center;
     padding: 4px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.8);
 }
 
-/* BOTONES UI */
-.btn-tuna-ui {
-    background: #000;
-    color: var(--color-acento);
-    border: 1px solid var(--color-acento);
-    padding: 8px 12px;
-    border-radius: 5px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.full-width { width: 100%; }
-.tuna-input { background: #151515; border: 1px solid #333; color: white; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box;}
-
-/* Estilo para el manillar de arrastre */
 .resizer-v {
-    display: none; /* Oculto en PC por defecto, controlado por @media query */
-    height: 20px; /* Fácil de tocar con el dedo */
-    background: #111; /* Fondo oscuro por defecto */
+    display: none;
+    height: 20px;
+    background: #111;
     border-top: 1px solid var(--color-acento);
     border-bottom: 1px solid var(--color-acento);
     cursor: row-resize;
     position: relative;
     z-index: 10;
-    touch-action: none; /* Crucial para móviles */
-    
-    /* Nueva transición suave para el color y el brillo */
-    transition: background 0.2s ease, box-shadow 0.2s ease; 
+    touch-action: none;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Indicador central (manillar visual con transición) */
 .resizer-v::after {
     content: "";
     width: 40px;
@@ -174,51 +118,30 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    
-    /* Transición suave para el color del manillar */
-    transition: background 0.2s ease;
 }
 
-/* --- RESPONSIVE PARA SMARTPHONES --- */
 @media (max-width: 900px) {
     .layout-principal {
         grid-template-columns: 1fr !important;
-        grid-template-rows: 60vh 20px 1fr; /* Ajustado el alto del resizer */
+        grid-template-rows: 60vh 20px 1fr;
         height: calc(100vh - 80px);
         overflow: hidden;
     }
-
-    .protocolo-body {
-        overflow-y: auto;
-    }
-
-    .panel-control {
-        height: 100%;
-    }
-
+    
+    .resizer-v { display: block; }
     .zona-pizarra { height: 100%; min-height: 100px; }
+    .panel-control { height: 100%; }
 
-    .fila-tunos {
-        padding: 8px;
+    .resizer-v:active {
+        background: var(--color-acento) !important;
+        box-shadow: 0 0 25px var(--color-acento);
     }
+
+    .resizer-v:active::after { background: #000 !important; }
 
     .hueco-tuno {
-        width: 50px; /* Huecos más pequeños en móvil */
-        height: 50px;
+        width: 45px;
+        height: 45px;
     }
-
-    .resizer-v { display: block; } /* Visible en móvil */
-
-    /* --- LÓGICA DEL BRILLO PREMIUM --- */
-    
-    /* Cuando el usuario mantiene el dedo sobre la barra (:active) */
-    .resizer-v:active {
-        background: var(--color-acento) !important; /* Se vuelve dorada entera */
-        box-shadow: 0 0 25px var(--color-acento); /* Efecto resplandor/brillo */
-    }
-
-    /* Cambiamos el manillar central a negro para que contraste con el fondo dorado */
-    .resizer-v:active::after {
-        background: #000 !important;
-    }
+    .fila-tunos { gap: 4px; padding: 6px; }
 }

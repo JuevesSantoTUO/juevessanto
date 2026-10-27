@@ -1,0 +1,129 @@
+/* --- POSICIONAMIENTO DEL CONTENIDO --- */
+
+/* Centramos el título */
+.titulo-pagina {
+    grid-column: 1 / -1 !important;
+    text-align: center;
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+/* Centramos el bloque de la línea del tiempo */
+.timeline {
+    grid-column: 1 / -1 !important;
+    justify-self: center; /* CLAVE: Centra el elemento dentro del Grid */
+    width: 90%;
+    max-width: 700px; /* Reducido un poco para que se vea más compacto y pro */
+    margin: 20px auto 60px auto !important;
+    position: relative;
+    padding-left: 40px;
+    border-left: 2px solid var(--color-acento);
+    box-sizing: border-box;
+}
+
+/* --- BLOQUES DE VERSIÓN --- */
+
+.version-block {
+    position: relative;
+    margin-bottom: 50px;
+    width: 100%;
+}
+
+/* El punto en la línea dorada */
+.version-block::before {
+    content: '';
+    position: absolute;
+    left: -47px; /* Ajustado para que encaje perfecto con la línea */
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    background: var(--color-acento);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--color-acento);
+    z-index: 2;
+}
+
+.version-tag {
+    font-weight: bold;
+    color: var(--color-acento);
+    font-size: 1.1rem;
+    display: inline-block;
+}
+
+.version-tag.current {
+    background: var(--color-acento);
+    color: black;
+    padding: 2px 12px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.version-fecha {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.version-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    padding: 25px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.version-card:hover {
+    border-color: var(--color-acento);
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.version-card h3 {
+    margin-bottom: 15px;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.version-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.version-card li {
+    margin-bottom: 12px;
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+}
+
+/* ETIQUETAS DE CAMBIO */
+.label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-right: 12px;
+    min-width: 50px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.add { background: #179558; color: white; }
+.fix { background: #8b0a0a; color: white; }
+.imp { background: #37c0f7; color: black; }
+
+/* AJUSTES PARA MÓVIL */
+@media (max-width: 600px) {
+    .timeline {
+        padding-left: 30px;
+        margin-left: 20px !important; /* Pequeño margen para no pegar la línea al borde */
+        width: calc(100% - 40px);
+    }
+    .version-block::before {
+        left: -37px;
+    }
+}

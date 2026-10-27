@@ -2,11 +2,11 @@
    VARIABLES DE COLOR Y CONFIGURACIÓN GLOBAL
    ========================================================================== */
 :root {
-    --color-primario: #000000; /* Negro Tuna */
+    --color-primario: #000000;
     --color-acento: #d4af37;   /* Dorado Oro */
     --color-fondo: #000000;
     --color-texto: #d4af37;
-    --color-hdad: #5f0514;     /* Color Burdeos */
+    --color-hdad: #5f0514;     /* Burdeos */
     --color-gris-oscuro: #1a1a1a;
     --fuente-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
@@ -22,7 +22,7 @@ body {
     line-height: 1.6;
     background-color: var(--color-fondo);
     color: var(--color-texto);
-    overflow-x: hidden; /* Evita scroll horizontal por el menú lateral */
+    overflow-x: hidden;
 }
 
 .contenedor {
@@ -31,9 +31,34 @@ body {
     margin: 0 auto;
 }
 
-/* ==========================================================================
-   NAVEGACIÓN (MENÚ HAMBURGUESA UNIVERSAL)
-   ========================================================================== */
+/* UI GENERAL REUTILIZABLE */
+.btn-tuna-ui {
+    background: #000;
+    color: var(--color-acento);
+    border: 1px solid var(--color-acento);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    transition: 0.3s;
+}
+
+.btn-tuna-ui:hover { background: var(--color-acento); color: #000; }
+.btn-destacado { background: var(--color-acento); color: #000; }
+.full-width { width: 100%; }
+
+.tuna-input {
+    background: #151515;
+    border: 1px solid #333;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* NAVEGACIÓN NAVBAR */
 .navbar {
     background-color: var(--color-primario);
     border-bottom: 3px solid var(--color-acento);
@@ -49,7 +74,6 @@ body {
     align-items: center;
 }
 
-/* Logo y Escudo unidos */
 .logo-union {
     display: flex;
     align-items: center;
@@ -58,49 +82,21 @@ body {
     flex-shrink: 0;
 }
 
-.logo-img {
-    height: 50px;
-    width: auto;
-    display: block;
-}
+.logo-img { height: 50px; width: auto; display: block; }
+.logo-texto { color: var(--color-acento); font-weight: bold; font-size: 1.5rem; white-space: nowrap; }
+.logo-texto span { font-size: 0.8rem; vertical-align: super; margin-left: 2px; font-weight: normal; }
 
-.logo-texto {
-    color: var(--color-acento);
-    font-weight: bold;
-    font-size: 1.5rem;
-    white-space: nowrap;
-}
+.menu-toggle { background: none; border: none; cursor: pointer; display: block; z-index: 1001; }
+.bar { display: block; width: 30px; height: 3px; margin: 6px auto; background-color: var(--color-acento); transition: 0.3s; }
 
-.logo-texto span {
-    font-size: 0.8rem;
-    vertical-align: super;
-    margin-left: 2px;
-    font-weight: normal;
-}
+/* ==========================================================================
+   MENÚ NAVEGACIÓN LATERAL DESPLEGABLE (CORREGIDO ESPACIADO SUPERIOR)
+   ========================================================================== */
 
-/* Botón Hamburguesa */
-.menu-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: block; /* Siempre visible según lo solicitado */
-    z-index: 1001;
-}
-
-.bar {
-    display: block;
-    width: 30px;
-    height: 3px;
-    margin: 6px auto;
-    background-color: var(--color-acento);
-    transition: 0.3s;
-}
-
-/* Panel Lateral (Drawer) */
 .nav-links {
     position: fixed;
     top: 0;
-    right: -100%; /* Oculto por defecto */
+    right: -100%;
     width: 300px;
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.98);
@@ -108,44 +104,66 @@ body {
     border-left: 2px solid var(--color-acento);
     display: flex;
     flex-direction: column;
-    padding-top: 60px;
+    padding-top: 70px; /* Separación suficiente para despejar el botón de hamburguesa */
+    padding-bottom: 80px; /* Margen inferior para no solapar el botón de WhatsApp */
     transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     list-style: none;
     z-index: 1000;
-
-    /* --- LA SOLUCIÓN AQUÍ --- */
-    overflow-y: auto; /* Permite scroll si hay muchos enlaces */
-    scrollbar-width: thin; /* Para que la barra de scroll no sea fea en PC */
+    overflow-y: auto;
+    scrollbar-width: thin;
     scrollbar-color: var(--color-acento) transparent;
 }
 
-.nav-links.activo {
-    right: 0; /* Entra en pantalla */
+.nav-links.activo { 
+    right: 0; 
 }
 
 .nav-links li a {
     display: block;
-    padding: 0.9rem 2rem; /* Reducimos de 1.2rem a 0.9rem */
+    padding: 0.65rem 1.8rem; /* Tamaño equilibrado de fila */
     color: white;
     text-decoration: none;
-    font-size: 1rem; /* Un pelín más pequeña para ganar espacio */
+    font-size: 0.85rem; /* Lectura clara sin apretar el texto */
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-    transition: 0.3s;
+    transition: all 0.3s ease;
 }
 
-.nav-links li a:hover {
-    background-color: rgba(212, 175, 55, 0.1);
-    color: var(--color-acento);
-    padding-left: 2.5rem;
+.nav-links li a:hover { 
+    background-color: rgba(212, 175, 55, 0.1); 
+    color: var(--color-acento); 
+    padding-left: 2.2rem; 
+}
+
+/* TITULOS Y CENTRADO GLOBAL */
+.titulo-pagina, .intro-prensa, .intro-relacionado, .intro-participa, .intro-seccion, .tabs-container, .tabs-principal {
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: block;
+}
+
+main.contenedor {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    main.contenedor { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================
-   PÁGINA DE INICIO (CONTADOR Y VÍDEOS)
+   PÁGINA DE INICIO (CONTADOR Y VÍDEOS RESTAURADOS)
    ========================================================================== */
 .contador-container {
     text-align: center;
     padding: 2rem 0;
+    grid-column: 1 / -1 !important;
 }
 
 .contador-container h2 {
@@ -183,13 +201,15 @@ body {
 
 /* Sección de Vídeos */
 .seccion-videos {
+    grid-column: 1 / -1 !important;
     display: flex;
-    flex-direction: column;
-    gap: 30px;
+    flex-direction: row;
+    gap: 20px;
     margin-top: 30px;
 }
 
 .video-card {
+    flex: 1;
     background: var(--color-gris-oscuro);
     padding: 15px;
     border-radius: 10px;
@@ -227,53 +247,13 @@ body {
     line-height: 1.6;
 }
 
-
-/* ==========================================================================
-   RESPONSIVIDAD Y GRID DE ESCRITORIO
-   ========================================================================== */
-@media (min-width: 768px) {
-    /* Mantenemos la hamburguesa visible en PC */
-    .menu-toggle {
-        display: block !important;
-    }
-
-    /* Grid para centrar elementos grandes */
-    main.contenedor {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 30px;
-    }
-
-    /* Estos elementos ocupan siempre el 100% del ancho */
-    .contador-container, 
-    .seccion-itinerarios, 
-    .footer-principal {
-        grid-column: 1 / -1;
-    }
-
-    /* Vídeos en paralelo */
+@media (max-width: 768px) {
     .seccion-videos {
-        grid-column: 1 / -1;
-        flex-direction: row;
-        gap: 20px;
-    }
-
-    .video-card {
-        flex: 1;
-    }
-
-    .logo-img {
-        height: 60px;
-    }
-
-    .logo-texto {
-        font-size: 1.8rem;
+        flex-direction: column;
     }
 }
 
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
+/* FOOTER & WHATSAPP FLOAT */
 .footer-principal {
     background-color: var(--color-primario);
     color: var(--color-acento);
@@ -283,96 +263,330 @@ body {
     border-top: 3px solid var(--color-acento);
 }
 
-.footer-principal .lema {
-    font-style: italic;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-}
-
-.footer-principal .autor {
-    font-size: 0.95rem;
-    color: white;
-}
-
-.footer-principal .version {
-    font-size: 0.8rem;
-    opacity: 0.6;
-    margin-top: 10px;
-}
-
-/* --- UNIFICACIÓN DE TÍTULOS Y CENTRADO GLOBAL --- */
-
-/* Forzamos a que el título y las intros ocupen todo el ancho y se centren */
-.titulo-pagina, 
-.intro-prensa, 
-.intro-relacionado, 
-.intro-participa, 
-.intro-seccion,
-.tabs-container,
-.tabs-principal {
-    grid-column: 1 / -1 !important; /* Rompe las 2 columnas del grid */
-    text-align: center !important;
-    width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    display: block; /* Asegura que se comporte como bloque para centrar texto */
-}
-
-/* Ajuste específico para que el contenedor principal no "empuje" los títulos */
-main.contenedor {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    align-items: start;
-}
-
-/* En móviles, el grid suele ser de 1 columna, pero esto no estorba */
-@media (max-width: 768px) {
-    main.contenedor {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* --- BOTÓN FLOTANTE LIMPIAR CACHÉ --- */
-.cache-reset-container {
+.whatsapp-float {
     position: fixed;
     bottom: 30px;
-    left: 30px; /* Al lado opuesto de WhatsApp */
-    z-index: 9999;
-}
-
-.cache-reset-btn {
-    background: rgba(0, 0, 0, 0.8);
-    color: #888; /* Color discreto */
-    border: 1px solid #444;
-    border-radius: 30px;
-    padding: 8px 15px;
-    font-size: 0.75rem;
-    cursor: pointer;
+    right: 30px;
+    background-color: #000;
+    border: 2px solid var(--color-acento);
+    border-radius: 50px;
+    padding: 10px 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    text-decoration: none;
+    z-index: 10000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     transition: all 0.3s ease;
-    font-family: 'Montserrat', sans-serif;
+    animation: pulse-gold 2s infinite;
 }
 
-.cache-reset-btn:hover {
+.whatsapp-text { color: var(--color-acento); font-size: 0.9rem; font-weight: bold; white-space: nowrap; }
+.whatsapp-icon { width: 25px; height: 25px; fill: var(--color-acento); }
+.whatsapp-float:hover { background-color: var(--color-acento); transform: scale(1.05); }
+.whatsapp-float:hover .whatsapp-text, .whatsapp-float:hover .whatsapp-icon { color: #000; fill: #000; }
+
+@keyframes pulse-gold {
+    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+@media (max-width: 480px) {
+    .whatsapp-text { display: none; }
+    .whatsapp-float { padding: 12px; right: 20px; bottom: 20px; }
+}
+
+/* --- BOTÓN DE USUARIO Y CONTROLES DE NAVEGACIÓN --- */
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-btn {
+    background: none;
+    border: 1px solid var(--color-acento);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.user-btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    transform: scale(1.05);
+}
+
+.user-icon {
+    width: 22px;
+    height: 22px;
+    fill: var(--color-acento);
+}
+
+.user-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #2ecc71;
+    border: 2px solid #000;
+    border-radius: 50%;
+}
+
+/* ==========================================================================
+   MODALES GLOBALES (PERFIL Y AUTH CON PESTAÑAS)
+   ========================================================================== */
+.modal-interno {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    z-index: 99999 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+.auth-modal-box, .perfil-modal-box {
+    background: #0d0d0d !important;
+    border: 2px solid var(--color-acento) !important;
+    border-radius: 15px !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    padding: 30px 25px !important;
+    position: relative !important;
+    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.25) !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-acento) #1a1a1a;
+}
+
+.auth-modal-box::-webkit-scrollbar, .perfil-modal-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.auth-modal-box::-webkit-scrollbar-track, .perfil-modal-box::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.auth-modal-box::-webkit-scrollbar-thumb, .perfil-modal-box::-webkit-scrollbar-thumb {
+    background: var(--color-acento);
+    border-radius: 4px;
+}
+
+.cerrar-modal {
+    position: absolute !important;
+    top: 15px !important;
+    right: 20px !important;
+    background: none !important;
+    border: none !important;
+    color: var(--color-acento) !important;
+    font-size: 2.2rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    z-index: 10 !important;
+    transition: transform 0.2s, color 0.2s !important;
+}
+
+.cerrar-modal:hover {
+    color: #ffffff !important;
+    transform: scale(1.15) !important;
+}
+
+/* PESTAÑAS DENTRO DEL MODAL DE AUTH (LOGIN / REGISTRO) */
+.auth-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding-bottom: 10px;
+}
+
+.auth-tab-btn {
+    background: transparent;
+    border: none;
+    color: #888888;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.auth-tab-btn:hover {
     color: var(--color-acento);
-    border-color: var(--color-acento);
-    background: #000;
 }
 
-.cache-icon { font-size: 1rem; }
+.auth-tab-btn.activo {
+    color: #ffffff;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid var(--color-acento);
+}
 
-/* En móvil lo hacemos un poco más compacto */
+/* PERFIL HEADER CARD */
+.perfil-card-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(212, 175, 55, 0.05);
+    border: 1px solid var(--color-acento);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.perfil-avatar {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: var(--color-acento);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+.perfil-datos-principal h3 { color: #fff; font-size: 1.2rem; margin-bottom: 4px; }
+.perfil-tuna-badge { color: var(--color-acento); font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; }
+
+.perfil-stats { display: flex; gap: 20px; }
+.stat-item { display: flex; flex-direction: column; }
+.stat-num { font-size: 1.1rem; font-weight: bold; color: var(--color-acento); }
+.stat-label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
+
+.perfil-seccion {
+    margin-top: 20px;
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+    padding-top: 15px;
+}
+
+.perfil-subtitulo { color: var(--color-acento); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 12px; }
+
+.tabla-contenedor-perfil {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #222;
+    border-radius: 8px;
+}
+
+.form-grid-perfil {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
 @media (max-width: 600px) {
-    .cache-reset-container {
-        bottom: 20px;
-        left: 20px;
-    }
-    .cache-text {
-        max-width: 120px;
-        line-height: 1.2;
-        text-align: left;
-    }
+    .perfil-card-header { flex-direction: column; text-align: center; }
+    .form-grid-perfil { grid-template-columns: 1fr; }
+}
+
+.tabla-tunos { width: 100%; border-collapse: collapse; }
+.tabla-tunos th, .tabla-tunos td { padding: 10px 8px; vertical-align: middle; }
+
+.tabla-tunos th:nth-child(2), .tabla-tunos th:nth-child(3), .tabla-tunos th:nth-child(4), .tabla-tunos th:nth-child(5),
+.tabla-tunos td:nth-child(2), .tabla-tunos td:nth-child(3), .tabla-tunos td:nth-child(4), .tabla-tunos td:nth-child(5) {
+    text-align: center !important;
+}
+
+.tabla-tunos td:nth-child(1) { text-align: center; }
+.tabla-tunos td:nth-child(2) { text-align: center; }
+.tabla-tunos td:nth-child(6) { text-align: center; }
+
+/* CAJETINES DE TEXTO, SELECTS Y BOTONES */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.input-group label {
+    color: var(--color-acento);
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.input-group input[type="email"],
+.input-group input[type="tel"],
+.input-group input[type="password"],
+.input-group select {
+    background: #151515 !important;
+    border: 1px solid #333333 !important;
+    color: #ffffff !important;
+    padding: 10px 12px !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    outline: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.3s !important;
+}
+
+.input-group input[type="email"]:focus,
+.input-group input[type="tel"]:focus,
+.input-group input[type="password"]:focus,
+.input-group select:focus {
+    border-color: var(--color-acento) !important;
+}
+
+.btn-sutil-logout {
+    background: transparent !important;
+    border: 1px solid rgba(212, 175, 55, 0.4) !important;
+    color: var(--color-acento) !important;
+    padding: 10px 15px !important;
+    border-radius: 6px !important;
+    font-weight: bold !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+}
+
+.btn-sutil-logout:hover {
+    background: rgba(212, 175, 55, 0.15) !important;
+    border-color: var(--color-acento) !important;
+}
+
+.btn-cancelar-asistencia {
+    background: transparent !important;
+    border: 1px solid #ff4444 !important;
+    color: #ff4444 !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    font-size: 0.7rem !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    margin-left: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-cancelar-asistencia:hover {
+    background: #ff4444 !important;
+    color: #ffffff !important;
 }

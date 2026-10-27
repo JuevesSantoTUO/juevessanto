@@ -1,0 +1,420 @@
+/* ==========================================================================
+   ESTILOS DASHBOARD ESTILO WORDPRESS (css/admin.css)
+   ========================================================================== */
+
+body.admin-body {
+    background-color: #080808 !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* SCROLLBAR PERSONALIZADO PARA EL PANEL */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #111111;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-acento);
+    border-radius: 3px;
+}
+
+/* 1. BARRA SUPERIOR (ADMIN BAR) */
+.wp-admin-bar {
+    background: #000000;
+    border-bottom: 2px solid var(--color-acento);
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10000;
+}
+
+.wp-admin-bar-left, .wp-admin-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.wp-site-title {
+    color: var(--color-acento);
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.wp-bar-link {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.2s;
+}
+
+.wp-bar-link:hover { color: var(--color-acento); }
+
+.wp-role-badge {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--color-acento);
+    color: var(--color-acento);
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.wp-user-email { color: #888; font-size: 0.8rem; }
+
+.wp-logout-btn {
+    background: transparent;
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.wp-logout-btn:hover { background: #ff4444; color: #fff; }
+
+/* 2. LAYOUT DASHBOARD (SIDEBAR + CONTENT) */
+.wp-dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - 45px);
+}
+
+/* SIDEBAR LATERAL */
+.wp-sidebar {
+    width: 230px;
+    background: #111111;
+    border-right: 1px solid rgba(212, 175, 55, 0.15);
+    flex-shrink: 0;
+}
+
+.wp-sidebar-menu {
+    list-style: none;
+    padding: 15px 0;
+    margin: 0;
+}
+
+.wp-sidebar-menu li {
+    padding: 12px 20px;
+    color: #aaa;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.wp-sidebar-menu li:hover {
+    background: rgba(212, 175, 55, 0.08);
+    color: #fff;
+}
+
+.wp-sidebar-menu li.active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--color-acento);
+    border-left-color: var(--color-acento);
+    font-weight: bold;
+}
+
+.menu-icon { font-size: 1rem; }
+
+/* ÁREA DE CONTENIDO */
+.wp-content-area {
+    flex-grow: 1;
+    padding: 30px;
+    background: #080808;
+    overflow-y: auto;
+}
+
+.wp-admin-section { display: none; }
+.wp-admin-section.active { display: block; }
+
+.wp-header-title h2 {
+    color: #fff;
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.wp-header-title p { color: #888; font-size: 0.85rem; margin-bottom: 25px; }
+
+/* RECUADROS Y MÉTRICAS */
+.wp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.wp-stat-card {
+    background: #121212;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.wp-stat-card h4 {
+    color: var(--color-acento);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.stat-big-num {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.wp-widget-box {
+    background: #121212;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.wp-widget-box h3 {
+    color: var(--color-acento);
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    padding-bottom: 10px;
+}
+
+/* ==========================================================================
+   3. FORMULARIOS, INPUTS Y CALENDARIO (DATETIME & NUMBER)
+   ========================================================================== */
+
+/* Forzado de esquema oscuro para que el picker desplegable nativo use fondo negro */
+#card-config-fecha input[type="datetime-local"],
+#card-config-fecha input[type="number"],
+.wp-admin-section input {
+    color-scheme: dark;
+    background-color: #161616 !important;
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    color: #ffffff !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    font-family: inherit !important;
+    outline: none !important;
+    transition: all 0.3s ease !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#card-config-fecha input[type="datetime-local"]:focus,
+#card-config-fecha input[type="number"]:focus,
+.wp-admin-section input:focus {
+    border-color: var(--color-acento) !important;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3) !important;
+    background-color: #1c1c1c !important;
+}
+
+/* Icono del calendario desplegable en Chrome / Edge / Safari */
+#card-config-fecha input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(75%) sepia(50%) saturate(1000%) hue-rotate(5deg) brightness(95%);
+    padding: 2px;
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+#card-config-fecha input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    transform: scale(1.15);
+}
+
+/* Flechitas del input number */
+#card-config-fecha input[type="number"]::-webkit-inner-spin-button,
+#card-config-fecha input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.6;
+    cursor: pointer;
+    filter: invert(80%) sepia(40%) hue-rotate(5deg);
+}
+
+#card-config-fecha input[type="number"]::-webkit-inner-spin-button:hover {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .wp-dashboard-layout { flex-direction: column; }
+    .wp-sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
+    .wp-sidebar-menu { display: flex; overflow-x: auto; padding: 5px; }
+    .wp-sidebar-menu li { white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+    .wp-sidebar-menu li.active { border-bottom-color: var(--color-acento); }
+}
+
+/* ==========================================================================
+   TABLAS Y ELEMENTOS DE ADMINISTRACIÓN (css/admin.css)
+   ========================================================================== */
+
+.wp-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+}
+
+.wp-admin-table th {
+    background-color: #161616;
+    color: var(--color-acento);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 12px 15px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+    text-align: left;
+}
+
+.wp-admin-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.08);
+    vertical-align: middle;
+}
+
+.wp-admin-table tbody tr:hover {
+    background-color: rgba(212, 175, 55, 0.04);
+}
+
+.tuno-nombre-destacado {
+    color: #ffffff;
+    font-weight: bold;
+    display: block;
+}
+
+.tuno-mote-tag {
+    color: var(--color-acento);
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.badge-asistencia {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.badge-asistencia.si { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+.badge-asistencia.no { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid #e74c3c; }
+
+.btn-eliminar-ins {
+    background: transparent;
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.btn-eliminar-ins:hover {
+    background: #ff4444;
+    color: #fff;
+}
+
+/* ==========================================================================
+   BOTONES DE EXPORTACIÓN UNIFICADOS
+   ========================================================================== */
+
+.btn-export-ui {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    line-height: 1;
+}
+
+/* Opción Excel: Fondo oscuro con borde y acento dorado */
+.btn-export-ui.excel {
+    background: #161616;
+    border: 1px solid var(--color-acento);
+    color: var(--color-acento);
+}
+
+.btn-export-ui.excel:hover {
+    background: var(--color-acento);
+    color: #000000;
+}
+
+/* Opción CSV: Estilo sutil y discreto */
+.btn-export-ui.csv {
+    background: transparent;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: #cccccc;
+}
+
+.btn-export-ui.csv:hover {
+    border-color: var(--color-acento);
+    color: #ffffff;
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.btn-export-ui .btn-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+/* ==========================================================================
+   EDITOR VISUAL WYSIWYG (ESTILO GUTENBERG / QUILL)
+   ========================================================================== */
+
+.ql-toolbar.ql-snow {
+    background-color: #111111 !important;
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.ql-container.ql-snow {
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    border-top: none !important;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    color: #ffffff !important;
+    font-family: inherit !important;
+    font-size: 0.95rem !important;
+}
+
+/* Iconos de la barra de herramientas en tono dorado */
+.ql-snow .ql-stroke {
+    stroke: var(--color-acento) !important;
+}
+
+.ql-snow .ql-fill {
+    fill: var(--color-acento) !important;
+}
+
+.ql-snow .ql-picker {
+    color: var(--color-acento) !important;
+}
+
+.ql-snow .ql-picker-options {
+    background-color: #1a1a1a !important;
+    border: 1px solid var(--color-acento) !important;
+}
+
+.ql-editor.ql-blank::before {
+    color: #666666 !important;
+    font-style: italic;
+}
