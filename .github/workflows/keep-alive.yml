@@ -1,17 +1,17 @@
-name: Mantener vivo Supabase (La Madrugá)
+name: Keep Supabase Alive
 
 on:
   schedule:
-    # Se ejecuta automáticamente todos los lunes a las 08:00 AM UTC
-    - cron: '0 8 * * 1'
-  workflow_dispatch: # Permite ejecutarlo manualmente desde GitHub con un clic
+    # Se ejecuta todos los lunes y jueves a las 08:00 UTC
+    - cron: '0 8 * * 1,4'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Hacer petición Keep-Alive a la API
+      - name: Ping Supabase REST API
         run: |
-          curl -i -X GET '${{ secrets.SUPABASE_URL }}/rest/v1/newsletter?select=id&limit=1' \
-          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          curl -i -X GET "https://nbfkwbdnhghtljgnpmng.supabase.co/rest/v1/configuracion?select=clave" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iZmt3YmRuaGdodGxqZ25wbW5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NjEwMDAsImV4cCI6MjEwODMzNzAwMH0.m3BrpYnbq_jODwELJEUYxiLDjwOdfT5X9GO8iNi84CA" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iZmt3YmRuaGdodGxqZ25wbW5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NjEwMDAsImV4cCI6MjEwODMzNzAwMH0.m3BrpYnbq_jODwELJEUYxiLDjwOdfT5X9GO8iNi84CA"
