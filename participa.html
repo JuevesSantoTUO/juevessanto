@@ -3,107 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Participa - Jueves Santo</title>
+    <title>Inscripción Oficial - Jueves Santo 2027</title>
     <link rel="icon" type="image/png" href="img/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/participa.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#d4af37">
+    <!-- CDN Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-client.js"></script>
 </head>
 <body>
     <div id="header-container"></div>
 
     <main class="contenedor">
-        <h2 class="titulo-pagina">Inscripción Jueves Santo 2026</h2>
-        
-        <script type="text/javascript">var submitted=false;</script>
-        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" 
-                onload="if(submitted) {window.location='participa.html?estado=exito';}"></iframe>
+        <h2 class="titulo-pagina">Inscripción Jueves Santo 2027</h2>
+        <p class="intro-seccion">Próxima cita: Jueves 25 de Marzo de 2027</p>
 
-        <form action="https://docs.google.com/forms/d/e/1FAIpQLSdVkekWXQZWR1cOGs9mw2frVuMk8ak_fVKCWaPmzmkQJAgUDA/formResponse" 
-              method="post" 
-              target="hidden_iframe" 
-              onsubmit="submitted=true;" 
-              class="form-invisible">
+        <!-- BANNER DE AVISO / ESTADO DE AUTENTICACIÓN -->
+        <div id="auth-banner" class="auth-banner-box">
+            <div id="auth-no-logged" class="auth-mensaje">
+                <span class="icono-alerta">⚠️</span>
+                <p>Puedes consultar toda la información de la web libremente. Sin embargo, <strong>si no estás registrado y/o no has iniciado sesión, no podrás enviar la inscripción</strong> para el Jueves Santo 2027.</p>
+                <div class="auth-acciones">
+                    <button type="button" class="btn-tuna-ui" onclick="abrirModalAuth('login')">Iniciar Sesión</button>
+                    <button type="button" class="btn-tuna-ui btn-destacado" onclick="abrirModalAuth('register')">Registrarse</button>
+                </div>
+            </div>
+            
+            <div id="auth-logged" class="auth-mensaje exito" style="display: none;">
+                <span class="icono-alerta">✅</span>
+                <p>Has iniciado sesión como <strong id="user-email-display">usuario</strong>. Tu identidad de tuno se ha vinculado correctamente a la inscripción.</p>
+                <button type="button" class="btn-sutil-logout" onclick="cerrarSesionUsuario()">Cerrar sesión</button>
+            </div>
+        </div>
 
+        <!-- FORMULARIO SIMPLIFICADO DE INSCRIPCIÓN -->
+        <form id="form-participa" onsubmit="registrarParticipante(event)" class="form-invisible">
             <div class="form-grid">
+                <!-- COLUMNA 1: FICHA DE TUNOS (DATOS REGISTRADOS EN PROFILES) -->
                 <div class="form-col">
+                    <h3 style="color: var(--color-acento); margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 5px;">👤 Tu Ficha de Tuno</h3>
+                    
                     <div class="input-group">
-                        <label>Nombre</label>
-                        <input type="text" name="entry.1241962128" placeholder="Tu nombre" required>
+                        <label>Nombre *</label>
+                        <input type="text" id="p-nombre" placeholder="Registrado en tu cuenta" disabled readonly>
                     </div>
                     <div class="input-group">
-                        <label>Apellidos</label>
-                        <input type="text" name="entry.1060756175" placeholder="Tus apellidos" required>
+                        <label>Apellidos *</label>
+                        <input type="text" id="p-apellidos" placeholder="Registrados en tu cuenta" disabled readonly>
                     </div>
                     <div class="input-group">
-                        <label>Mote</label>
-                        <input type="text" name="entry.1822881454" placeholder="Tu mote de Tuna" required>
+                        <label>Mote de Tuna *</label>
+                        <input type="text" id="p-mote" placeholder="Registrado en tu cuenta" disabled readonly>
                     </div>
                     <div class="input-group">
-                        <label>Tuna</label>
-                        <input type="text" name="entry.116043067" placeholder="Nombre completo de la Tuna" required>
+                        <label>Tuna / Agrupación *</label>
+                        <input type="text" id="p-tuna-search" placeholder="Registrada en tu cuenta" disabled readonly>
                     </div>
                 </div>
 
+                <!-- COLUMNA 2: DETALLES DE ASISTENCIA (DINÁMICOS POR EDICIÓN) -->
                 <div class="form-col">
+                    <h3 style="color: var(--color-acento); margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 5px;">🎵 Asistencia Edición 2027</h3>
+
                     <div class="input-group">
-                        <label>Teléfono</label>
-                        <input type="tel" name="entry.731294455" placeholder="Ej: 600000000" required>
+                        <label>Teléfono Móvil de Contacto *</label>
+                        <input type="tel" id="p-telefono" placeholder="Ej: 600000000" required disabled>
                     </div>
+
                     <div class="input-group">
-                        <label>Email</label>
-                        <input type="email" name="entry.1693309551" placeholder="tu@email.com" required>
+                        <label>Instrumento con el que acudes este año *</label>
+                        <select id="p-instrumento" required disabled>
+                            <option value="">Selecciona tu instrumento...</option>
+                            <option value="Guitarra">Guitarra</option>
+                            <option value="Bandurria">Bandurria</option>
+                            <option value="Laúd">Laúd</option>
+                            <option value="Contrabajo">Contrabajo / Bajo</option>
+                            <option value="Pandereta">Pandereta</option>
+                            <option value="Acordeón">Acordeón</option>
+                            <option value="Otros">Otros (Voz / Percusión / etc.)</option>
+                        </select>
                     </div>
                     
-                    <div class="opciones-grid">
+                    <div class="opciones-grid" style="margin-top: 15px;">
                         <div class="input-group">
-                            <label>¿Es tu primer año o no tienes fajín?</label>
-                            <select name="entry.110546052">
+                            <label>¿Es tu primer año?</label>
+                            <select id="p-primer-anio" disabled>
+                                <option value="No">No</option>
+                                <option value="Sí">Sí (Preparar fajín)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>¿Asistes a la comida?</label>
+                            <select id="p-comida" disabled>
                                 <option value="Sí">Sí</option>
                                 <option value="No">No</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>¿Vas a venir a la comida?</label>
-                            <select name="entry.823328778">
+                            <label>¿Asistes a la Ronda?</label>
+                            <select id="p-ronda" disabled>
                                 <option value="Sí">Sí</option>
                                 <option value="No">No</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>¿Vas a venir a la Ronda?</label>
-                            <select name="entry.1807518330">
+                            <label>¿Asistes a la Madrugá?</label>
+                            <select id="p-madruga" disabled>
                                 <option value="Sí">Sí</option>
-                                <option value="No">No</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>¿Vas a venir a la Madrugá?</label>
-                            <select name="entry.1741566604">
-                                <option value="Sí">Sí</option>
-                                <option value="No">No</option>
+                                <option value="No">No (Costalero/Cometido)</option>
                             </select>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn-enviar-participa">Enviar Inscripción</button>
+            <button type="submit" id="btn-submit-participa" class="btn-enviar-participa" disabled style="margin-top: 25px;">
+                Enviar Inscripción Jueves Santo 2027
+            </button>
             
-            <div id="mensaje-confirmacion" class="mensaje-exito" style="display:none;">
-                ¡Inscripción enviada con éxito! Nos vemos pronto.
-            </div>
+            <div id="participa-estado" class="mensaje-estado"></div>
         </form>
     </main>
 
     <div id="footer-container"></div>
     <script src="scripts/main.js"></script>
-    <script>
-        if(window.location.search.includes('estado=exito')) {
-            document.getElementById('mensaje-confirmacion').style.display = 'block';
-            window.scrollTo(0, document.body.scrollHeight);
-        }
-    </script>
 </body>
 </html>

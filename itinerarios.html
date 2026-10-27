@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="css/itinerarios.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#d4af37">
+    <!-- CDN Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-client.js"></script>
 </head>
 <body>
     <div id="header-container"></div>
@@ -19,6 +22,7 @@
             <p class="intro">Selecciona un año para consultar los horarios y recorridos oficiales.</p>
             
             <div class="grid-años">
+                <button class="btn-año" onclick="abrirItinerario(2027)">2027</button>
                 <button class="btn-año" onclick="abrirItinerario(2026)">2026</button>
                 <button class="btn-año" onclick="abrirItinerario(2025)">2025</button>
                 <button class="btn-año" onclick="abrirItinerario(2024)">2024</button>

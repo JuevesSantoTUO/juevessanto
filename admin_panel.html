@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Jueves Santo</title>
+
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <meta name="theme-color" content="#d4af37">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Editor Visual WYSIWYG (Estilo Gutenberg) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script src="scripts/supabase-client.js"></script>
+</head>
+<body class="admin-body">
+
+    <!-- BARRA SUPERIOR (ADMIN BAR ESTILO WORDPRESS) -->
+    <header class="wp-admin-bar">
+        <div class="wp-admin-bar-left">
+            <span class="wp-site-title">⚙️ Jueves Santo Admin</span>
+            <a href="index.html" class="wp-bar-link">🌐 Ver sitio web</a>
+        </div>
+        <div class="wp-admin-bar-right">
+            <span id="wp-user-badge" class="wp-role-badge">ADMIN</span>
+            <span id="wp-user-email" class="wp-user-email">cargando...</span>
+            <button onclick="cerrarSesionUsuario()" class="wp-logout-btn">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <div class="wp-dashboard-layout">
+        
+        <!-- NAVEGACIÓN LATERAL (SIDEBAR DE WORDPRESS) -->
+        <aside class="wp-sidebar">
+            <ul class="wp-sidebar-menu">
+                <li class="active" onclick="cambiarSeccionAdmin('escritorio', this)">
+                    <span class="menu-icon">📊</span> Escritorio
+                </li>
+                <li id="menu-item-inscripciones" onclick="cambiarSeccionAdmin('inscripciones', this)">
+                    <span class="menu-icon">📋</span> Inscripciones
+                </li>
+                <li id="menu-item-blog" onclick="cambiarSeccionAdmin('blog', this)">
+                    <span class="menu-icon">📰</span> Noticias / Blog
+                </li>
+                <li id="menu-item-tunas" onclick="cambiarSeccionAdmin('tunas', this)">
+                    <span class="menu-icon">🎸</span> Censos Tunas
+                </li>
+                <li id="menu-item-usuarios" onclick="cambiarSeccionAdmin('usuarios', this)">
+                    <span class="menu-icon">👥</span> Usuarios & Permisos
+                </li>
+                <li id="menu-item-denuncias" onclick="cambiarSeccionAdmin('denuncias', this)">
+                    <span class="menu-icon">🛡️</span> Moderación
+                    <span id="badge-count-denuncias" class="wp-role-badge" style="background:#ff4444; color:#fff; border:none; display:none; margin-left: auto;">0</span>
+                </li>                           
+            </ul>
+        </aside>
+
+        <!-- ÁREA DE TRABAJO DINÁMICA -->
+        <main class="wp-content-area">
+            
+            <!-- SECCIÓN 1: ESCRITORIO (RESUMEN & MÉTRICAS) -->
+            <section id="sec-escritorio" class="wp-admin-section active">
+                <div class="wp-header-title">
+                    <h2>Escritorio de Control</h2>
+                    <p>Resumen general de la Madrugá y estado del sistema.</p>
+                </div>
+
+                <div class="wp-stats-grid">
+                    <div class="wp-stat-card">
+                        <h4>Total Inscritos 2027</h4>
+                        <span id="stat-total-inscritos" class="stat-big-num">0</span>
+                    </div>
+                    <div class="wp-stat-card">
+                        <h4>Asisten a Comida</h4>
+                        <span id="stat-total-comida" class="stat-big-num">0</span>
+                    </div>
+                    <div class="wp-stat-card">
+                        <h4>Asisten a Ronda</h4>
+                        <span id="stat-total-ronda" class="stat-big-num">0</span>
+                    </div>
+                    <div class="wp-stat-card">
+                        <h4>Madrugá (Procesión)</h4>
+                        <span id="stat-total-madruga" class="stat-big-num">0</span>
+                    </div>
+                </div>
+
+                <div class="wp-widget-box" style="margin-top: 25px;">
+                    <h3>⚡ Accesos Rápidos</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                        <!-- 🟢 ID añadido aquí -->
+                        <button id="btn-quick-inscripciones" class="btn-tuna-ui" onclick="cambiarSeccionAdmin('inscripciones', document.getElementById('menu-item-inscripciones'))">
+                            VER LISTADO DE TUNOS
+                        </button>
+                        <button class="btn-tuna-ui" onclick="cambiarSeccionAdmin('blog', document.getElementById('menu-item-blog'))">
+                            REDACTAR NOTICIA
+                        </button>
+                    </div>
+
+                    <!-- Módulo dinámico de fecha objetivo (Solo Admin y Gestor) -->
+                    <div id="card-config-fecha" style="background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--color-acento); padding: 15px; border-radius: 8px; margin-top: 15px; display: none;">
+                        <h4 style="color: var(--color-acento); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">📅 Configuración del Próximo Jueves Santo</h4>
+                        <form id="form-config-fecha" onsubmit="guardarNuevaFechaJuevesSanto(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 12px; align-items: end;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Año de la Edición</label>
+                                <input type="number" id="cfg-anio" placeholder="Ej: 2027" required min="2025" max="2050">
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Fecha y Hora Objetivo</label>
+                                <input type="datetime-local" id="cfg-fecha-hora" required>
+                            </div>
+                            <button type="submit" class="btn-tuna-ui" style="height: 42px;">Guardar Cambios</button>
+                        </form>
+                        <div id="cfg-fecha-status" class="mensaje-estado" style="margin-top: 10px; font-size: 0.8rem;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: INSCRIPCIONES -->
+            <!-- SECCIÓN 2: INSCRIPCIONES (SOLO ADMIN Y GESTOR) -->
+            <section id="sec-inscripciones" class="wp-admin-section">
+                <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2>📋 Censo de Inscripciones (<span id="admin-anio-inscripciones">2027</span>)</h2>
+                        <p>Gestión de asistencia de tunos a la Comida, Ronda y Procesión de la Madrugá.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn-export-ui excel" onclick="exportarInscripcionesExcel()" title="Descargar como hoja de cálculo de Excel">
+                            <span class="btn-icon">📊</span> Excel (.xlsx)
+                        </button>
+                        <button class="btn-export-ui csv" onclick="exportarInscripcionesCSV()" title="Descargar plano en CSV">
+                            <span class="btn-icon">📄</span> CSV (.csv)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FILTROS Y BUSCADOR -->
+                <div class="wp-widget-box" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Buscar Tuno / Tuna</label>
+                            <input type="text" id="filter-ins-search" placeholder="Nombre, mote o tuna..." oninput="filtrarTablaInscripciones()">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Asistencia</label>
+                            <select id="filter-ins-asistencia" onchange="filtrarTablaInscripciones()">
+                                <option value="todos">Todos los inscritos</option>
+                                <option value="comida">Asisten a Comida</option>
+                                <option value="ronda">Asisten a Ronda</option>
+                                <option value="madruga">Asisten a Madrugá</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Instrumento</label>
+                            <select id="filter-ins-instrumento" onchange="filtrarTablaInscripciones()">
+                                <option value="todos">Todos los instrumentos</option>
+                                <option value="Guitarra">Guitarra</option>
+                                <option value="Bandurria">Bandurria</option>
+                                <option value="Laúd">Laúd</option>
+                                <option value="Contrabajo">Contrabajo / Bajo</option>
+                                <option value="Pandereta">Pandereta</option>
+                                <option value="Acordeón">Acordeón</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLA PRINCIPAL DE INSCRIPCIONES -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tuno / Mote</th>
+                                    <th>Tuna / Agrupación</th>
+                                    <th>Contacto</th>
+                                    <th>Comida</th>
+                                    <th>Ronda</th>
+                                    <th>Madrugá</th>
+                                    <th>Inst.</th>
+                                    <th>Debut</th>
+                                    <th style="text-align: center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-inscripciones-body">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 25px; color: #888;">Cargando censo de inscritos...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 3: BLOG Y NOTICIAS (ADMIN, GESTOR Y EDITOR) -->
+            <section id="sec-blog" class="wp-admin-section">
+                <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2>📰 Gestión del Blog y Noticias</h2>
+                        <p>Redacción, edición y publicación de artículos oficiales.</p>
+                    </div>
+                    <button class="btn-tuna-ui" onclick="abrirFormularioNoticia()">✏️ Nueva Noticia</button>
+                </div>
+
+                <!-- FORMULARIO DE EDICIÓN / CREACIÓN (Oculto por defecto) -->
+                <div id="box-editor-blog" class="wp-widget-box" style="display: none; margin-bottom: 25px;">
+                    <h3 id="editor-blog-titulo">Redactar Noticia</h3>
+                    <form id="form-blog" onsubmit="guardarNoticiaAdmin(event)" style="margin-top: 15px;">
+                        <input type="hidden" id="blog-id">
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Título de la Noticia</label>
+                                <input type="text" id="blog-titulo-input" placeholder="Ej: Confirmada la recepción oficial..." required>
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>URL Imagen Destacada (Opcional)</label>
+                                <input type="url" id="blog-imagen-input" placeholder="https://..." >
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Firma / Autor</label>
+                                <input type="text" id="blog-autor-input" placeholder="Ej: Prensa Jueves Santo" value="Redacción Jueves Santo">
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Estado de Publicación</label>
+                                <select id="blog-estado-select">
+                                    <option value="borrador">📝 Borrador (Privado)</option>
+                                    <option value="publicado">🌐 Publicado (Visible en la web)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label>Resumen Breve (Aparece en la tarjeta del blog)</label>
+                            <input type="text" id="blog-resumen-input" placeholder="Breve descripción del artículo..." required maxlength="250">
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label>Contenido Completo (Editor Visual estilo Gutenberg)</label>
+                            <!-- Contenedor donde Quill montará la suite de maquetación -->
+                            <div id="editor-quill-container" style="height: 280px; background: #161616; border-radius: 6px;"></div>
+                            <!-- Campo oculto para enviar el HTML generado a Supabase -->
+                            <input type="hidden" id="blog-contenido-input">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="btn-sutil-logout" onclick="cerrarFormularioNoticia()" style="padding: 10px 18px;">Cancelar</button>
+                            <button type="submit" class="btn-tuna-ui" style="height: auto; padding: 10px 20px;">Guardar Articulo</button>
+                        </div>
+                        <div id="blog-form-status" class="mensaje-estado" style="margin-top: 10px;"></div>
+                    </form>
+                </div>
+
+                <!-- TABLA DE ARTÍCULOS PUBLICADOS / BORRADORES -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Autor</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th style="text-align: center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-blog-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 25px; color: #888;">Cargando artículos...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: DIRECTORIO Y CENSO DE TUNAS (SOLO ADMIN Y GESTOR) -->
+            <section id="sec-tunas" class="wp-admin-section">
+                <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2>🎸 Directorio y Censo de Tunas</h2>
+                        <p>Gestión del catálogo oficial de agrupaciones vinculadas al buscador predictivo.</p>
+                    </div>
+                    <button class="btn-tuna-ui" onclick="abrirFormularioTuna()">➕ Nueva Tuna</button>
+                </div>
+
+                <!-- FORMULARIO DE CREACIÓN / EDICIÓN DE TUNA -->
+                <div id="box-editor-tuna" class="wp-widget-box" style="display: none; margin-bottom: 25px;">
+                    <h3 id="editor-tuna-titulo">Añadir Nueva Agrupación</h3>
+                    <form id="form-tuna" onsubmit="guardarTunaAdmin(event)" style="margin-top: 15px;">
+                        <input type="hidden" id="tuna-id">
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Nombre Oficial de la Tuna</label>
+                                <input type="text" id="tuna-nombre-input" placeholder="Ej: Tuna de Derecho de la Universidad de Oviedo" required>
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>URL Escudo / Logo (Opcional)</label>
+                                <input type="url" id="tuna-escudo-input" placeholder="https://...">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Ciudad de Origen</label>
+                                <input type="text" id="tuna-ciudad-input" placeholder="Ej: Oviedo, Ceuta, Salamanca...">
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Universidad / Institución</label>
+                                <input type="text" id="tuna-universidad-input" placeholder="Ej: Universidad de Oviedo">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="btn-sutil-logout" onclick="cerrarFormularioTuna()" style="padding: 10px 18px;">Cancelar</button>
+                            <button type="submit" class="btn-tuna-ui" style="height: auto; padding: 10px 20px;">Guardar Agrupación</button>
+                        </div>
+                        <div id="tuna-form-status" class="mensaje-estado" style="margin-top: 10px;"></div>
+                    </form>
+                </div>
+
+                <!-- FILTRO / BUSCADOR DE TUNAS EN EL PANEL -->
+                <div class="wp-widget-box" style="margin-bottom: 20px;">
+                    <div class="input-group" style="margin-bottom:0; max-width: 400px;">
+                        <label>Filtrar Directorio</label>
+                        <input type="text" id="filter-tunas-search" placeholder="Buscar por nombre o ciudad..." oninput="filtrarTablaTunasAdmin()">
+                    </div>
+                </div>
+
+                <!-- TABLA DE TUNAS REGISTRADAS -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Escudo</th>
+                                    <th>Nombre de la Agrupación</th>
+                                    <th>Ciudad / Universidad</th>
+                                    <th style="text-align: center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-tunas-body">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 25px; color: #888;">Cargando catálogo de tunas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 5: USUARIOS -->
+            <!-- SECCIÓN 5: USUARIOS, PERMISOS Y LOPD (SOLO ADMIN) -->
+            <section id="sec-usuarios" class="wp-admin-section">
+                <div class="wp-header-title">
+                    <h2>👥 Usuarios, Permisos y Cumplimiento LOPD</h2>
+                    <p>Control de roles de acceso, auditoría de actividad y gestión del Derecho al Olvido (LOPD).</p>
+                </div>
+
+                <!-- BUSCADOR DE USUARIOS -->
+                <div class="wp-widget-box" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; align-items: end;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Buscar Usuario</label>
+                            <input type="text" id="filter-users-search" placeholder="Email o rol..." oninput="filtrarTablaUsuariosAdmin()">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Rol</label>
+                            <select id="filter-users-role" onchange="filtrarTablaUsuariosAdmin()">
+                                <option value="todos">Todos los roles</option>
+                                <option value="admin">Administrador (ADMIN)</option>
+                                <option value="gestor">Gestor (GESTOR)</option>
+                                <option value="editor">Editor (EDITOR)</option>
+                                <option value="user">Usuario Estándar (USER)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE USUARIOS Y MÉTRICAS DE ACTIVIDAD -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario (Email)</th>
+                                    <th>Rol de Sistema</th>
+                                    <th>Última Conexión</th>
+                                    <th style="text-align: center;">Comentarios</th>
+                                    <th style="text-align: center;">Likes</th>
+                                    <th style="text-align: center;">Denuncias</th>
+                                    <th style="text-align: center;">Acciones LOPD</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-usuarios-body">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 25px; color: #888;">Cargando registro de usuarios...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 6: MODERACIÓN Y SANCIONES (SOLO ADMIN Y GESTOR) -->
+            <section id="sec-denuncias" class="wp-admin-section">
+                <div class="wp-header-title">
+                    <h2>🛡️ Moderación de Comentarios y Sanciones</h2>
+                    <p>Gestión de reportes recibidos y control de vetos de inscripción de tunos.</p>
+                </div>
+
+                <!-- TABLA DE DENUNCIAS PENDIENTES -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden; margin-bottom: 30px;">
+                    <h3 style="padding: 15px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); margin: 0;">🚩 Comentarios Reportados</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tuno Denunciado</th>
+                                    <th>Comentario Ofensivo</th>
+                                    <th>Motivo Reporte</th>
+                                    <th>Fecha</th>
+                                    <th style="text-align: center;">Acciones de Moderación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-denuncias-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 25px; color: #888;">No hay reportes pendientes de revisión.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- Script exclusivo de gestión del Dashboard -->
+    <script src="scripts/admin.js"></script>
+</body>
+</html>

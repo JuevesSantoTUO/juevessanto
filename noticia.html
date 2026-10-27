@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargando noticia... - Jueves Santo Oviedo</title>
+
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/blog.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-client.js"></script>
+</head>
+<body>
+
+    <div id="header-container"></div>
+
+    <div class="contenedor-noticia-lectura">
+        <div style="margin-bottom: 25px;">
+            <a href="blog.html" class="btn-sutil-logout" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 8px 16px; font-size: 0.85rem;">
+                ← Volver a Noticias
+            </a>
+        </div>
+
+        <div id="noticia-loading" style="text-align: center; color: #888; padding: 60px 0;">
+            Cargando contenido de la noticia...
+        </div>
+
+        <article id="noticia-article" style="display: none;">
+            <header style="margin-bottom: 30px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 20px;">
+                <span id="noticia-fecha" style="color: var(--color-acento); font-size: 0.85rem; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 10px;"></span>
+                <h1 id="noticia-titulo" style="color: #ffffff; font-size: 2.2rem; margin: 0 0 15px 0; line-height: 1.25; font-weight: bold;"></h1>
+                <p id="noticia-autor" style="color: #aaaaaa; font-size: 0.9rem; margin: 0;"></p>
+            </header>
+
+            <div id="noticia-img-box" style="margin-bottom: 35px; display: none;">
+                <img id="noticia-imagen" src="" alt="Noticia" style="width: 100%; max-height: 480px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.2);">
+            </div>
+
+            <!-- CUERPO DE LA NOTICIA -->
+            <div id="noticia-cuerpo" class="noticia-body-rich"></div>
+
+            <!-- BARRA DE INTERACCIÓN (LIKE Y COMPARTIR) -->
+            <div class="noticia-social-bar">
+                <button id="btn-like-noticia" class="btn-like-ui" onclick="toggleLikeNoticia()">
+                    ❤️ <span id="like-count">0</span> Me gusta
+                </button>
+
+                <div class="share-buttons">
+                    <span style="font-size: 0.8rem; color: #888;">Compartir:</span>
+                    <button class="btn-share wa" onclick="compartirSocial('wa')" title="Compartir en WhatsApp">📱 WhatsApp</button>
+                    <button class="btn-share fb" onclick="compartirSocial('fb')" title="Compartir en Facebook">📘 Facebook</button>
+                    <button class="btn-share copy" onclick="copiarEnlaceNoticia()" title="Copiar enlace">🔗 Copiar</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE COMENTARIOS -->
+            <section class="seccion-comentarios">
+                <h3 style="color: var(--color-acento); margin-bottom: 20px; font-size: 1.2rem;">💬 Comentarios (<span id="num-comentarios">0</span>)</h3>
+
+                <!-- Formulario de nuevo comentario -->
+                <div id="box-nuevo-comentario" style="margin-bottom: 30px;">
+                    <form onsubmit="publicarComentario(event)">
+                        <textarea id="txt-nuevo-comentario" rows="3" placeholder="Escribe tu comentario o apreciación sobre la noticia..." required style="width:100%; background:#141414; border:1px solid rgba(212,175,55,0.3); color:#fff; padding:12px; border-radius:6px; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
+                        <div style="text-align: right; margin-top: 10px;">
+                            <button type="submit" class="btn-tuna-ui" style="padding: 8px 18px; font-size: 0.85rem;">Publicar Comentario</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de comentarios -->
+                <div id="lista-comentarios">
+                    <p style="color: #666; font-size: 0.9rem;">Cargando comentarios...</p>
+                </div>
+            </section>
+        </article>
+    </div>
+
+    <div id="footer-container"></div>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/noticia-detalle.js"></script>
+</body>
+</html>
