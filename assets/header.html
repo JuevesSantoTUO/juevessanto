@@ -3,13 +3,26 @@
         
         <a href="index.html" class="logo-union">
             <img src="img/logo.png" alt="Logo" class="logo-img">
-            <span class="logo-texto">Jueves Santo 2026 <small></small></span>
+            <span class="logo-texto">Jueves Santo 2026 <small>v2.1</small></span>
         </a>
-        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-        </button>
+
+        <!-- Área de Controles (Perfil + Menú Hamburguesa) -->
+        <div class="nav-controls">
+            <!-- Botón Perfil / Acceso -->
+            <button id="user-profile-btn" class="user-btn" onclick="gestionarBotonPerfil()" title="Mi Perfil / Iniciar Sesión">
+                <svg viewBox="0 0 24 24" class="user-icon">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3 3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+                <span id="user-badge" class="user-badge" style="display: none;"></span>
+            </button>
+
+            <!-- Botón Hamburguesa -->
+            <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
 
         <ul class="nav-links" id="nav-links">
             <li><a href="index.html">Inicio</a></li>
@@ -19,9 +32,11 @@
             <li><a href="historia.html">Historia</a></li>
             <li><a href="galeria.html">Galería</a></li>
             <li><a href="participa.html">Participa</a></li>
+            <li><a href="blog.html">NOTICIAS</a></li>
             <li><a href="relacionado.html">Relacionado</a></li>
             <li><a href="prensa.html">Prensa</a></li>
             <li><a href="legal-contacto.html">Contacto y Legal</a></li>
+            <li><a href="changelog.html">Changelog</a></li>
         </ul>
     </div>
 </nav>
