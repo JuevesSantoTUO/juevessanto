@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" href="img/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/rumbieditor.css">
     <meta name="theme-color" content="#d4af37">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -223,7 +224,7 @@
                             </div>
                         </div>
 
-                        <!-- NUEVA FILA: CATEGORÍA Y ETIQUETAS -->
+                        <!-- FILA: CATEGORÍA Y ETIQUETAS -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                             <div class="input-group" style="margin-bottom:0;">
                                 <label for="blog-categoria-select">Categoría Principal</label>
@@ -233,7 +234,7 @@
                                     <option value="Crónicas">Crónicas y Vivencias</option>
                                     <option value="Eventos">Eventos y Ensayos</option>
                                     <option value="Historia">Historia y Tradición</option>
-                                    <option value="Hermandad">Tunas y Tunos</option>
+                                    <option value="Tunas y Tunos">Tunas y Tunos</option>
                                 </select>
                             </div>
                             <div class="input-group" style="margin-bottom:0;">
@@ -261,10 +262,26 @@
                             <input type="text" id="blog-resumen-input" placeholder="Breve descripción del artículo..." required maxlength="250">
                         </div>
 
-                        <div class="input-group" style="margin-bottom: 20px;">
-                            <label>Contenido Completo (Editor Visual estilo Gutenberg)</label>
+                        <!-- CONMUTADOR DE MODO DE EDITOR (QUILL VS RUMBIEDITOR) -->
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label>Modo de Edición</label>
+                            <select id="blog-modo-editor" onchange="alternarModoEditorBlog(this.value)">
+                                <option value="quill">✏️ Editor Visual Clásico (Texto Libre)</option>
+                                <option value="rumbi">🧱 RumbiEditor (Maquetador por Bloques)</option>
+                            </select>
+                        </div>
+
+                        <!-- CONTENEDOR CLASSIC QUILL -->
+                        <div id="wrapper-editor-quill" class="input-group" style="margin-bottom: 20px;">
+                            <label>Contenido Completo (Editor Visual)</label>
                             <div id="editor-quill-container" style="height: 280px; background: #161616; border-radius: 6px;"></div>
                             <input type="hidden" id="blog-contenido-input">
+                        </div>
+
+                        <!-- CONTENEDOR RUMBIEDITOR -->
+                        <div id="wrapper-editor-rumbi" style="display: none; margin-bottom: 20px;">
+                            <label style="color: var(--color-acento); font-weight: bold; text-transform: uppercase; font-size: 0.8rem;">Maquetador de Bloques RumbiEditor</label>
+                            <div id="rumbi-editor-app"></div>
                         </div>
 
                         <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -519,6 +536,7 @@
 
     </div>
 
+    <script src="scripts/rumbieditor.js"></script>
     <script src="scripts/admin.js"></script>
 </body>
 </html>
