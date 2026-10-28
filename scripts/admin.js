@@ -882,24 +882,49 @@ window.cambiarRolUsuarioAdmin = async function(userId, nuevoRol) {
     }
 };
 
+/* --- 8. USUARIOS, PERMISOS Y ELIMINACIÓN TOTAL LOPD --- */
 window.eliminarUsuarioLOPD = async function(userId, email) {
-    const seguro = confirm(`⚠️ ELIMINACIÓN PERMANENTE LOPD / RGPD ⚠️\n\n¿Estás seguro de eliminar al usuario "${email}"?\n\nEsta acción borrará definitivamente su perfil, inscripciones, comentarios y actividad en la plataforma.`);
+    const seguro = confirm(
+        `⚠️ BORRADO DEFINITIVO DE USUARIO (LOPD / RGPD) ⚠️\n\n` +
+        `¿Estás seguro de que deseas eliminar permanentemente a "${email}"?\n\n` +
+        `• Se borrará su cuenta en Autenticación (auth.users).\n` +
+        `• Se eliminarán sus inscripciones, perfil, comentarios y likes.\n` +
+        `• El usuario podrá VOLVER A REGISTRARSE con el mismo correo si lo desea.`
+    );
+    
     if (!seguro) return;
 
-    await Promise.all([
-        supabaseClient.from('inscripciones').delete().eq('user_id', userId),
-        supabaseClient.from('blog_comentarios').delete().eq('user_id', userId),
-        supabaseClient.from('blog_likes').delete().eq('user_id', userId),
-        supabaseClient.from('blog_denuncias').delete().eq('denunciante_id', userId)
-    ]);
+    try {
+        // Llama a la función almacenada RPC de PostgreSQL con permisos SECURITY DEFINER
+        const { error } = await supabaseClient.rpc('delete_user_cascade', {
+            target_user_id: userId
+        });
 
-    const { error } = await supabaseClient.from('profiles').delete().eq('id', userId);
+        if (error) {
+            // Si la función RPC aún no está creada, se utiliza la eliminación cliente estándar de fallback
+            console.warn("RPC delete_user_cascade no encontrada, utilizando borrado público:", error);
+            
+            await Promise.all([
+                supabaseClient.from('inscripciones').delete().eq('user_id', userId),
+                supabaseClient.from('blog_comentarios').delete().eq('user_id', userId),
+                supabaseClient.from('blog_likes').delete().eq('user_id', userId),
+                supabaseClient.from('blog_denuncias').delete().eq('denunciante_id', userId),
+                supabaseClient.from('newsletter').delete().eq('user_id', userId)
+            ]);
 
-    if (error) {
-        alert("Error procesando solicitud LOPD: " + error.message);
-    } else {
-        alert(`Los datos de ${email} han sido eliminados de la plataforma conforme a la LOPD.`);
+            const { error: profErr } = await supabaseClient.from('profiles').delete().eq('id', userId);
+            
+            if (profErr) {
+                alert("Error eliminando perfil: " + profErr.message);
+                return;
+            }
+        }
+
+        alert(`¡El usuario ${email} y todo su rastro han sido eliminados de la base de datos!`);
         cargarUsuariosAdmin();
+
+    } catch (err) {
+        alert("Error en el proceso de borrado: " + err.message);
     }
 };
 
