@@ -1,0 +1,434 @@
+/* ==========================================================================
+   RUMBIEDITOR - MAQUETADOR MODULAR DE BLOQUES (css/rumbieditor.css)
+   ========================================================================== */
+
+/* CONTENEDOR DEL EDITOR EN PANEL ADMIN */
+.rumbi-editor-container {
+    background: #0a0a0a;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.rumbi-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #121212;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    margin-bottom: 20px;
+}
+
+.rumbi-btn-add {
+    background: #181818;
+    color: var(--color-acento);
+    border: 1px solid var(--color-acento);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rumbi-btn-add:hover {
+    background: var(--color-acento);
+    color: #000;
+}
+
+/* LISTA DE BLOQUES ACTIVOS EN EL EDITOR */
+.rumbi-blocks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-height: 100px;
+}
+
+.rumbi-block-item {
+    background: #141414;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.rumbi-block-item:hover {
+    border-color: var(--color-acento);
+}
+
+.rumbi-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+.rumbi-block-title {
+    color: var(--color-acento);
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rumbi-block-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.rumbi-ctrl-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.rumbi-ctrl-btn:hover {
+    border-color: var(--color-acento);
+    color: #fff;
+}
+
+.rumbi-ctrl-btn.delete {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+.rumbi-ctrl-btn.delete:hover {
+    background: #ff4444;
+    color: #fff;
+}
+
+/* ==========================================================================
+   ESTILOS RENDERIZADOS PÚBLICOS DE LOS BLOQUES (HTML COMPILADO)
+   ========================================================================== */
+
+/* 1. Bloque Cita / Pasodoble */
+.rumbi-render-cita {
+    border-left: 4px solid var(--color-acento);
+    background: rgba(212, 175, 55, 0.05);
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #f0f0f0;
+}
+
+.rumbi-render-cita .cita-autor {
+    display: block;
+    margin-top: 10px;
+    color: var(--color-acento);
+    font-style: normal;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+/* 2. Bloque Hero Portada */
+.rumbi-render-hero {
+    background: linear-gradient(135deg, #111111 0%, #000000 100%);
+    border: 1px solid var(--color-acento);
+    border-radius: 12px;
+    padding: 40px 25px;
+    text-align: center;
+    margin: 25px 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.rumbi-render-hero h1 {
+    color: var(--color-acento);
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.rumbi-render-hero p {
+    color: #cccccc;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+/* 3. Bloque Sobre Nosotros / Agrupación */
+.rumbi-render-asociacion {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #111111;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 25px 0;
+}
+
+.rumbi-render-asociacion img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.rumbi-render-asociacion h4 {
+    color: var(--color-acento);
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+}
+
+.rumbi-render-asociacion p {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .rumbi-render-asociacion { flex-direction: column; text-align: center; }
+}
+
+/* ==========================================================================
+   DISPOSICIONES Y COLUMNAS EN PARALELO (GRID / FLEX)
+   ========================================================================== */
+
+/* Selector de alineación/layout en el panel admin */
+.rumbi-layout-selector {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.rumbi-layout-btn {
+    background: #181818;
+    border: 1px solid #333;
+    color: #aaa;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.rumbi-layout-btn.active {
+    border-color: var(--color-acento);
+    color: var(--color-acento);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+/* RENDERIZADO PÚBLICO: Disposición Texto + Imagen / 2 Columnas */
+.rumbi-split-container {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin: 25px 0;
+}
+
+.rumbi-split-container.img-derecha {
+    flex-direction: row;
+}
+
+.rumbi-split-container.img-izquierda {
+    flex-direction: row-reverse;
+}
+
+.rumbi-split-container .split-col-text {
+    flex: 1;
+}
+
+.rumbi-split-container .split-col-media {
+    flex: 1;
+    max-width: 50%;
+}
+
+.rumbi-split-container .split-col-media img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* En móvil se apilan verticalmente para mantener legibilidad */
+@media (max-width: 768px) {
+    .rumbi-split-container,
+    .rumbi-split-container.img-izquierda {
+        flex-direction: column !important;
+    }
+    .rumbi-split-container .split-col-media {
+        max-width: 100%;
+    }
+}
+
+/* ==========================================================================
+   CARRUSEL DE TESTIMONIOS Y FOTOS (ELEGANTE Y HORIZONTAL)
+   ========================================================================== */
+
+.rumbi-carousel-container {
+    position: relative;
+    margin: 35px 0;
+    padding: 10px 0;
+}
+
+.rumbi-carousel-nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.rumbi-carousel-arrow {
+    background: #141414 !important;
+    border: 1px solid var(--color-acento) !important;
+    color: var(--color-acento) !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    cursor: pointer;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.rumbi-carousel-arrow:hover {
+    background: var(--color-acento) !important;
+    color: #000000 !important;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}
+
+.rumbi-carousel-track,
+.rumbi-img-carousel-track {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 20px !important;
+    overflow-x: auto !important;
+    scroll-behavior: smooth !important;
+    scroll-snap-type: x mandatory !important;
+    padding: 10px 5px 20px 5px !important;
+    scrollbar-width: none !important; /* Firefox */
+}
+
+.rumbi-carousel-track::-webkit-scrollbar,
+.rumbi-img-carousel-track::-webkit-scrollbar {
+    display: none !important; /* Chrome / Safari / Edge */
+}
+
+.rumbi-carousel-card {
+    flex: 0 0 calc(50% - 10px) !important;
+    min-width: 280px !important;
+    scroll-snap-align: start !important;
+    background: #111111 !important;
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    border-radius: 12px !important;
+    padding: 22px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.rumbi-carousel-card .quote-text {
+    font-style: italic;
+    color: #eeeeee;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.rumbi-carousel-card .author-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+}
+
+.rumbi-carousel-card .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-acento);
+}
+
+.rumbi-carousel-card .author-name {
+    color: var(--color-acento);
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.rumbi-carousel-card .author-tag {
+    color: #999999;
+    font-size: 0.78rem;
+    margin: 2px 0 0 0;
+}
+
+@media (max-width: 768px) {
+    .rumbi-carousel-card {
+        flex: 0 0 88% !important;
+    }
+}
+
+/* ==========================================================================
+   CARRUSEL DE IMÁGENES / GALERÍA DESLIZANTE
+   ========================================================================== */
+
+.rumbi-img-carousel-track {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    padding: 10px 5px;
+    scrollbar-width: none;
+}
+
+.rumbi-img-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.rumbi-img-card {
+    flex: 0 0 calc(40% - 10px);
+    scroll-snap-align: start;
+    background: #121212;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.rumbi-img-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+.rumbi-img-card figcaption {
+    padding: 10px;
+    font-size: 0.75rem;
+    color: #bbb;
+    text-align: center;
+    background: #0a0a0a;
+}
+
+@media (max-width: 768px) {
+    .rumbi-img-card {
+        flex: 0 0 75%;
+    }
+    .rumbi-img-card img {
+        height: 180px;
+    }
+}

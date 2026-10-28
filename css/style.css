@@ -671,3 +671,31 @@ main.contenedor {
     background: var(--color-acento) !important;
     color: #000000 !important;
 }
+
+/* ==========================================================================
+   ALINEACIONES NATIVAS DE QUILL EN TODO EL SITIO WEB
+   ========================================================================== */
+
+.ql-align-justify,
+#noticia-contenido .ql-align-justify,
+.rumbi-text-block .ql-align-justify {
+    text-align: justify !important;
+}
+
+.ql-align-center,
+#noticia-contenido .ql-align-center,
+.rumbi-text-block .ql-align-center {
+    text-align: center !important;
+}
+
+.ql-align-right,
+#noticia-contenido .ql-align-right,
+.rumbi-text-block .ql-align-right {
+    text-align: right !important;
+}
+
+.ql-align-left,
+#noticia-contenido .ql-align-left,
+.rumbi-text-block .ql-align-left {
+    text-align: left !important;
+}
