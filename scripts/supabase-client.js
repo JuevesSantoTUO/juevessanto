@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarBuscadorTunas();
     inyectarModalPerfilGlobal();
     inyectarModalAuthGlobal();
+    comprobarTokenRecuperacionPassword();
 
     if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange(() => {
@@ -26,6 +27,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+/* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN DE CORREO --- */
+async function comprobarTokenRecuperacionPassword() {
+    if (!supabaseClient) return;
+
+    // Detectar hash de recuperación de Supabase en la URL
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+
+    if (type === 'recovery') {
+        setTimeout(() => {
+            abrirModalNuevaPasswordRecovery();
+        }, 300);
+    }
+}
 
 /* --- 1. GESTIÓN DE SESIÓN Y AUTOCOMPLETADO DE PERFIL --- */
 async function comprobarEstadoSesion() {
@@ -42,7 +58,6 @@ async function comprobarEstadoSesion() {
     const formInputs = document.querySelectorAll('#form-participa input, #form-participa select, #btn-submit-participa');
 
     if (session && session.user) {
-        // Actualizar timestamp de conexión
         supabaseClient
             .from('profiles')
             .update({ ultima_conexion: new Date() })
@@ -58,7 +73,6 @@ async function comprobarEstadoSesion() {
             if (input.id !== 'p-email-display') input.disabled = false;
         });
 
-        // CONSULTAR ROL Y DATOS DEL PERFIL PARA AUTOCOMPLETAR FORMULARIO
         try {
             const { data: profile } = await supabaseClient
                 .from('profiles')
@@ -124,7 +138,7 @@ async function comprobarEstadoSesion() {
     }
 }
 
-/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN (CON CHECKBOXES LOPD Y NEWSLETTER) --- */
+/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN (CON BOTÓN DE OLVIDÉ MI CONTRASEÑA) --- */
 function inyectarModalAuthGlobal() {
     if (document.getElementById('modal-auth')) return;
 
@@ -145,9 +159,14 @@ function inyectarModalAuthGlobal() {
                     <label>Correo Electrónico *</label>
                     <input type="email" id="auth-email" placeholder="tu@email.com" required>
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="position: relative;">
                     <label>Contraseña *</label>
                     <input type="password" id="auth-password" placeholder="••••••••" required minlength="6">
+                    
+                    <!-- ENLACE DIRECTO RECUPERAR CONTRASEÑA -->
+                    <div id="auth-forgot-link-box" style="text-align: right; margin-top: 5px;">
+                        <button type="button" onclick="abrirModalRecuperarPasswordModal()" style="background:none; border:none; color:var(--color-acento); font-size:0.75rem; cursor:pointer; text-decoration:underline;">¿Olvidaste tu contraseña?</button>
+                    </div>
                 </div>
 
                 <div id="auth-extra-fields" style="display: none;">
@@ -212,6 +231,7 @@ window.cambiarPestanaAuth = function(modo) {
     const btnAction = document.getElementById('btn-auth-action');
     const status = document.getElementById('auth-estado');
     const extraFields = document.getElementById('auth-extra-fields');
+    const forgotBox = document.getElementById('auth-forgot-link-box');
 
     const inputNombre = document.getElementById('auth-nombre');
     const inputApellidos = document.getElementById('auth-apellidos');
@@ -227,6 +247,7 @@ window.cambiarPestanaAuth = function(modo) {
         if (title) title.innerText = "Iniciar Sesión";
         if (btnAction) btnAction.innerText = "Entrar";
         if (extraFields) extraFields.style.display = 'none';
+        if (forgotBox) forgotBox.style.display = 'block';
 
         if (inputNombre) inputNombre.required = false;
         if (inputApellidos) inputApellidos.required = false;
@@ -239,6 +260,7 @@ window.cambiarPestanaAuth = function(modo) {
         if (title) title.innerText = "Crear Cuenta de Tuno";
         if (btnAction) btnAction.innerText = "Registrarme";
         if (extraFields) extraFields.style.display = 'block';
+        if (forgotBox) forgotBox.style.display = 'none';
 
         if (inputNombre) inputNombre.required = true;
         if (inputApellidos) inputApellidos.required = true;
@@ -260,6 +282,120 @@ window.abrirModalAuth = function(modo = 'login') {
 window.cerrarModalAuth = function() {
     const modal = document.getElementById('modal-auth');
     if (modal) modal.style.display = 'none';
+};
+
+/* MODAL DEDICADO PARA PEDIR CORREO DE RECUPERACIÓN */
+window.abrirModalRecuperarPasswordModal = function() {
+    const currentEmail = document.getElementById('auth-email')?.value || '';
+    cerrarModalAuth();
+
+    const modalBox = document.querySelector('#modal-auth .auth-modal-box');
+    if (modalBox) {
+        modalBox.innerHTML = `
+            <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
+            <div style="text-align: center; padding: 10px 0;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔑</span>
+                <h3 class="protocolo-titulo" style="margin-bottom: 10px;">Recuperar Contraseña</h3>
+                <p style="color: #ccc; font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+                    Introduce tu correo electrónico y te enviaremos un enlace seguro para restablecer tu acceso.
+                </p>
+                <div class="input-group" style="text-align: left;">
+                    <label>Correo Electrónico Registrado *</label>
+                    <input type="email" id="recuperar-email-input" value="${currentEmail}" placeholder="tu@email.com" required>
+                </div>
+                <button type="button" class="btn-tuna-ui full-width" style="margin-top: 15px;" onclick="enviarSolicitudResetPassword()">Enviar Enlace de Recuperación</button>
+                <button type="button" class="btn-sutil-logout full-width" style="margin-top: 10px; padding: 10px;" onclick="abrirModalAuth('login')">Volver al Inicio de Sesión</button>
+                <div id="recuperar-status" class="mensaje-estado" style="margin-top: 15px;"></div>
+            </div>
+        `;
+        const modal = document.getElementById('modal-auth');
+        if (modal) modal.style.display = 'flex';
+    }
+};
+
+window.enviarSolicitudResetPassword = async function() {
+    const emailInput = document.getElementById('recuperar-email-input');
+    const status = document.getElementById('recuperar-status');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email) {
+        if (status) status.innerText = "Por favor, introduce tu correo electrónico.";
+        return;
+    }
+
+    if (status) status.innerText = "Enviando correo de restablecimiento...";
+
+    // Redirige al dominio/página actual
+    const redirectUrl = window.location.origin + window.location.pathname;
+
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+    });
+
+    if (error) {
+        if (status) status.innerText = "Error: " + error.message;
+        if (status) status.style.color = "#ff4444";
+    } else {
+        if (status) {
+            status.innerText = "¡Enviado! Revisa tu bandeja de entrada o carpeta de SPAM.";
+            status.style.color = "#2ecc71";
+        }
+    }
+};
+
+/* MODAL PARA CAMBIAR LA CONTRASEÑA TRAS HACER CLIC EN EL CORREO */
+function abrirModalNuevaPasswordRecovery() {
+    inyectarModalAuthGlobal();
+    const modalBox = document.querySelector('#modal-auth .auth-modal-box');
+    if (modalBox) {
+        modalBox.innerHTML = `
+            <div style="text-align: center; padding: 10px 0;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔐</span>
+                <h3 class="protocolo-titulo" style="margin-bottom: 10px;">Crea tu Nueva Contraseña</h3>
+                <p style="color: #ccc; font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+                    Has accedido mediante el enlace de verificación. Escribe tu nueva clave de acceso a continuación.
+                </p>
+                <div class="input-group" style="text-align: left;">
+                    <label>Nueva Contraseña *</label>
+                    <input type="password" id="recovery-new-pass" placeholder="••••••••" required minlength="6">
+                </div>
+                <button type="button" class="btn-tuna-ui full-width" style="margin-top: 15px;" onclick="guardarNuevaPasswordDesdeRecovery()">Guardar Nueva Contraseña</button>
+                <div id="recovery-status" class="mensaje-estado" style="margin-top: 15px;"></div>
+            </div>
+        `;
+        const modal = document.getElementById('modal-auth');
+        if (modal) modal.style.display = 'flex';
+    }
+}
+
+window.guardarNuevaPasswordDesdeRecovery = async function() {
+    const inputPass = document.getElementById('recovery-new-pass');
+    const status = document.getElementById('recovery-status');
+    const newPassword = inputPass ? inputPass.value : '';
+
+    if (!newPassword || newPassword.length < 6) {
+        if (status) status.innerText = "La contraseña debe tener al menos 6 caracteres.";
+        return;
+    }
+
+    if (status) status.innerText = "Actualizando contraseña...";
+
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+
+    if (error) {
+        if (status) status.innerText = "Error actualizando clave: " + error.message;
+        if (status) status.style.color = "#ff4444";
+    } else {
+        if (status) {
+            status.innerText = "¡Contraseña cambiada con éxito! Redirigiendo...";
+            status.style.color = "#2ecc71";
+        }
+        setTimeout(() => {
+            window.location.hash = ''; // Limpiar el token de la URL
+            cerrarModalAuth();
+            comprobarEstadoSesion();
+        }, 1500);
+    }
 };
 
 window.procesarAuth = async function(event) {
@@ -316,7 +452,7 @@ window.procesarAuth = async function(event) {
                             </p>
                             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
                                 <button type="button" class="btn-tuna-ui full-width" onclick="abrirModalAuthConEmail('login', '${email}')">Iniciar Sesión</button>
-                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="restablecerPassword('${email}')">¿Has olvidado tu contraseña?</button>
+                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="abrirModalRecuperarPasswordModal()">¿Has olvidado tu contraseña?</button>
                             </div>
                             <div id="forgot-status" class="mensaje-estado" style="margin-top: 15px;"></div>
                         </div>
@@ -327,7 +463,6 @@ window.procesarAuth = async function(event) {
             }
         } else {
             if (data && data.user) {
-                // Guardar perfil con datos del consentimiento legal
                 await supabaseClient.from('profiles').upsert({
                     id: data.user.id,
                     email: email,
@@ -341,7 +476,6 @@ window.procesarAuth = async function(event) {
                     fecha_consentimiento: fechaAhora
                 });
 
-                // Registrar en la tabla newsletter si aceptó
                 if (aceptaNewsletter) {
                     await supabaseClient.from('newsletter').upsert({
                         email: email,
@@ -379,19 +513,6 @@ window.abrirModalAuthConEmail = function(modo, email) {
         const inputEmail = document.getElementById('auth-email');
         if (inputEmail) inputEmail.value = email;
     }, 50);
-};
-
-window.restablecerPassword = async function(email) {
-    const status = document.getElementById('forgot-status');
-    if (status) status.innerText = "Enviando enlace de recuperación...";
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/participa.html'
-    });
-    if (error) {
-        if (status) status.innerText = "Error al enviar correo de recuperación.";
-    } else {
-        if (status) status.innerText = "¡Enviado! Revisa tu correo.";
-    }
 };
 
 window.cerrarSesionUsuario = async function() {
@@ -563,7 +684,6 @@ window.registrarParticipante = async function(event) {
                 if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
             }
         } else {
-            // Sincronización con profiles y boletín
             await supabaseClient.from('profiles').upsert({
                 id: session.user.id,
                 email: session.user.email,
@@ -592,7 +712,7 @@ window.registrarParticipante = async function(event) {
     }
 };
 
-/* --- 5. MODAL GLOBAL DE PERFIL Y GESTIÓN DE SUSCRIPCIÓN (OPT-IN / OPT-OUT) --- */
+/* --- 5. MODAL GLOBAL DE PERFIL Y GESTIÓN DE SUSCRIPCIÓN --- */
 function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
@@ -627,7 +747,6 @@ function inyectarModalPerfilGlobal() {
                 </div>
             </div>
 
-            <!-- SECCIÓN NUEVA: GESTIÓN DE NOTIFICACIONES Y NEWSLETTER -->
             <div class="perfil-seccion">
                 <h4 class="perfil-subtitulo">📩 Preferencias de Comunicaciones (Boletín)</h4>
                 <div style="background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
@@ -705,7 +824,6 @@ window.abrirModalPerfil = async function() {
     const inicial = (mote || nombreCompleto || 'T').charAt(0).toUpperCase();
     document.getElementById('perfil-mote-inicial').innerText = inicial;
 
-    // ESTADO DE SUSCRIPCIÓN A NEWSLETTER
     const checkNews = document.getElementById('perfil-check-newsletter');
     const statusNews = document.getElementById('perfil-newsletter-status');
     const estaSuscrito = profile?.acepta_newsletter || false;
@@ -755,7 +873,6 @@ window.abrirModalPerfil = async function() {
     }
 };
 
-/* GESTIÓN RÁPIDA DE ALTA/BAJA NEWSLETTER EN EL PERFIL */
 window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
     if (!supabaseClient) return;
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -764,13 +881,11 @@ window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
     const statusNews = document.getElementById('perfil-newsletter-status');
     if (statusNews) statusNews.innerText = "Guardando preferencia...";
 
-    // 1. Actualizar perfil
     await supabaseClient.from('profiles').update({
         acepta_newsletter: nuevoEstado,
         fecha_consentimiento: new Date().toISOString()
     }).eq('id', session.user.id);
 
-    // 2. Actualizar o insertar en la tabla newsletter
     if (nuevoEstado) {
         await supabaseClient.from('newsletter').upsert({
             email: session.user.email,
