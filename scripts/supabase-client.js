@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev)
+   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev - UNIFICADO)
    ========================================================================== */
 
 const SUPABASE_URL = "https://nbfkwbdnhghtljgnpmng.supabase.co";
@@ -28,22 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN DE CORREO --- */
+/* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN --- */
 async function comprobarTokenRecuperacionPassword() {
     if (!supabaseClient) return;
-
-    // Detectar hash de recuperación de Supabase en la URL
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-
-    if (type === 'recovery') {
-        setTimeout(() => {
-            abrirModalNuevaPasswordRecovery();
-        }, 300);
+    if (hashParams.get('type') === 'recovery') {
+        setTimeout(() => abrirModalNuevaPasswordRecovery(), 300);
     }
 }
 
-/* --- 1. GESTIÓN DE SESIÓN Y AUTOCOMPLETADO DE PERFIL --- */
+/* --- 1. GESTIÓN DE SESIÓN Y AUTOCOMPLETADO DESDE PROFILES --- */
 async function comprobarEstadoSesion() {
     if (!supabaseClient) return;
 
@@ -58,6 +52,7 @@ async function comprobarEstadoSesion() {
     const formInputs = document.querySelectorAll('#form-participa input, #form-participa select, #btn-submit-participa');
 
     if (session && session.user) {
+        // Actualizar última conexión
         supabaseClient
             .from('profiles')
             .update({ ultima_conexion: new Date() })
@@ -73,6 +68,7 @@ async function comprobarEstadoSesion() {
             if (input.id !== 'p-email-display') input.disabled = false;
         });
 
+        // CONSULTAR DATOS UNIFICADOS DEL PERFIL
         try {
             const { data: profile } = await supabaseClient
                 .from('profiles')
@@ -88,10 +84,10 @@ async function comprobarEstadoSesion() {
                 const inputMote = document.getElementById('p-mote');
                 const inputTuna = document.getElementById('p-tuna-search');
 
-                if (inputNombre && profile.nombre) { inputNombre.value = profile.nombre; }
-                if (inputApellidos && profile.apellidos) { inputApellidos.value = profile.apellidos; }
-                if (inputMote && profile.mote) { inputMote.value = profile.mote; }
-                if (inputTuna && profile.tuna_nombre) { inputTuna.value = profile.tuna_nombre; }
+                if (inputNombre && profile.nombre) inputNombre.value = profile.nombre;
+                if (inputApellidos && profile.apellidos) inputApellidos.value = profile.apellidos;
+                if (inputMote && profile.mote) inputMote.value = profile.mote;
+                if (inputTuna && profile.tuna_nombre) inputTuna.value = profile.tuna_nombre;
             }
 
             if (footerAdminContainer) {
@@ -138,7 +134,7 @@ async function comprobarEstadoSesion() {
     }
 }
 
-/* --- RECONSTRUIR EL MODAL DE AUTH CON PESTAÑAS ORIGINALES --- */
+/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN --- */
 function inyectarModalAuthGlobal() {
     let modal = document.getElementById('modal-auth');
     if (!modal) {
@@ -201,13 +197,13 @@ function inyectarModalAuthGlobal() {
                         <div class="input-group-checkbox" style="margin-bottom: 10px;">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
                                 <input type="checkbox" id="auth-check-lopd" style="accent-color: var(--color-acento); margin-top: 2px;">
-                                <span>He leído y acepto la Términos Legales y Protección de Datos (LOPD/RGPD). *</span>
+                                <span>He leído y acepto los Términos Legales y Protección de Datos (LOPD/RGPD). *</span>
                             </label>
                         </div>
                         <div class="input-group-checkbox">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
                                 <input type="checkbox" id="auth-check-newsletter" style="accent-color: var(--color-acento); margin-top: 2px;">
-                                <span>Deseo recibir boletines e información sobre la Madrugá y eventos de la Tuna por correo.</span>
+                                <span>Deseo recibir boletines e información sobre la Madrugá y eventos por correo.</span>
                             </label>
                         </div>
                     </div>
@@ -286,7 +282,135 @@ window.cerrarModalAuth = function() {
     if (modal) modal.style.display = 'none';
 };
 
-/* MODAL DEDICADO PARA PEDIR CORREO DE RECUPERACIÓN */
+/* --- PROCESO UNIFICADO DE LOGIN / REGISTRO --- */
+window.procesarAuth = async function(event) {
+    event.preventDefault();
+
+    const honeypot = document.getElementById('auth-website-field')?.value;
+    if (honeypot) return;
+
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const status = document.getElementById('auth-estado');
+
+    if (!supabaseClient) return;
+    if (status) status.innerText = "Procesando...";
+
+    if (currentAuthMode === 'login') {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+            if (status) status.innerText = "Error: Credenciales incorrectas o email pendiente de verificación.";
+        } else {
+            if (status) status.innerText = "¡Bienvenido!";
+            window.cerrarModalAuth();
+            comprobarEstadoSesion();
+        }
+    } else {
+        const nombre = document.getElementById('auth-nombre').value.trim();
+        const apellidos = document.getElementById('auth-apellidos').value.trim();
+        const mote = document.getElementById('auth-mote').value.trim();
+        const tunaNombre = document.getElementById('auth-tuna-search').value.trim();
+
+        const aceptaLopd = document.getElementById('auth-check-lopd').checked;
+        const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
+        const fechaAhora = new Date().toISOString();
+
+        if (!aceptaLopd) {
+            if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
+            return;
+        }
+
+        // URL exacta de la página actual (para evitar la redirección por defecto a localhost:3000)
+        const currentRedirectUrl = window.location.origin + window.location.pathname;
+
+        // ENVIAR METADATA Y REDIRECCIÓN DINÁMICA EN EL SIGNUP
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: currentRedirectUrl, // <--- AQUÍ SE AÑADE LA REDIRECCIÓN
+                data: {
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    mote: mote,
+                    tuna_nombre: tunaNombre,
+                    acepta_lopd: aceptaLopd,
+                    acepta_newsletter: aceptaNewsletter
+                }
+            }
+        });
+        
+        if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes("already registered") || msg.includes("already exists") || error.status === 400) {
+                const modalContent = document.querySelector('#modal-auth .auth-modal-box');
+                if (modalContent) {
+                    modalContent.innerHTML = `
+                        <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
+                        <div style="text-align: center; padding: 10px 0;">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔑</span>
+                            <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Cuenta ya registrada!</h3>
+                            <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                                El correo <strong style="color: var(--color-acento);">${email}</strong> ya tiene una cuenta activa.
+                            </p>
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                                <button type="button" class="btn-tuna-ui full-width" onclick="abrirModalAuthConEmail('login', '${email}')">Iniciar Sesión</button>
+                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="abrirModalRecuperarPasswordModal()">¿Has olvidado tu contraseña?</button>
+                            </div>
+                            <div id="forgot-status" class="mensaje-estado" style="margin-top: 15px;"></div>
+                        </div>
+                    `;
+                }
+            } else {
+                if (status) status.innerText = "Error al registrar: " + error.message;
+            }
+        } else {
+            if (data && data.user) {
+                // GUARDAR/ACTUALIZAR PROFILES
+                await supabaseClient.from('profiles').upsert({
+                    id: data.user.id,
+                    email: email,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    mote: mote,
+                    tuna_nombre: tunaNombre,
+                    role: 'user',
+                    acepta_lopd: aceptaLopd,
+                    acepta_newsletter: aceptaNewsletter,
+                    fecha_consentimiento: fechaAhora
+                });
+
+                if (aceptaNewsletter) {
+                    await supabaseClient.from('newsletter').upsert({
+                        email: email,
+                        user_id: data.user.id,
+                        estado: 'activo'
+                    }, { onConflict: 'email' });
+                }
+            }
+
+            const modalContent = document.querySelector('#modal-auth .auth-modal-box');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
+                    <div style="text-align: center; padding: 10px 0;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 15px;">📩</span>
+                        <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Registro completado!</h3>
+                        <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                            Hemos enviado un correo de confirmación a:<br><strong style="color: var(--color-acento);">${email}</strong>
+                        </p>
+                        <p style="color: #aaa; font-size: 0.85rem; line-height: 1.5; margin-bottom: 25px;">
+                            Por motivos de seguridad, haz clic en el enlace de ese correo para activar tu cuenta.
+                        </p>
+                        <button type="button" class="btn-tuna-ui full-width" onclick="cerrarModalAuth()">Entendido</button>
+                    </div>
+                `;
+            }
+        }
+    }
+};
+
+/* --- 3. MODALES DE RECUPERACIÓN Y PERFIL --- */
 window.abrirModalRecuperarPasswordModal = function() {
     const currentEmail = document.getElementById('auth-email')?.value || '';
     cerrarModalAuth();
@@ -326,26 +450,17 @@ window.enviarSolicitudResetPassword = async function() {
     }
 
     if (status) status.innerText = "Enviando correo de restablecimiento...";
-
-    // Redirige al dominio/página actual
     const redirectUrl = window.location.origin + window.location.pathname;
 
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
-    });
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
 
     if (error) {
-        if (status) status.innerText = "Error: " + error.message;
-        if (status) status.style.color = "#ff4444";
+        if (status) { status.innerText = "Error: " + error.message; status.style.color = "#ff4444"; }
     } else {
-        if (status) {
-            status.innerText = "¡Enviado! Revisa tu bandeja de entrada o carpeta de SPAM.";
-            status.style.color = "#2ecc71";
-        }
+        if (status) { status.innerText = "¡Enviado! Revisa tu bandeja de entrada o carpeta de SPAM."; status.style.color = "#2ecc71"; }
     }
 };
 
-/* MODAL PARA CAMBIAR LA CONTRASEÑA TRAS HACER CLIC EN EL CORREO */
 function abrirModalNuevaPasswordRecovery() {
     inyectarModalAuthGlobal();
     const modalBox = document.querySelector('#modal-auth .auth-modal-box');
@@ -355,7 +470,7 @@ function abrirModalNuevaPasswordRecovery() {
                 <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔐</span>
                 <h3 class="protocolo-titulo" style="margin-bottom: 10px;">Crea tu Nueva Contraseña</h3>
                 <p style="color: #ccc; font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-                    Has accedido mediante el enlace de verificación. Escribe tu nueva clave de acceso a continuación.
+                    Escribe tu nueva clave de acceso a continuación.
                 </p>
                 <div class="input-group" style="text-align: left;">
                     <label>Nueva Contraseña *</label>
@@ -381,240 +496,21 @@ window.guardarNuevaPasswordDesdeRecovery = async function() {
     }
 
     if (status) status.innerText = "Actualizando contraseña...";
-
     const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
 
     if (error) {
-        if (status) status.innerText = "Error actualizando clave: " + error.message;
-        if (status) status.style.color = "#ff4444";
+        if (status) { status.innerText = "Error actualizando clave: " + error.message; status.style.color = "#ff4444"; }
     } else {
-        if (status) {
-            status.innerText = "¡Contraseña cambiada con éxito! Redirigiendo...";
-            status.style.color = "#2ecc71";
-        }
+        if (status) { status.innerText = "¡Contraseña cambiada con éxito! Redirigiendo..."; status.style.color = "#2ecc71"; }
         setTimeout(() => {
-            window.location.hash = ''; // Limpiar el token de la URL
+            window.location.hash = '';
             cerrarModalAuth();
             comprobarEstadoSesion();
         }, 1500);
     }
 };
 
-window.procesarAuth = async function(event) {
-    event.preventDefault();
-
-    const honeypot = document.getElementById('auth-website-field')?.value;
-    if (honeypot) return;
-
-    const email = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-    const status = document.getElementById('auth-estado');
-
-    if (!supabaseClient) return;
-    if (status) status.innerText = "Procesando...";
-
-    if (currentAuthMode === 'login') {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-            if (status) status.innerText = "Error: Credenciales incorrectas o email pendiente de verificación.";
-        } else {
-            if (status) status.innerText = "¡Bienvenido!";
-            window.cerrarModalAuth();
-            comprobarEstadoSesion();
-        }
-    } else {
-        const nombre = document.getElementById('auth-nombre').value.trim();
-        const apellidos = document.getElementById('auth-apellidos').value.trim();
-        const mote = document.getElementById('auth-mote').value.trim();
-        const tunaNombre = document.getElementById('auth-tuna-search').value.trim();
-
-        const aceptaLopd = document.getElementById('auth-check-lopd').checked;
-        const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
-        const fechaAhora = new Date().toISOString();
-
-        if (!aceptaLopd) {
-            if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
-            return;
-        }
-
-        const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        
-        if (error) {
-            const msg = error.message.toLowerCase();
-            if (msg.includes("already registered") || msg.includes("already exists") || error.status === 400) {
-                const modalContent = document.querySelector('#modal-auth .auth-modal-box');
-                if (modalContent) {
-                    modalContent.innerHTML = `
-                        <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
-                        <div style="text-align: center; padding: 10px 0;">
-                            <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔑</span>
-                            <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Cuenta ya registrada!</h3>
-                            <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
-                                El correo <strong style="color: var(--color-acento);">${email}</strong> ya tiene una cuenta activa.
-                            </p>
-                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                                <button type="button" class="btn-tuna-ui full-width" onclick="abrirModalAuthConEmail('login', '${email}')">Iniciar Sesión</button>
-                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="abrirModalRecuperarPasswordModal()">¿Has olvidado tu contraseña?</button>
-                            </div>
-                            <div id="forgot-status" class="mensaje-estado" style="margin-top: 15px;"></div>
-                        </div>
-                    `;
-                }
-            } else {
-                if (status) status.innerText = "Error al registrar: " + error.message;
-            }
-        } else {
-            if (data && data.user) {
-                await supabaseClient.from('profiles').upsert({
-                    id: data.user.id,
-                    email: email,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    mote: mote,
-                    tuna_nombre: tunaNombre,
-                    role: 'user',
-                    acepta_lopd: aceptaLopd,
-                    acepta_newsletter: aceptaNewsletter,
-                    fecha_consentimiento: fechaAhora
-                });
-
-                if (aceptaNewsletter) {
-                    await supabaseClient.from('newsletter').upsert({
-                        email: email,
-                        user_id: data.user.id,
-                        estado: 'activo'
-                    }, { onConflict: 'email' });
-                }
-            }
-
-            const modalContent = document.querySelector('#modal-auth .auth-modal-box');
-            if (modalContent) {
-                modalContent.innerHTML = `
-                    <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
-                    <div style="text-align: center; padding: 10px 0;">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 15px;">📩</span>
-                        <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Registro completado!</h3>
-                        <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
-                            Hemos enviado un correo de confirmación a:<br><strong style="color: var(--color-acento);">${email}</strong>
-                        </p>
-                        <p style="color: #aaa; font-size: 0.85rem; line-height: 1.5; margin-bottom: 25px;">
-                            Por motivos de seguridad y para evitar registros automáticos, 
-                            <strong>haz clic en el enlace de ese correo</strong> para activar tu cuenta e inscribirte.
-                        </p>
-                        <button type="button" class="btn-tuna-ui full-width" onclick="cerrarModalAuth()">Entendido</button>
-                    </div>
-                `;
-            }
-        }
-    }
-};
-
-window.abrirModalAuthConEmail = function(modo, email) {
-    window.abrirModalAuth(modo);
-    setTimeout(() => {
-        const inputEmail = document.getElementById('auth-email');
-        if (inputEmail) inputEmail.value = email;
-    }, 50);
-};
-
-window.cerrarSesionUsuario = async function() {
-    if (supabaseClient) {
-        await supabaseClient.auth.signOut();
-        window.cerrarModalPerfil();
-        comprobarEstadoSesion();
-    }
-};
-
-/* --- 3. BUSCADOR PREDICTIVO DE TUNAS --- */
-function configurarBuscadorTunas() {
-    const searchInput = document.getElementById('p-tuna-search');
-    const resultsList = document.getElementById('tuna-results-list');
-    if (!searchInput || !resultsList) return;
-
-    let timeout = null;
-    searchInput.addEventListener('input', (e) => {
-        clearTimeout(timeout);
-        const query = e.target.value.trim();
-        if (query.length < 2) { resultsList.style.display = 'none'; return; }
-
-        timeout = setTimeout(async () => {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient
-                .from('tunas')
-                .select('nombre')
-                .ilike('nombre', `%${query}%`)
-                .limit(8);
-
-            if (!error && data && data.length > 0) {
-                resultsList.innerHTML = '';
-                data.forEach(tuna => {
-                    const li = document.createElement('li');
-                    li.innerText = tuna.nombre;
-                    li.style.padding = '8px 12px';
-                    li.style.cursor = 'pointer';
-                    li.addEventListener('click', () => {
-                        searchInput.value = tuna.nombre;
-                        resultsList.style.display = 'none';
-                    });
-                    resultsList.appendChild(li);
-                });
-                resultsList.style.display = 'block';
-            } else { resultsList.style.display = 'none'; }
-        }, 300);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
-            resultsList.style.display = 'none';
-        }
-    });
-}
-
-function configurarBuscadorTunasModalAuth() {
-    const searchInput = document.getElementById('auth-tuna-search');
-    const resultsList = document.getElementById('auth-tuna-results-list');
-    if (!searchInput || !resultsList) return;
-
-    let timeout = null;
-    searchInput.addEventListener('input', (e) => {
-        clearTimeout(timeout);
-        const query = e.target.value.trim();
-        if (query.length < 2) { resultsList.style.display = 'none'; return; }
-
-        timeout = setTimeout(async () => {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient
-                .from('tunas')
-                .select('nombre')
-                .ilike('nombre', `%${query}%`)
-                .limit(8);
-
-            if (!error && data && data.length > 0) {
-                resultsList.innerHTML = '';
-                data.forEach(tuna => {
-                    const li = document.createElement('li');
-                    li.innerText = tuna.nombre;
-                    li.style.padding = '8px 12px';
-                    li.style.cursor = 'pointer';
-                    li.addEventListener('click', () => {
-                        searchInput.value = tuna.nombre;
-                        resultsList.style.display = 'none';
-                    });
-                    resultsList.appendChild(li);
-                });
-                resultsList.style.display = 'block';
-            } else { resultsList.style.display = 'none'; }
-        }, 300);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
-            resultsList.style.display = 'none';
-        }
-    });
-}
-
-/* --- 4. ENVÍO DE INSCRIPCIÓN Y REGISTRO/SINCRONIZACIÓN AUTOMÁTICA EN PROFILES --- */
+/* --- 4. CÓDIGO UNIFICADO PARA INSCRIPCIÓN DESDE PROFILES --- */
 window.registrarParticipante = async function(event) {
     event.preventDefault();
     const statusBox = document.getElementById('participa-estado');
@@ -629,9 +525,10 @@ window.registrarParticipante = async function(event) {
     }
 
     try {
+        // Obtener datos consolidados desde profiles
         const { data: userProfile } = await supabaseClient
             .from('profiles')
-            .select('baneado, vetado_inscripcion, motivo_sancion')
+            .select('*')
             .eq('id', session.user.id)
             .maybeSingle();
 
@@ -655,10 +552,11 @@ window.registrarParticipante = async function(event) {
             anioActivo = parseInt(cfgAnio.valor);
         }
 
-        const nombreVal = document.getElementById('p-nombre')?.value.trim() || '';
-        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || '';
-        const moteVal = document.getElementById('p-mote')?.value.trim() || '';
-        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || '';
+        // Leer datos: preferir inputs si el usuario los modifica en el form, sino los de profiles
+        const nombreVal = document.getElementById('p-nombre')?.value.trim() || userProfile?.nombre || '';
+        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || userProfile?.apellidos || '';
+        const moteVal = document.getElementById('p-mote')?.value.trim() || userProfile?.mote || '';
+        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || userProfile?.tuna_nombre || '';
         const deseaNewsletter = document.getElementById('p-check-newsletter')?.checked || false;
 
         const payload = {
@@ -686,6 +584,7 @@ window.registrarParticipante = async function(event) {
                 if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
             }
         } else {
+            // Actualización/Sincronización final en profiles
             await supabaseClient.from('profiles').upsert({
                 id: session.user.id,
                 email: session.user.email,
@@ -714,7 +613,7 @@ window.registrarParticipante = async function(event) {
     }
 };
 
-/* --- 5. MODAL GLOBAL DE PERFIL Y GESTIÓN DE SUSCRIPCIÓN --- */
+/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO --- */
 function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
@@ -815,7 +714,7 @@ window.abrirModalPerfil = async function() {
 
     const nombreCompleto = profile?.nombre 
         ? `${profile.nombre} ${profile.apellidos || ''}` 
-        : (ultInscripcion ? `${ultInscripcion.nombre} ${ultInscripcion.apellidos}` : session.user.email);
+        : (ultInscripcion?.nombre ? `${ultInscripcion.nombre} ${ultInscripcion.apellidos}` : session.user.email);
 
     const mote = profile?.mote || ultInscripcion?.mote || '';
     const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna no especificada';
@@ -858,7 +757,7 @@ window.abrirModalPerfil = async function() {
                 
             tr.innerHTML = `
                 <td><strong>${i.anio}</strong> ${botonCancelar}</td>
-                <td style="font-size:0.8rem">${i.tuna_nombre}</td>
+                <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
                 <td>${i.asiste_comida ? '✅' : '❌'}</td>
                 <td>${i.asiste_ronda ? '✅' : '❌'}</td>
                 <td>${i.asiste_madruga ? '✅' : '❌'}</td>
@@ -919,9 +818,7 @@ window.cerrarModalPerfil = function() {
 
 window.gestionarBotonPerfil = async function() {
     if (!supabaseClient) return;
-
     const { data: { session } } = await supabaseClient.auth.getSession();
-
     if (session && session.user) {
         window.abrirModalPerfil();
     } else {
@@ -982,5 +879,110 @@ window.actualizarPasswordPerfil = async function(event) {
     } else {
         status.innerText = "¡Contraseña cambiada correctamente!";
         document.getElementById('perfil-nueva-pass').value = '';
+    }
+};
+
+/* --- 6. BUSCADORES DE TUNAS --- */
+function configurarBuscadorTunas() {
+    const searchInput = document.getElementById('p-tuna-search');
+    const resultsList = document.getElementById('tuna-results-list');
+    if (!searchInput || !resultsList) return;
+
+    let timeout = null;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        const query = e.target.value.trim();
+        if (query.length < 2) { resultsList.style.display = 'none'; return; }
+
+        timeout = setTimeout(async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('tunas')
+                .select('nombre')
+                .ilike('nombre', `%${query}%`)
+                .limit(8);
+
+            if (!error && data && data.length > 0) {
+                resultsList.innerHTML = '';
+                data.forEach(tuna => {
+                    const li = document.createElement('li');
+                    li.innerText = tuna.nombre;
+                    li.style.padding = '8px 12px';
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        searchInput.value = tuna.nombre;
+                        resultsList.style.display = 'none';
+                    });
+                    resultsList.appendChild(li);
+                });
+                resultsList.style.display = 'block';
+            } else { resultsList.style.display = 'none'; }
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+}
+
+function configurarBuscadorTunasModalAuth() {
+    const searchInput = document.getElementById('auth-tuna-search');
+    const resultsList = document.getElementById('auth-tuna-results-list');
+    if (!searchInput || !resultsList) return;
+
+    let timeout = null;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        const query = e.target.value.trim();
+        if (query.length < 2) { resultsList.style.display = 'none'; return; }
+
+        timeout = setTimeout(async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('tunas')
+                .select('nombre')
+                .ilike('nombre', `%${query}%`)
+                .limit(8);
+
+            if (!error && data && data.length > 0) {
+                resultsList.innerHTML = '';
+                data.forEach(tuna => {
+                    const li = document.createElement('li');
+                    li.innerText = tuna.nombre;
+                    li.style.padding = '8px 12px';
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        searchInput.value = tuna.nombre;
+                        resultsList.style.display = 'none';
+                    });
+                    resultsList.appendChild(li);
+                });
+                resultsList.style.display = 'block';
+            } else { resultsList.style.display = 'none'; }
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+}
+
+window.abrirModalAuthConEmail = function(modo, email) {
+    window.abrirModalAuth(modo);
+    setTimeout(() => {
+        const inputEmail = document.getElementById('auth-email');
+        if (inputEmail) inputEmail.value = email;
+    }, 50);
+};
+
+window.cerrarSesionUsuario = async function() {
+    if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+        window.cerrarModalPerfil();
+        comprobarEstadoSesion();
     }
 };
