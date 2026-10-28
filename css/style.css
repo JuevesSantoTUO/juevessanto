@@ -58,7 +58,9 @@ body {
     font-size: 0.8rem;
 }
 
-/* NAVEGACIÓN NAVBAR */
+/* ==========================================================================
+   NAVEGACIÓN NAVBAR & CABECERA MÓVIL BLINDADA
+   ========================================================================== */
 .navbar {
     background-color: var(--color-primario);
     border-bottom: 3px solid var(--color-acento);
@@ -72,25 +74,110 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    width: 100%;
 }
 
 .logo-union {
     display: flex;
     align-items: center;
     text-decoration: none;
-    gap: 12px;
+    gap: 10px;
+    flex-shrink: 1;
+    min-width: 0; /* Permite que el texto se comprima si no cabe */
+}
+
+.logo-img { 
+    height: 45px; 
+    width: auto; 
+    display: block; 
     flex-shrink: 0;
 }
 
-.logo-img { height: 50px; width: auto; display: block; }
-.logo-texto { color: var(--color-acento); font-weight: bold; font-size: 1.5rem; white-space: nowrap; }
-.logo-texto span { font-size: 0.8rem; vertical-align: super; margin-left: 2px; font-weight: normal; }
+.logo-texto { 
+    color: var(--color-acento); 
+    font-weight: bold; 
+    font-size: 1.4rem; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-.menu-toggle { background: none; border: none; cursor: pointer; display: block; z-index: 1001; }
-.bar { display: block; width: 30px; height: 3px; margin: 6px auto; background-color: var(--color-acento); transition: 0.3s; }
+.logo-texto span { 
+    font-size: 0.8rem; 
+    vertical-align: super; 
+    margin-left: 2px; 
+    font-weight: normal; 
+}
+
+/* --- BOTÓN DE USUARIO Y CONTROLES DE NAVEGACIÓN --- */
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0; /* IMPIDE QUE PERFIL Y HAMBURGUESA SE SALGAN DE LA PANTALLA */
+}
+
+.user-btn {
+    background: none;
+    border: 1px solid var(--color-acento);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.user-btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    transform: scale(1.05);
+}
+
+.user-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--color-acento);
+}
+
+.user-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: #2ecc71;
+    border: 1.5px solid #000;
+    border-radius: 50%;
+}
+
+.menu-toggle { 
+    background: none; 
+    border: none; 
+    cursor: pointer; 
+    display: block; 
+    z-index: 1001; 
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.bar { 
+    display: block; 
+    width: 26px; 
+    height: 3px; 
+    margin: 5px auto; 
+    background-color: var(--color-acento); 
+    transition: 0.3s; 
+    border-radius: 2px;
+}
 
 /* ==========================================================================
-   MENÚ NAVEGACIÓN LATERAL DESPLEGABLE (CORREGIDO ESPACIADO SUPERIOR)
+   MENÚ NAVEGACIÓN LATERAL DESPLEGABLE
    ========================================================================== */
 
 .nav-links {
@@ -104,8 +191,8 @@ body {
     border-left: 2px solid var(--color-acento);
     display: flex;
     flex-direction: column;
-    padding-top: 70px; /* Separación suficiente para despejar el botón de hamburguesa */
-    padding-bottom: 80px; /* Margen inferior para no solapar el botón de WhatsApp */
+    padding-top: 70px;
+    padding-bottom: 80px;
     transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     list-style: none;
     z-index: 1000;
@@ -120,10 +207,10 @@ body {
 
 .nav-links li a {
     display: block;
-    padding: 0.65rem 1.8rem; /* Tamaño equilibrado de fila */
+    padding: 0.65rem 1.8rem;
     color: white;
     text-decoration: none;
-    font-size: 0.85rem; /* Lectura clara sin apretar el texto */
+    font-size: 0.85rem;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     border-bottom: 1px solid rgba(212, 175, 55, 0.1);
@@ -134,6 +221,21 @@ body {
     background-color: rgba(212, 175, 55, 0.1); 
     color: var(--color-acento); 
     padding-left: 2.2rem; 
+}
+
+/* AJUSTES RESPONSIVOS MÓVIL */
+@media (max-width: 768px) {
+    .logo-img { height: 36px; }
+    .logo-texto { font-size: 1.1rem; }
+    .logo-texto span { font-size: 0.7rem; }
+    
+    .nav-flex {
+        padding: 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .logo-texto { font-size: 0.95rem; }
 }
 
 /* TITULOS Y CENTRADO GLOBAL */
@@ -158,7 +260,7 @@ main.contenedor {
 }
 
 /* ==========================================================================
-   PÁGINA DE INICIO (CONTADOR Y VÍDEOS RESTAURADOS)
+   PÁGINA DE INICIO (CONTADOR Y VÍDEOS)
    ========================================================================== */
 .contador-container {
     text-align: center;
@@ -295,50 +397,6 @@ main.contenedor {
 @media (max-width: 480px) {
     .whatsapp-text { display: none; }
     .whatsapp-float { padding: 12px; right: 20px; bottom: 20px; }
-}
-
-/* --- BOTÓN DE USUARIO Y CONTROLES DE NAVEGACIÓN --- */
-.nav-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.user-btn {
-    background: none;
-    border: 1px solid var(--color-acento);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.3s ease;
-    padding: 0;
-}
-
-.user-btn:hover {
-    background: rgba(212, 175, 55, 0.15);
-    transform: scale(1.05);
-}
-
-.user-icon {
-    width: 22px;
-    height: 22px;
-    fill: var(--color-acento);
-}
-
-.user-badge {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 10px;
-    height: 10px;
-    background-color: #2ecc71;
-    border: 2px solid #000;
-    border-radius: 50%;
 }
 
 /* ==========================================================================
