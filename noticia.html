@@ -44,10 +44,14 @@
         </div>
 
         <article id="noticia-article" style="display: none;">
-            <header style="margin-bottom: 30px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 20px;">
-                <span id="noticia-fecha" style="color: var(--color-acento); font-size: 0.85rem; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 10px;"></span>
+            <header style="margin-bottom: 25px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                    <span id="noticia-categoria" class="noticia-badge-cat">General</span>
+                    <span id="noticia-fecha" style="color: var(--color-acento); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;"></span>
+                </div>
                 <h1 id="noticia-titulo" style="color: #ffffff; font-size: 2.2rem; margin: 0 0 15px 0; line-height: 1.25; font-weight: bold;"></h1>
-                <p id="noticia-autor" style="color: #aaaaaa; font-size: 0.9rem; margin: 0;"></p>
+                <p id="noticia-autor" style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 12px;"></p>
+                <div id="noticia-tags" class="noticia-tags-container"></div>
             </header>
 
             <div id="noticia-img-box" style="margin-bottom: 35px; display: none;">
@@ -75,7 +79,6 @@
             <section class="seccion-comentarios">
                 <h3 style="color: var(--color-acento); margin-bottom: 20px; font-size: 1.2rem;">💬 Comentarios (<span id="num-comentarios">0</span>)</h3>
 
-                <!-- Formulario de nuevo comentario -->
                 <div id="box-nuevo-comentario" style="margin-bottom: 30px;">
                     <form onsubmit="publicarComentario(event)">
                         <textarea id="txt-nuevo-comentario" rows="3" placeholder="Escribe tu comentario o apreciación sobre la noticia..." required style="width:100%; background:#141414; border:1px solid rgba(212,175,55,0.3); color:#fff; padding:12px; border-radius:6px; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
@@ -85,7 +88,6 @@
                     </form>
                 </div>
 
-                <!-- Lista de comentarios -->
                 <div id="lista-comentarios">
                     <p style="color: #666; font-size: 0.9rem;">Cargando comentarios...</p>
                 </div>
