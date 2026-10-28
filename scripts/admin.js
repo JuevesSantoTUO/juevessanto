@@ -62,6 +62,7 @@ function gestionarVisibilidadSegunRol(role) {
         const itemIns = document.getElementById('menu-item-inscripciones');
         const itemTunas = document.getElementById('menu-item-tunas');
         const itemDenuncias = document.getElementById('menu-item-denuncias');
+        const itemNews = document.getElementById('menu-item-newsletter'); // 🔒 Restringido a editor
         
         const btnQuickIns = document.getElementById('btn-quick-inscripciones');
         if (btnQuickIns) btnQuickIns.style.display = 'none';
@@ -69,6 +70,7 @@ function gestionarVisibilidadSegunRol(role) {
         if (itemIns) itemIns.style.display = 'none';
         if (itemTunas) itemTunas.style.display = 'none';
         if (itemDenuncias) itemDenuncias.style.display = 'none';
+        if (itemNews) itemNews.style.display = 'none';
     }
 }
 
@@ -104,6 +106,9 @@ window.cambiarSeccionAdmin = function(seccionId, elem) {
             break;
         case 'denuncias':
             cargarDenunciasAdmin();
+            break;
+        case 'newsletter':
+            cargarMetricasNewsletter();
             break;
     }
 };
@@ -856,4 +861,139 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
         alert(`Los datos de ${email} han sido eliminados de la plataforma conforme a la LOPD.`);
         cargarUsuariosAdmin();
     }
+};
+
+/* ==========================================================================
+   9. MÓDULO DE COMUNICACIONES Y NEWSLETTER (SOLO ADMIN Y GESTOR)
+   ========================================================================== */
+
+let quillNewsletter = null;
+let listaDestinatariosGlobal = [];
+
+function inicializarEditorNewsletter() {
+    if (quillNewsletter || !document.getElementById('editor-newsletter-container')) return;
+
+    quillNewsletter = new Quill('#editor-newsletter-container', {
+        theme: 'snow',
+        placeholder: 'Escribe aquí el contenido del boletín informativo...',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ 'align': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'clean']
+            ]
+        }
+    });
+}
+
+async function cargarMetricasNewsletter() {
+    if (!supabaseClient) return;
+
+    inicializarEditorNewsletter();
+
+    let anioActivo = 2027;
+    const { data: cfgAnio } = await supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle();
+    if (cfgAnio && cfgAnio.valor) anioActivo = parseInt(cfgAnio.valor);
+
+    const [{ data: profSuscritos }, { data: newsBajas }, { data: inscritos }] = await Promise.all([
+        supabaseClient.from('profiles').select('email').eq('acepta_newsletter', true),
+        supabaseClient.from('newsletter').select('email').eq('estado', 'cancelado'),
+        supabaseClient.from('inscripciones').select('email').eq('anio', anioActivo)
+    ]);
+
+    const bajasSet = new Set(newsBajas ? newsBajas.map(b => b.email) : []);
+    const activosReal = profSuscritos ? profSuscritos.map(p => p.email).filter(e => e && !bajasSet.has(e)) : [];
+
+    const elActivos = document.getElementById('stat-newsletter-activos');
+    const elBajas = document.getElementById('stat-newsletter-bajas');
+    const elInscritos = document.getElementById('stat-newsletter-inscritos');
+
+    if (elActivos) elActivos.innerText = activosReal.length;
+    if (elBajas) elBajas.innerText = bajasSet.size;
+    if (elInscritos) elInscritos.innerText = inscritos ? [...new Set(inscritos.map(i => i.email))].length : 0;
+
+    await window.actualizarConteoDestinatarios();
+}
+
+window.actualizarConteoDestinatarios = async function() {
+    if (!supabaseClient) return;
+    const selectElem = document.getElementById('news-destinatarios-select');
+    const modo = selectElem ? selectElem.value : 'newsletter';
+    const conteoEl = document.getElementById('news-conteo-dest');
+
+    let anioActivo = 2027;
+    try {
+        const { data: cfgAnio } = await supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle();
+        if (cfgAnio && cfgAnio.valor) anioActivo = parseInt(cfgAnio.valor);
+    } catch(e) {}
+
+    let correos = [];
+
+    if (modo === 'newsletter') {
+        // Lee los usuarios registrados que no tengan rechazada explícitamente la newsletter
+        const { data: profiles, error } = await supabaseClient
+            .from('profiles')
+            .select('email, acepta_newsletter');
+
+        if (!error && profiles) {
+            correos = profiles
+                .filter(p => p.email && p.acepta_newsletter !== false)
+                .map(p => p.email);
+        }
+    } else if (modo === 'inscritos') {
+        const { data: inscritos, error } = await supabaseClient
+            .from('inscripciones')
+            .select('email')
+            .eq('anio', anioActivo);
+
+        if (!error && inscritos) {
+            correos = [...new Set(inscritos.map(i => i.email))].filter(Boolean);
+        }
+    } else {
+        const { data: profiles, error } = await supabaseClient
+            .from('profiles')
+            .select('email');
+
+        if (!error && profiles) {
+            correos = profiles.map(p => p.email).filter(Boolean);
+        }
+    }
+
+    listaDestinatariosGlobal = correos;
+    if (conteoEl) conteoEl.innerText = listaDestinatariosGlobal.length;
+};
+
+window.copiarListaCorreosCSV = function() {
+    if (!listaDestinatariosGlobal || listaDestinatariosGlobal.length === 0) {
+        alert("No hay destinatarios en el segmento seleccionado.");
+        return;
+    }
+
+    const texto = listaDestinatariosGlobal.join(', ');
+    navigator.clipboard.writeText(texto);
+    alert(`¡${listaDestinatariosGlobal.length} correos copiados al portapapeles! Puedes pegarlos en el CCO/BCC de tu cliente de correo.`);
+};
+
+window.prepararEnvioNewsletter = async function(e) {
+    e.preventDefault();
+    const status = document.getElementById('news-form-status');
+    status.innerText = "Procesando boletín...";
+
+    if (quillNewsletter) {
+        document.getElementById('news-contenido-input').value = quillNewsletter.root.innerHTML;
+    }
+
+    const asunto = document.getElementById('news-asunto').value.trim();
+    const contenido = document.getElementById('news-contenido-input').value;
+
+    if (!listaDestinatariosGlobal || listaDestinatariosGlobal.length === 0) {
+        status.innerText = "Error: La lista de destinatarios está vacía.";
+        status.style.color = "#ff4444";
+        return;
+    }
+
+    status.innerText = `¡Preparado! Se generó el envío para ${listaDestinatariosGlobal.length} destinatarios. Utiliza 'Copiar Correos' para enviar desde tu servidor de correo o servicio SMTP.`;
+    status.style.color = "#2ecc71";
 };

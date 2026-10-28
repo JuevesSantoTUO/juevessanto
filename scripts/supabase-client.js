@@ -124,7 +124,7 @@ async function comprobarEstadoSesion() {
     }
 }
 
-/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN --- */
+/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN (CON CHECKBOXES LOPD Y NEWSLETTER) --- */
 function inyectarModalAuthGlobal() {
     if (document.getElementById('modal-auth')) return;
 
@@ -172,6 +172,22 @@ function inyectarModalAuthGlobal() {
                         <input type="text" id="auth-tuna-search" placeholder="Empieza a escribir tu tuna..." autocomplete="off">
                         <ul id="auth-tuna-results-list" class="autocomplete-results" style="display:none; position:absolute; width:100%; z-index:99; max-height:150px; overflow-y:auto; background:#222; border:1px solid var(--color-acento); list-style:none; padding:0; margin:0;"></ul>
                     </div>
+
+                    <!-- CASILLAS LEGALES (LOPD & NEWSLETTER) -->
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 12px;">
+                        <div class="input-group-checkbox" style="margin-bottom: 10px;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
+                                <input type="checkbox" id="auth-check-lopd" style="accent-color: var(--color-acento); margin-top: 2px;">
+                                <span>He leído y acepto la Términos Legales y Protección de Datos (LOPD/RGPD). *</span>
+                            </label>
+                        </div>
+                        <div class="input-group-checkbox">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
+                                <input type="checkbox" id="auth-check-newsletter" style="accent-color: var(--color-acento); margin-top: 2px;">
+                                <span>Deseo recibir boletines e información sobre la Madrugá y eventos de la Tuna por correo.</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="display:none !important;" aria-hidden="true">
@@ -201,6 +217,7 @@ window.cambiarPestanaAuth = function(modo) {
     const inputApellidos = document.getElementById('auth-apellidos');
     const inputMote = document.getElementById('auth-mote');
     const inputTuna = document.getElementById('auth-tuna-search');
+    const checkLopd = document.getElementById('auth-check-lopd');
 
     if (status) status.innerText = '';
 
@@ -215,6 +232,7 @@ window.cambiarPestanaAuth = function(modo) {
         if (inputApellidos) inputApellidos.required = false;
         if (inputMote) inputMote.required = false;
         if (inputTuna) inputTuna.required = false;
+        if (checkLopd) checkLopd.required = false;
     } else {
         btnRegister?.classList.add('activo');
         btnLogin?.classList.remove('activo');
@@ -226,6 +244,7 @@ window.cambiarPestanaAuth = function(modo) {
         if (inputApellidos) inputApellidos.required = true;
         if (inputMote) inputMote.required = true;
         if (inputTuna) inputTuna.required = true;
+        if (checkLopd) checkLopd.required = true;
     }
 };
 
@@ -271,6 +290,15 @@ window.procesarAuth = async function(event) {
         const mote = document.getElementById('auth-mote').value.trim();
         const tunaNombre = document.getElementById('auth-tuna-search').value.trim();
 
+        const aceptaLopd = document.getElementById('auth-check-lopd').checked;
+        const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
+        const fechaAhora = new Date().toISOString();
+
+        if (!aceptaLopd) {
+            if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
+            return;
+        }
+
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
         
         if (error) {
@@ -299,6 +327,7 @@ window.procesarAuth = async function(event) {
             }
         } else {
             if (data && data.user) {
+                // Guardar perfil con datos del consentimiento legal
                 await supabaseClient.from('profiles').upsert({
                     id: data.user.id,
                     email: email,
@@ -306,8 +335,20 @@ window.procesarAuth = async function(event) {
                     apellidos: apellidos,
                     mote: mote,
                     tuna_nombre: tunaNombre,
-                    role: 'user'
+                    role: 'user',
+                    acepta_lopd: aceptaLopd,
+                    acepta_newsletter: aceptaNewsletter,
+                    fecha_consentimiento: fechaAhora
                 });
+
+                // Registrar en la tabla newsletter si aceptó
+                if (aceptaNewsletter) {
+                    await supabaseClient.from('newsletter').upsert({
+                        email: email,
+                        user_id: data.user.id,
+                        estado: 'activo'
+                    }, { onConflict: 'email' });
+                }
             }
 
             const modalContent = document.querySelector('#modal-auth .auth-modal-box');
@@ -495,6 +536,7 @@ window.registrarParticipante = async function(event) {
         const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || '';
         const moteVal = document.getElementById('p-mote')?.value.trim() || '';
         const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || '';
+        const deseaNewsletter = document.getElementById('p-check-newsletter')?.checked || false;
 
         const payload = {
             user_id: session.user.id,
@@ -521,15 +563,25 @@ window.registrarParticipante = async function(event) {
                 if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
             }
         } else {
-            // 🟢 SINCRONIZACIÓN CON PROFILES TRAS INSCRIBIRSE
+            // Sincronización con profiles y boletín
             await supabaseClient.from('profiles').upsert({
                 id: session.user.id,
                 email: session.user.email,
                 nombre: nombreVal,
                 apellidos: apellidosVal,
                 mote: moteVal,
-                tuna_nombre: tunaVal
+                tuna_nombre: tunaVal,
+                acepta_newsletter: deseaNewsletter,
+                fecha_consentimiento: new Date().toISOString()
             });
+
+            if (deseaNewsletter) {
+                await supabaseClient.from('newsletter').upsert({
+                    email: session.user.email,
+                    user_id: session.user.id,
+                    estado: 'activo'
+                }, { onConflict: 'email' });
+            }
 
             if (statusBox) statusBox.innerText = "¡Inscripción enviada con éxito! Nos vemos en la Madrugá.";
             document.getElementById('form-participa').reset();
@@ -540,7 +592,7 @@ window.registrarParticipante = async function(event) {
     }
 };
 
-/* --- 5. MODAL GLOBAL DE PERFIL Y LECTURA UNIFICADA --- */
+/* --- 5. MODAL GLOBAL DE PERFIL Y GESTIÓN DE SUSCRIPCIÓN (OPT-IN / OPT-OUT) --- */
 function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
@@ -572,6 +624,18 @@ function inyectarModalPerfilGlobal() {
                             <tr><td colspan="6" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN NUEVA: GESTIÓN DE NOTIFICACIONES Y NEWSLETTER -->
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">📩 Preferencias de Comunicaciones (Boletín)</h4>
+                <div style="background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                        <span>Recibir boletines informativos y novedades por email</span>
+                        <input type="checkbox" id="perfil-check-newsletter" onchange="toggleSuscripcionNewsletterPerfil(this.checked)" style="accent-color: var(--color-acento); transform: scale(1.3); cursor: pointer;">
+                    </label>
+                    <p id="perfil-newsletter-status" style="font-size: 0.75rem; color: #aaa; margin-top: 8px; margin-bottom: 0;"></p>
                 </div>
             </div>
 
@@ -621,13 +685,11 @@ window.abrirModalPerfil = async function() {
     const modal = document.getElementById('modal-perfil');
     if (modal) modal.style.display = 'flex';
 
-    // 🟢 LECTURA UNIFICADA EN PARALELO DE AMBAS TABLAS
     const [{ data: profile }, { data: inscripciones }] = await Promise.all([
         supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
         supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false })
     ]);
 
-    // 1. Extraer Mote, Nombre y Tuna con prioridad en la última inscripción o el perfil
     const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
 
     const nombreCompleto = profile?.nombre 
@@ -637,14 +699,25 @@ window.abrirModalPerfil = async function() {
     const mote = profile?.mote || ultInscripcion?.mote || '';
     const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna no especificada';
 
-    // 2. Renderizar Cabecera del Modal
     document.getElementById('perfil-nombre-completo').innerText = mote ? `${nombreCompleto} ("${mote}")` : nombreCompleto;
     document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
     
     const inicial = (mote || nombreCompleto || 'T').charAt(0).toUpperCase();
     document.getElementById('perfil-mote-inicial').innerText = inicial;
 
-    // 3. Renderizar Histórico de Asistencias
+    // ESTADO DE SUSCRIPCIÓN A NEWSLETTER
+    const checkNews = document.getElementById('perfil-check-newsletter');
+    const statusNews = document.getElementById('perfil-newsletter-status');
+    const estaSuscrito = profile?.acepta_newsletter || false;
+
+    if (checkNews) checkNews.checked = estaSuscrito;
+    if (statusNews) {
+        statusNews.innerText = estaSuscrito 
+            ? "Estado: Suscrito activamente al boletín." 
+            : "Estado: No suscrito o has cancelado las comunicaciones.";
+        statusNews.style.color = estaSuscrito ? "#2ecc71" : "#ffaa00";
+    }
+
     if (inscripciones && inscripciones.length > 0) {
         document.getElementById('perfil-total-asistencias').innerText = inscripciones.length;
 
@@ -679,6 +752,46 @@ window.abrirModalPerfil = async function() {
         document.getElementById('perfil-historico-body').innerHTML = `
             <tr><td colspan="6" style="text-align:center; color:#aaa;">Aún no tienes inscripciones registradas.</td></tr>
         `;
+    }
+};
+
+/* GESTIÓN RÁPIDA DE ALTA/BAJA NEWSLETTER EN EL PERFIL */
+window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const statusNews = document.getElementById('perfil-newsletter-status');
+    if (statusNews) statusNews.innerText = "Guardando preferencia...";
+
+    // 1. Actualizar perfil
+    await supabaseClient.from('profiles').update({
+        acepta_newsletter: nuevoEstado,
+        fecha_consentimiento: new Date().toISOString()
+    }).eq('id', session.user.id);
+
+    // 2. Actualizar o insertar en la tabla newsletter
+    if (nuevoEstado) {
+        await supabaseClient.from('newsletter').upsert({
+            email: session.user.email,
+            user_id: session.user.id,
+            estado: 'activo',
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'email' });
+        if (statusNews) {
+            statusNews.innerText = "Estado: Suscrito activamente al boletín.";
+            statusNews.style.color = "#2ecc71";
+        }
+    } else {
+        await supabaseClient.from('newsletter').update({
+            estado: 'cancelado',
+            updated_at: new Date().toISOString()
+        }).eq('email', session.user.email);
+
+        if (statusNews) {
+            statusNews.innerText = "Estado: No suscrito o has cancelado las comunicaciones.";
+            statusNews.style.color = "#ffaa00";
+        }
     }
 };
 
