@@ -283,6 +283,7 @@ window.cerrarModalAuth = function() {
 };
 
 /* --- PROCESO UNIFICADO DE LOGIN / REGISTRO --- */
+/* --- PROCESO UNIFICADO DE LOGIN / REGISTRO --- */
 window.procesarAuth = async function(event) {
     event.preventDefault();
 
@@ -319,11 +320,9 @@ window.procesarAuth = async function(event) {
             return;
         }
 
-        // URL exacta de la página actual (para evitar la redirección por defecto a localhost:3000)
         const currentRedirectUrl = window.location.origin + window.location.pathname;
 
-        // ENVIAR METADATA Y REDIRECCIÓN DINÁMICA EN EL SIGNUP
-        // El Trigger de PostgreSQL se encargará de copiar estos datos a `profiles` y `newsletter`
+        // SIGNUP: La metadata se envía a Supabase y el Trigger se encarga del guardado automático
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
@@ -365,7 +364,6 @@ window.procesarAuth = async function(event) {
                 if (status) status.innerText = "Error al registrar: " + error.message;
             }
         } else {
-            // El usuario fue creado en Auth y el Trigger pobló profiles automáticamente.
             const modalContent = document.querySelector('#modal-auth .auth-modal-box');
             if (modalContent) {
                 modalContent.innerHTML = `
