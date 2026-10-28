@@ -1,9 +1,9 @@
 /* ==========================================================================
-   SERVICE WORKER - JUEVES SANTO OVIEDO (v2.1)
+   SERVICE WORKER - JUEVES SANTO OVIEDO (v2.2)
    ========================================================================== */
 
-const CACHE_NAME = 'jueves-santo-cache-v2.1';
-const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.1';
+const CACHE_NAME = 'jueves-santo-cache-v2.2';
+const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.2';
 
 // Recursos críticos para precachear (App Shell)
 const STATIC_ASSETS = [
@@ -47,6 +47,7 @@ const STATIC_ASSETS = [
     './css/participa.css',
     './css/prensa.css',
     './css/relacionado.css',
+    './css/rumbieditor.css',
 
     // JavaScripts
     './scripts/main.js',
@@ -62,6 +63,7 @@ const STATIC_ASSETS = [
     './scripts/organizacion.js',
     './scripts/prensa.js',
     './scripts/relacionado.js',
+    './scripts/rumbieditor.js',
 
     // Imágenes Base
     './img/favicon.png',
