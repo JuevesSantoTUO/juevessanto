@@ -2,8 +2,8 @@
    SERVICE WORKER - JUEVES SANTO OVIEDO (v2.2)
    ========================================================================== */
 
-const CACHE_NAME = 'jueves-santo-cache-v2.2';
-const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.2';
+const CACHE_NAME = 'jueves-santo-cache-v2.3';
+const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.3';
 
 // Recursos críticos para precachear (App Shell)
 const STATIC_ASSETS = [
