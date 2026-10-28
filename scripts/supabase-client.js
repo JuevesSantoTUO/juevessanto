@@ -313,7 +313,6 @@ window.procesarAuth = async function(event) {
 
         const aceptaLopd = document.getElementById('auth-check-lopd').checked;
         const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
-        const fechaAhora = new Date().toISOString();
 
         if (!aceptaLopd) {
             if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
@@ -324,11 +323,12 @@ window.procesarAuth = async function(event) {
         const currentRedirectUrl = window.location.origin + window.location.pathname;
 
         // ENVIAR METADATA Y REDIRECCIÓN DINÁMICA EN EL SIGNUP
+        // El Trigger de PostgreSQL se encargará de copiar estos datos a `profiles` y `newsletter`
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: currentRedirectUrl, // <--- AQUÍ SE AÑADE LA REDIRECCIÓN
+                emailRedirectTo: currentRedirectUrl,
                 data: {
                     nombre: nombre,
                     apellidos: apellidos,
@@ -365,30 +365,7 @@ window.procesarAuth = async function(event) {
                 if (status) status.innerText = "Error al registrar: " + error.message;
             }
         } else {
-            if (data && data.user) {
-                // GUARDAR/ACTUALIZAR PROFILES
-                await supabaseClient.from('profiles').upsert({
-                    id: data.user.id,
-                    email: email,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    mote: mote,
-                    tuna_nombre: tunaNombre,
-                    role: 'user',
-                    acepta_lopd: aceptaLopd,
-                    acepta_newsletter: aceptaNewsletter,
-                    fecha_consentimiento: fechaAhora
-                });
-
-                if (aceptaNewsletter) {
-                    await supabaseClient.from('newsletter').upsert({
-                        email: email,
-                        user_id: data.user.id,
-                        estado: 'activo'
-                    }, { onConflict: 'email' });
-                }
-            }
-
+            // El usuario fue creado en Auth y el Trigger pobló profiles automáticamente.
             const modalContent = document.querySelector('#modal-auth .auth-modal-box');
             if (modalContent) {
                 modalContent.innerHTML = `
