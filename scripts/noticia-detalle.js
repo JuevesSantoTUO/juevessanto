@@ -37,8 +37,17 @@ async function cargarDetalleNoticia() {
         return;
     }
 
-    // Actualizar Meta Tags dinámicamente para rastreadores y pestañas del navegador
+    // Meta Tags dinámicos Open Graph
     actualizarMetaTags(noticia);
+
+    // Pintar categoría y etiquetas
+    const catEl = document.getElementById('noticia-categoria');
+    if (catEl) catEl.innerText = noticia.categoria || 'General';
+
+    const tagsContainer = document.getElementById('noticia-tags');
+    if (tagsContainer && noticia.etiquetas && Array.isArray(noticia.etiquetas)) {
+        tagsContainer.innerHTML = noticia.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('');
+    }
 
     document.getElementById('noticia-fecha').innerText = new Date(noticia.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     document.getElementById('noticia-titulo').innerText = noticia.titulo;
@@ -54,7 +63,6 @@ async function cargarDetalleNoticia() {
     document.getElementById('noticia-loading').style.display = 'none';
     document.getElementById('noticia-article').style.display = 'block';
 
-    // Cargar me gustas y comentarios
     actualizarLikesNoticia();
     cargarComentarios();
 }
@@ -155,7 +163,6 @@ async function cargarComentarios() {
     for (const c of comentarios) {
         const fecha = new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
         
-        // Contar likes del comentario
         const { data: likesCom } = await supabaseClient.from('blog_comentario_likes').select('user_id').eq('comentario_id', c.id);
         const numLikes = likesCom ? likesCom.length : 0;
         const dioLike = usuarioSesion && likesCom?.some(l => l.user_id === usuarioSesion.id);
@@ -191,7 +198,6 @@ window.publicarComentario = async function(e) {
     const texto = document.getElementById('txt-nuevo-comentario').value.trim();
     if (!texto) return;
 
-    // Obtener mote o email del usuario
     const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', usuarioSesion.id).maybeSingle();
     const { data: inscripcion } = await supabaseClient.from('inscripciones').select('nombre, mote').eq('user_id', usuarioSesion.id).maybeSingle();
 

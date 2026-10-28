@@ -42,34 +42,27 @@ async function verificarAccesoAdminPanel() {
         return;
     }
 
-    // Actualizar datos de la barra superior
     const badge = document.getElementById('wp-user-badge');
     const emailDisplay = document.getElementById('wp-user-email');
     if (badge) badge.innerText = currentUserRole.toUpperCase();
     if (emailDisplay) emailDisplay.innerText = session.user.email;
 
-    // Mostrar u ocultar pestañas según el rol
     gestionarVisibilidadSegunRol(currentUserRole);
-
-    // Cargar datos del Escritorio y comprobar si hay denuncias pendientes
     cargarMetricasEscritorio();
     comprobarDenunciasPendientesBadge();
 }
 
 function gestionarVisibilidadSegunRol(role) {
-    // Solo los administradores principales gestionan la sección de Usuarios & Permisos
     if (role !== 'admin') {
         const itemUsers = document.getElementById('menu-item-usuarios');
         if (itemUsers) itemUsers.style.display = 'none';
     }
 
-    // Los editores solo gestionan el Blog
     if (role === 'editor') {
         const itemIns = document.getElementById('menu-item-inscripciones');
         const itemTunas = document.getElementById('menu-item-tunas');
         const itemDenuncias = document.getElementById('menu-item-denuncias');
         
-        // 🟢 Ocultar botón de acceso rápido al censo en el Escritorio
         const btnQuickIns = document.getElementById('btn-quick-inscripciones');
         if (btnQuickIns) btnQuickIns.style.display = 'none';
 
@@ -81,22 +74,18 @@ function gestionarVisibilidadSegunRol(role) {
 
 /* --- 2. NAVEGACIÓN UNIFICADA POR PESTAÑAS DEL DASHBOARD --- */
 window.cambiarSeccionAdmin = function(seccionId, elem) {
-    // 🟢 Bloqueo de seguridad: El editor solo puede acceder a 'escritorio' y 'blog'
     if (currentUserRole === 'editor' && !['escritorio', 'blog'].includes(seccionId)) {
         alert("Acceso denegado: Tu rol de Editor solo permite gestionar el Blog.");
         return;
     }
 
-    // 1. Cambiar clase activa en el menú lateral
     document.querySelectorAll('.wp-sidebar-menu li').forEach(li => li.classList.remove('active'));
     if (elem) elem.classList.add('active');
 
-    // 2. Ocultar todas las secciones y mostrar la seleccionada
     document.querySelectorAll('.wp-admin-section').forEach(sec => sec.classList.remove('active'));
     const secTarget = document.getElementById(`sec-${seccionId}`);
     if (secTarget) secTarget.classList.add('active');
 
-    // 3. Ejecutar la carga de datos de la sección elegida
     switch (seccionId) {
         case 'escritorio':
             cargarMetricasEscritorio();
@@ -125,7 +114,6 @@ async function cargarMetricasEscritorio() {
 
     let anioActivo = 2027;
 
-    // 1. Cargar configuración activa
     const { data: configData } = await supabaseClient.from('configuracion').select('*');
     if (configData) {
         const cfgAnio = configData.find(c => c.clave === 'anio_edicion');
@@ -133,7 +121,6 @@ async function cargarMetricasEscritorio() {
 
         if (cfgAnio && cfgAnio.valor) anioActivo = parseInt(cfgAnio.valor);
 
-        // Mostrar tarjeta de configuración SOLO a ADMIN y GESTOR
         const cardFecha = document.getElementById('card-config-fecha');
         if (cardFecha) {
             if (['admin', 'gestor'].includes(currentUserRole)) {
@@ -145,12 +132,11 @@ async function cargarMetricasEscritorio() {
                     document.getElementById('cfg-fecha-hora').value = formatISO;
                 }
             } else {
-                cardFecha.style.display = 'none'; // Oculto para editores
+                cardFecha.style.display = 'none';
             }
         }
     }
 
-    // 2. Cargar métricas de inscritos (Permite consulta de recuento)
     const { data: inscritos, error } = await supabaseClient
         .from('inscripciones')
         .select('asiste_comida, asiste_ronda, asiste_madruga')
@@ -375,7 +361,7 @@ async function cargarNoticiasAdmin() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
         return;
     }
 
@@ -388,7 +374,7 @@ function renderizarTablaBlogAdmin(lista) {
     if (!tbody) return;
 
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 25px; color:#888;">No hay artículos redactados aún.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 25px; color:#888;">No hay artículos redactados aún.</td></tr>`;
         return;
     }
 
@@ -397,11 +383,17 @@ function renderizarTablaBlogAdmin(lista) {
         const tr = document.createElement('tr');
         const fecha = new Date(item.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         
+        const tagsHTML = (item.etiquetas && Array.isArray(item.etiquetas))
+            ? item.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('')
+            : '<span style="color:#666; font-size:0.75rem;">Sin tags</span>';
+
         tr.innerHTML = `
             <td>
-                <span class="tuno-nombre-destacado">${item.titulo}</span>
+                <span class="noticia-badge-cat">${item.categoria || 'General'}</span>
+                <div class="tuno-nombre-destacado">${item.titulo}</div>
                 <span style="font-size: 0.75rem; color: #888;">/${item.slug}</span>
             </td>
+            <td>${tagsHTML}</td>
             <td>${item.autor}</td>
             <td><span class="badge-asistencia ${item.estado === 'publicado' ? 'si' : 'no'}">${item.estado.toUpperCase()}</span></td>
             <td>${fecha}</td>
@@ -417,6 +409,8 @@ function renderizarTablaBlogAdmin(lista) {
 window.abrirFormularioNoticia = function() {
     document.getElementById('form-blog').reset();
     document.getElementById('blog-id').value = '';
+    document.getElementById('blog-categoria-select').value = 'General';
+    document.getElementById('blog-etiquetas-input').value = '';
     document.getElementById('editor-blog-titulo').innerText = "Redactar Nueva Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
     
@@ -435,6 +429,8 @@ window.editarNoticiaAdmin = function(id) {
     document.getElementById('blog-id').value = noticia.id;
     document.getElementById('blog-titulo-input').value = noticia.titulo;
     document.getElementById('blog-imagen-input').value = noticia.imagen_url || '';
+    document.getElementById('blog-categoria-select').value = noticia.categoria || 'General';
+    document.getElementById('blog-etiquetas-input').value = noticia.etiquetas ? noticia.etiquetas.join(', ') : '';
     document.getElementById('blog-autor-input').value = noticia.autor;
     document.getElementById('blog-estado-select').value = noticia.estado;
     document.getElementById('blog-resumen-input').value = noticia.resumen;
@@ -461,9 +457,16 @@ window.guardarNoticiaAdmin = async function(e) {
     const titulo = document.getElementById('blog-titulo-input').value.trim();
     const slug = titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
+    const etiquetasRaw = document.getElementById('blog-etiquetas-input').value;
+    const etiquetas = etiquetasRaw
+        ? etiquetasRaw.split(',').map(tag => tag.trim().replace(/^#/, '')).filter(tag => tag.length > 0)
+        : [];
+
     const payload = {
         titulo: titulo,
         slug: slug,
+        categoria: document.getElementById('blog-categoria-select').value,
+        etiquetas: etiquetas,
         imagen_url: document.getElementById('blog-imagen-input').value.trim() || null,
         autor: document.getElementById('blog-autor-input').value.trim() || 'Redacción Jueves Santo',
         estado: document.getElementById('blog-estado-select').value,
@@ -496,7 +499,7 @@ window.eliminarNoticiaAdmin = async function(id, titulo) {
     if (!error) cargarNoticiasAdmin();
 };
 
-/* --- 6. MODERACIÓN Y GESTIÓN DE DENUNCIAS (SECCIÓN 6) --- */
+/* --- 6. MODERACIÓN Y GESTIÓN DE DENUNCIAS --- */
 async function comprobarDenunciasPendientesBadge() {
     if (!supabaseClient) return;
     const { data: denuncias } = await supabaseClient.from('blog_denuncias').select('id').eq('estado', 'pendiente');
@@ -602,7 +605,7 @@ window.vetarTunoAdmin = async function(denunciaId, userId, nombreTuno) {
     }
 };
 
-/* --- 7. DIRECTORIO Y GESTIÓN DE TUNAS (SECCIÓN 4) --- */
+/* --- 7. DIRECTORIO Y GESTIÓN DE TUNAS --- */
 async function cargarTunasAdmin() {
     if (!supabaseClient) return;
     const tbody = document.getElementById('tabla-admin-tunas-body');
@@ -640,12 +643,8 @@ function renderizarTablaTunasAdmin(lista) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="width: 50px; text-align: center;">${escudoHTML}</td>
-            <td>
-                <span class="tuno-nombre-destacado">${t.nombre}</span>
-            </td>
-            <td>
-                <span style="font-size:0.8rem; color:#aaa;">${t.ciudad || 'Sin ciudad'} ${t.universidad ? '• ' + t.universidad : ''}</span>
-            </td>
+            <td><span class="tuno-nombre-destacado">${t.nombre}</span></td>
+            <td><span style="font-size:0.8rem; color:#aaa;">${t.ciudad || 'Sin ciudad'} ${t.universidad ? '• ' + t.universidad : ''}</span></td>
             <td style="text-align: center;">
                 <button class="btn-export-ui csv" style="padding: 4px 8px;" onclick="editarTunaAdmin('${t.id}')">✏️ Editar</button>
                 <button class="btn-eliminar-ins" onclick="eliminarTunaAdmin('${t.id}', '${t.nombre}')">🗑️</button>
@@ -734,16 +733,12 @@ window.eliminarTunaAdmin = async function(id, nombre) {
     }
 };
 
-/* ==========================================================================
-   8. USUARIOS, PERMISOS Y ELIMINACIÓN LOPD (SECCIÓN 5 - SOLO ADMIN)
-   ========================================================================== */
-
+/* --- 8. USUARIOS, PERMISOS Y ELIMINACIÓN LOPD --- */
 async function cargarUsuariosAdmin() {
     if (!supabaseClient) return;
     const tbody = document.getElementById('tabla-admin-usuarios-body');
     if (!tbody) return;
 
-    // Obtener perfiles de usuarios
     const { data: perfiles, error } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -754,14 +749,12 @@ async function cargarUsuariosAdmin() {
         return;
     }
 
-    // Cargar métricas de actividad de todos los usuarios de forma paralela
     const [{ data: comentarios }, { data: likes }, { data: denuncias }] = await Promise.all([
         supabaseClient.from('blog_comentarios').select('user_id'),
         supabaseClient.from('blog_likes').select('user_id'),
         supabaseClient.from('blog_denuncias').select('denunciante_id')
     ]);
 
-    // Combinar métricas en la lista global
     usuariosGlobalesAdmin = (perfiles || []).map(p => {
         return {
             ...p,
@@ -848,7 +841,6 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
     const seguro = confirm(`⚠️ ELIMINACIÓN PERMANENTE LOPD / RGPD ⚠️\n\n¿Estás seguro de eliminar al usuario "${email}"?\n\nEsta acción borrará definitivamente su perfil, inscripciones, comentarios y actividad en la plataforma.`);
     if (!seguro) return;
 
-    // 1. Eliminar datos asociados en cascada
     await Promise.all([
         supabaseClient.from('inscripciones').delete().eq('user_id', userId),
         supabaseClient.from('blog_comentarios').delete().eq('user_id', userId),
@@ -856,7 +848,6 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
         supabaseClient.from('blog_denuncias').delete().eq('denunciante_id', userId)
     ]);
 
-    // 2. Eliminar perfil del usuario
     const { error } = await supabaseClient.from('profiles').delete().eq('id', userId);
 
     if (error) {
