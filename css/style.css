@@ -589,6 +589,7 @@ main.contenedor {
     text-transform: uppercase;
 }
 
+.input-group input[type="text"],
 .input-group input[type="email"],
 .input-group input[type="tel"],
 .input-group input[type="password"],
@@ -605,6 +606,7 @@ main.contenedor {
     transition: border-color 0.3s !important;
 }
 
+.input-group input[type="text"]:focus,
 .input-group input[type="email"]:focus,
 .input-group input[type="tel"]:focus,
 .input-group input[type="password"]:focus,
@@ -647,4 +649,25 @@ main.contenedor {
 .btn-cancelar-asistencia:hover {
     background: #ff4444 !important;
     color: #ffffff !important;
+}
+
+/* AUTOCOMPLETADO DE TUNAS EN EL MODAL DE REGISTRO */
+#auth-tuna-results-list {
+    background: #151515 !important;
+    border: 1px solid var(--color-acento) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8) !important;
+}
+
+#auth-tuna-results-list li {
+    color: #ffffff !important;
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+    border-bottom: 1px solid #222222 !important;
+    transition: background 0.2s !important;
+}
+
+#auth-tuna-results-list li:hover {
+    background: var(--color-acento) !important;
+    color: #000000 !important;
 }
