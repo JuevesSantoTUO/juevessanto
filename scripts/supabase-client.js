@@ -138,12 +138,18 @@ async function comprobarEstadoSesion() {
     }
 }
 
-/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN (CON BOTÓN DE OLVIDÉ MI CONTRASEÑA) --- */
+/* --- RECONSTRUIR EL MODAL DE AUTH CON PESTAÑAS ORIGINALES --- */
 function inyectarModalAuthGlobal() {
-    if (document.getElementById('modal-auth')) return;
+    let modal = document.getElementById('modal-auth');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-auth';
+        modal.className = 'modal-interno';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+    }
 
-    const modalHTML = `
-    <div id="modal-auth" class="modal-interno" style="display: none;">
+    modal.innerHTML = `
         <div class="modal-contenido auth-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
             
@@ -163,7 +169,6 @@ function inyectarModalAuthGlobal() {
                     <label>Contraseña *</label>
                     <input type="password" id="auth-password" placeholder="••••••••" required minlength="6">
                     
-                    <!-- ENLACE DIRECTO RECUPERAR CONTRASEÑA -->
                     <div id="auth-forgot-link-box" style="text-align: right; margin-top: 5px;">
                         <button type="button" onclick="abrirModalRecuperarPasswordModal()" style="background:none; border:none; color:var(--color-acento); font-size:0.75rem; cursor:pointer; text-decoration:underline;">¿Olvidaste tu contraseña?</button>
                     </div>
@@ -192,7 +197,6 @@ function inyectarModalAuthGlobal() {
                         <ul id="auth-tuna-results-list" class="autocomplete-results" style="display:none; position:absolute; width:100%; z-index:99; max-height:150px; overflow-y:auto; background:#222; border:1px solid var(--color-acento); list-style:none; padding:0; margin:0;"></ul>
                     </div>
 
-                    <!-- CASILLAS LEGALES (LOPD & NEWSLETTER) -->
                     <div style="margin-top: 15px; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 12px;">
                         <div class="input-group-checkbox" style="margin-bottom: 10px;">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
@@ -216,10 +220,8 @@ function inyectarModalAuthGlobal() {
                 <button type="submit" id="btn-auth-action" class="btn-tuna-ui full-width" style="margin-top: 15px;">Entrar</button>
                 <div id="auth-estado" class="mensaje-estado" style="text-align: center; margin-top: 15px;"></div>
             </form>
-        </div>
-    </div>`;
+        </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
     configurarBuscadorTunasModalAuth();
 }
 
