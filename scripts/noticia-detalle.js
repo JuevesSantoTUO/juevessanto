@@ -37,7 +37,8 @@ async function cargarDetalleNoticia() {
         return;
     }
 
-    document.title = `${noticia.titulo} - Jueves Santo Oviedo`;
+    // Actualizar Meta Tags dinámicamente para rastreadores y pestañas del navegador
+    actualizarMetaTags(noticia);
 
     document.getElementById('noticia-fecha').innerText = new Date(noticia.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     document.getElementById('noticia-titulo').innerText = noticia.titulo;
@@ -56,6 +57,29 @@ async function cargarDetalleNoticia() {
     // Cargar me gustas y comentarios
     actualizarLikesNoticia();
     cargarComentarios();
+}
+
+/* FUNCIÓN DE INYECCIÓN DINÁMICA DE META TAGS OPEN GRAPH */
+function actualizarMetaTags(noticia) {
+    document.title = `${noticia.titulo} - Jueves Santo Oviedo`;
+
+    const setMeta = (property, content) => {
+        let el = document.querySelector(`meta[property="${property}"]`);
+        if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute('property', property);
+            document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+    };
+
+    const resumenTexto = noticia.resumen || noticia.contenido.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+    const imagenNoticia = noticia.imagen_url || 'https://juevessantotuo.github.io/juevessanto/img/logo.png';
+
+    setMeta('og:title', noticia.titulo);
+    setMeta('og:description', resumenTexto);
+    setMeta('og:image', imagenNoticia);
+    setMeta('og:url', window.location.href);
 }
 
 /* GESTIÓN DE ME GUSTA EN NOTICIA */
