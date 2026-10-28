@@ -54,7 +54,10 @@
                 <li id="menu-item-denuncias" onclick="cambiarSeccionAdmin('denuncias', this)">
                     <span class="menu-icon">🛡️</span> Moderación
                     <span id="badge-count-denuncias" class="wp-role-badge" style="background:#ff4444; color:#fff; border:none; display:none; margin-left: auto;">0</span>
-                </li>                           
+                </li>
+                <li id="menu-item-newsletter" onclick="cambiarSeccionAdmin('newsletter', this)">
+                    <span class="menu-icon">✉️</span> Comunicaciones / Newsletter
+                </li>
             </ul>
         </aside>
 
@@ -446,6 +449,69 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 7: COMUNICACIONES Y NEWSLETTER (SOLO ADMIN Y GESTOR) -->
+            <section id="sec-newsletter" class="wp-admin-section">
+                <div class="wp-header-title">
+                    <h2>✉️ Envío de Comunicaciones y Newsletter</h2>
+                    <p>Redacción y envío masivo de boletines y comunicados a los tunos suscritos.</p>
+                </div>
+
+                <!-- METRICAS DE SUSCRIPTORES -->
+                <div class="wp-stats-grid" style="margin-bottom: 25px;">
+                    <div class="wp-stat-card">
+                        <h4>Suscritos al Boletín</h4>
+                        <span id="stat-newsletter-activos" class="stat-big-num">0</span>
+                    </div>
+                    <div class="wp-stat-card">
+                        <h4>Bajas / Cancelados</h4>
+                        <span id="stat-newsletter-bajas" class="stat-big-num">0</span>
+                    </div>
+                    <div class="wp-stat-card">
+                        <h4>Inscritos Edición Activa</h4>
+                        <span id="stat-newsletter-inscritos" class="stat-big-num">0</span>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO / EDITOR DE COMUNICADO -->
+                <div class="wp-widget-box">
+                    <h3>📝 Redactar Comunicado Oficial</h3>
+                    <form id="form-newsletter" onsubmit="prepararEnvioNewsletter(event)" style="margin-top: 15px;">
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Asunto del Correo *</label>
+                                <input type="text" id="news-asunto" placeholder="Ej: [Boletín] Novedades sobre los ensayos y la Madrugá 2027" required>
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Destinatarios / Segmento *</label>
+                                <select id="news-destinatarios-select" onchange="actualizarConteoDestinatarios()">
+                                    <option value="newsletter">📧 Todos los suscritos al Boletín (Newsletter)</option>
+                                    <option value="inscritos">🎵 Solo Tunos inscritos en la edición activa</option>
+                                    <option value="todos">🌐 Todos los usuarios registrados con email activado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label>Cuerpo del Mensaje (HTML / Texto Maquetado)</label>
+                            <div id="editor-newsletter-container" style="height: 250px; background: #161616; border-radius: 6px;"></div>
+                            <input type="hidden" id="news-contenido-input">
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                            <div>
+                                <span style="font-size: 0.85rem; color: #fff;">Destinatarios seleccionados: <strong id="news-conteo-dest" style="color: var(--color-acento);">0</strong> personas.</span>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn-export-ui csv" onclick="copiarListaCorreosCSV()">📋 Copiar Correos (BCC)</button>
+                                <button type="submit" class="btn-tuna-ui" style="height: auto; padding: 10px 20px;">🚀 Preparar / Enviar Boletín</button>
+                            </div>
+                        </div>
+                        <div id="news-form-status" class="mensaje-estado" style="margin-top: 10px;"></div>
+                    </form>
                 </div>
             </section>
 
