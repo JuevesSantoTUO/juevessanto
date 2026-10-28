@@ -62,7 +62,7 @@ function gestionarVisibilidadSegunRol(role) {
         const itemIns = document.getElementById('menu-item-inscripciones');
         const itemTunas = document.getElementById('menu-item-tunas');
         const itemDenuncias = document.getElementById('menu-item-denuncias');
-        const itemNews = document.getElementById('menu-item-newsletter'); // 🔒 Restringido a editor
+        const itemNews = document.getElementById('menu-item-newsletter');
         
         const btnQuickIns = document.getElementById('btn-quick-inscripciones');
         if (btnQuickIns) btnQuickIns.style.display = 'none';
@@ -334,7 +334,7 @@ window.exportarInscripcionesCSV = function() {
     document.body.removeChild(link);
 };
 
-/* --- 5. GESTIÓN DEL BLOG Y EDITOR GUTENBERG (QUILL) --- */
+/* --- 5. GESTIÓN DEL BLOG Y EDITOR (QUILL & RUMBIEDITOR) --- */
 function inicializarEditorQuill() {
     if (quillEditor || !document.getElementById('editor-quill-container')) return;
 
@@ -354,6 +354,23 @@ function inicializarEditorQuill() {
         }
     });
 }
+
+window.alternarModoEditorBlog = function(modo) {
+    const wrapQuill = document.getElementById('wrapper-editor-quill');
+    const wrapRumbi = document.getElementById('wrapper-editor-rumbi');
+
+    if (modo === 'rumbi') {
+        if (wrapQuill) wrapQuill.style.display = 'none';
+        if (wrapRumbi) wrapRumbi.style.display = 'block';
+        if (typeof window.inicializarRumbiEditor === 'function') {
+            window.inicializarRumbiEditor();
+        }
+    } else {
+        if (wrapQuill) wrapQuill.style.display = 'block';
+        if (wrapRumbi) wrapRumbi.style.display = 'none';
+        inicializarEditorQuill();
+    }
+};
 
 async function cargarNoticiasAdmin() {
     if (!supabaseClient) return;
@@ -419,7 +436,8 @@ window.abrirFormularioNoticia = function() {
     document.getElementById('editor-blog-titulo').innerText = "Redactar Nueva Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
     
-    inicializarEditorQuill();
+    document.getElementById('blog-modo-editor').value = 'quill';
+    window.alternarModoEditorBlog('quill');
     if (quillEditor) quillEditor.setText('');
 };
 
@@ -443,9 +461,18 @@ window.editarNoticiaAdmin = function(id) {
     document.getElementById('editor-blog-titulo').innerText = "Editar Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
 
-    inicializarEditorQuill();
-    if (quillEditor) {
-        quillEditor.clipboard.dangerouslyPasteHTML(noticia.contenido || '');
+    if (noticia.bloques_json && Array.isArray(noticia.bloques_json) && noticia.bloques_json.length > 0) {
+        document.getElementById('blog-modo-editor').value = 'rumbi';
+        window.alternarModoEditorBlog('rumbi');
+        if (typeof window.inicializarRumbiEditor === 'function') {
+            window.inicializarRumbiEditor(noticia.bloques_json);
+        }
+    } else {
+        document.getElementById('blog-modo-editor').value = 'quill';
+        window.alternarModoEditorBlog('quill');
+        if (quillEditor) {
+            quillEditor.clipboard.dangerouslyPasteHTML(noticia.contenido || '');
+        }
     }
 };
 
@@ -454,8 +481,20 @@ window.guardarNoticiaAdmin = async function(e) {
     const status = document.getElementById('blog-form-status');
     status.innerText = "Guardando noticia...";
 
-    if (quillEditor) {
-        document.getElementById('blog-contenido-input').value = quillEditor.root.innerHTML;
+    const modoEditor = document.getElementById('blog-modo-editor')?.value || 'quill';
+    let contenidoHTML = '';
+    let bloquesJsonData = null;
+
+    if (modoEditor === 'rumbi') {
+        if (typeof window.obtenerDatosRumbiEditor === 'function') {
+            const datosRumbi = window.obtenerDatosRumbiEditor();
+            contenidoHTML = datosRumbi.contenidoHTML;
+            bloquesJsonData = datosRumbi.bloquesJSON;
+        }
+    } else {
+        if (quillEditor) {
+            contenidoHTML = quillEditor.root.innerHTML;
+        }
     }
 
     const id = document.getElementById('blog-id').value;
@@ -476,7 +515,8 @@ window.guardarNoticiaAdmin = async function(e) {
         autor: document.getElementById('blog-autor-input').value.trim() || 'Redacción Jueves Santo',
         estado: document.getElementById('blog-estado-select').value,
         resumen: document.getElementById('blog-resumen-input').value.trim(),
-        contenido: document.getElementById('blog-contenido-input').value,
+        contenido: contenidoHTML,
+        bloques_json: bloquesJsonData,
         updated_at: new Date()
     };
 
@@ -863,10 +903,7 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
     }
 };
 
-/* ==========================================================================
-   9. MÓDULO DE COMUNICACIONES Y NEWSLETTER (SOLO ADMIN Y GESTOR)
-   ========================================================================== */
-
+/* --- 9. MÓDULO DE COMUNICACIONES Y NEWSLETTER (SOLO ADMIN Y GESTOR) --- */
 let quillNewsletter = null;
 let listaDestinatariosGlobal = [];
 
@@ -932,7 +969,6 @@ window.actualizarConteoDestinatarios = async function() {
     let correos = [];
 
     if (modo === 'newsletter') {
-        // Lee los usuarios registrados que no tengan rechazada explícitamente la newsletter
         const { data: profiles, error } = await supabaseClient
             .from('profiles')
             .select('email, acepta_newsletter');
