@@ -591,6 +591,7 @@ main.contenedor {
 
 .input-group input[type="text"],
 .input-group input[type="email"],
+.input-group input[type="url"],
 .input-group input[type="tel"],
 .input-group input[type="password"],
 .input-group select {
@@ -608,6 +609,7 @@ main.contenedor {
 
 .input-group input[type="text"]:focus,
 .input-group input[type="email"]:focus,
+.input-group input[type="url"]:focus,
 .input-group input[type="tel"]:focus,
 .input-group input[type="password"]:focus,
 .input-group select:focus {
