@@ -20,10 +20,12 @@ async function cargarBlogPublico() {
     const tagParam = params.get('tag');
 
     // 2. CONSTRUIR CONSULTA A SUPABASE
+    // Solo noticias 'publicado' y que NO sean privadas (es_privado = false)
     let query = supabaseClient
         .from('blog')
         .select('*')
-        .eq('estado', 'publicado');
+        .eq('estado', 'publicado')
+        .eq('es_privado', false);
 
     if (autorIdParam) {
         query = query.eq('user_id', autorIdParam);
@@ -65,6 +67,11 @@ function renderizarGridBlog(lista) {
             ? item.etiquetas.map(t => `<span class="tag-pildora" onclick="event.stopPropagation(); filtrarNoticiasPorTag('${t}')" style="cursor:pointer;">#${t}</span>`).join('')
             : '';
 
+        // Badge identificativo si requiere inicio de sesión
+        const badgeRestringido = item.es_restringido 
+            ? `<span style="font-size: 0.72rem; color: #ffaa00; background: rgba(255,170,0,0.15); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(255,170,0,0.4); margin-left: 6px;">🔒 Solo Registrados</span>`
+            : '';
+
         const card = document.createElement('div');
         card.className = 'blog-card';
         card.style.cursor = 'pointer';
@@ -74,7 +81,10 @@ function renderizarGridBlog(lista) {
             ${item.imagen_url ? `<img src="${item.imagen_url}" class="blog-card-img" alt="${item.titulo}">` : ''}
             <div class="blog-card-body">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                    <span class="noticia-badge-cat">${item.categoria || 'General'}</span>
+                    <div>
+                        <span class="noticia-badge-cat">${item.categoria || 'General'}</span>
+                        ${badgeRestringido}
+                    </div>
                     <span class="blog-card-meta">${fecha}</span>
                 </div>
                 <h3 class="blog-card-title">${item.titulo}</h3>

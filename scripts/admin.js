@@ -383,7 +383,7 @@ async function cargarNoticiasAdmin() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
         return;
     }
 
@@ -396,7 +396,7 @@ function renderizarTablaBlogAdmin(lista) {
     if (!tbody) return;
 
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 25px; color:#888;">No hay artículos redactados aún.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 25px; color:#888;">No hay artículos redactados aún.</td></tr>`;
         return;
     }
 
@@ -409,12 +409,25 @@ function renderizarTablaBlogAdmin(lista) {
             ? item.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('')
             : '<span style="color:#666; font-size:0.75rem;">Sin tags</span>';
 
+        // Píldoras de visibilidad
+        let visibilidadBadges = [];
+        if (item.es_privado) {
+            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(255,255,255,0.1); color:#aaa; padding:2px 6px; border-radius:4px; border:1px solid #555;">👁️‍🗨️ Privada</span>`);
+        } else {
+            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(46,204,113,0.15); color:#2ecc71; padding:2px 6px; border-radius:4px; border:1px solid rgba(46,204,113,0.3);">🌐 Pública</span>`);
+        }
+
+        if (item.es_restringido) {
+            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(255,170,0,0.15); color:#ffaa00; padding:2px 6px; border-radius:4px; border:1px solid rgba(255,170,0,0.3);">🔒 Registrados</span>`);
+        }
+
         tr.innerHTML = `
             <td>
                 <span class="noticia-badge-cat">${item.categoria || 'General'}</span>
                 <div class="tuno-nombre-destacado">${item.titulo}</div>
                 <span style="font-size: 0.75rem; color: #888;">/${item.slug}</span>
             </td>
+            <td><div style="display:flex; flex-direction:column; gap:3px;">${visibilidadBadges.join('')}</div></td>
             <td>${tagsHTML}</td>
             <td>${item.autor}</td>
             <td><span class="badge-asistencia ${item.estado === 'publicado' ? 'si' : 'no'}">${item.estado.toUpperCase()}</span></td>
@@ -433,6 +446,8 @@ window.abrirFormularioNoticia = function() {
     document.getElementById('blog-id').value = '';
     document.getElementById('blog-categoria-select').value = 'General';
     document.getElementById('blog-etiquetas-input').value = '';
+    document.getElementById('blog-check-privado').checked = false;
+    document.getElementById('blog-check-restringido').checked = false;
     document.getElementById('editor-blog-titulo').innerText = "Redactar Nueva Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
     
@@ -456,6 +471,8 @@ window.editarNoticiaAdmin = function(id) {
     document.getElementById('blog-etiquetas-input').value = noticia.etiquetas ? noticia.etiquetas.join(', ') : '';
     document.getElementById('blog-autor-input').value = noticia.autor;
     document.getElementById('blog-estado-select').value = noticia.estado;
+    document.getElementById('blog-check-privado').checked = noticia.es_privado || false;
+    document.getElementById('blog-check-restringido').checked = noticia.es_restringido || false;
     document.getElementById('blog-resumen-input').value = noticia.resumen;
 
     document.getElementById('editor-blog-titulo').innerText = "Editar Noticia";
@@ -514,6 +531,8 @@ window.guardarNoticiaAdmin = async function(e) {
         imagen_url: document.getElementById('blog-imagen-input').value.trim() || null,
         autor: document.getElementById('blog-autor-input').value.trim() || 'Redacción Jueves Santo',
         estado: document.getElementById('blog-estado-select').value,
+        es_privado: document.getElementById('blog-check-privado').checked,
+        es_restringido: document.getElementById('blog-check-restringido').checked,
         resumen: document.getElementById('blog-resumen-input').value.trim(),
         contenido: contenidoHTML,
         bloques_json: bloquesJsonData,
@@ -895,7 +914,6 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
     if (!seguro) return;
 
     try {
-        // Invocamos la función PostgreSQL con permisos elevados
         const { error } = await supabaseClient.rpc('delete_user_cascade', {
             target_user_id: userId
         });

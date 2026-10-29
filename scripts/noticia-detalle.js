@@ -55,7 +55,7 @@ async function cargarDetalleNoticia() {
     document.getElementById('noticia-fecha').innerText = new Date(noticia.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     document.getElementById('noticia-titulo').innerText = noticia.titulo;
 
-    // PUNTO 3: FIRMA DE AUTOR CON AVATAR, MOTE Y MENÚ DESPLEGABLE ESTILO PERIÓDICO
+    // FIRMA DE AUTOR CON AVATAR, MOTE Y MENÚ DESPLEGABLE ESTILO PERIÓDICO
     await renderizarFirmaAutorNoticia(noticia);
 
     if (noticia.imagen_url) {
@@ -63,7 +63,27 @@ async function cargarDetalleNoticia() {
         document.getElementById('noticia-img-box').style.display = 'block';
     }
 
-    document.getElementById('noticia-cuerpo').innerHTML = noticia.contenido;
+    // --- COMPROBACIÓN DE CONTROL DE ACCESO (RESTRINGIDO) ---
+    const cuerpoEl = document.getElementById('noticia-cuerpo');
+
+    if (noticia.es_restringido && !usuarioSesion) {
+        // Muestra resumen con tarjeta de bloqueo
+        cuerpoEl.innerHTML = `
+            <div style="background: rgba(212,175,55,0.05); border: 2px dashed var(--color-acento); border-radius: 12px; padding: 30px 20px; text-align: center; margin: 30px 0;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔒</span>
+                <h3 style="color: var(--color-acento); margin-bottom: 10px;">Contenido Exclusivo para Tunos Registrados</h3>
+                <p style="color: #ccc; max-width: 500px; margin: 0 auto 20px auto; font-size: 0.9rem; line-height: 1.6;">
+                    ${noticia.resumen || 'Esta publicación contiene información privada o reservada para la comunidad del Jueves Santo.'}
+                </p>
+                <button class="btn-tuna-ui" onclick="window.abrirModalAuth('login')" style="padding: 12px 24px; font-size: 0.9rem;">
+                    🔑 Iniciar Sesión para Leer
+                </button>
+            </div>
+        `;
+    } else {
+        // Mostrar cuerpo completo si es pública o si el usuario ya inició sesión
+        cuerpoEl.innerHTML = noticia.contenido;
+    }
 
     document.getElementById('noticia-loading').style.display = 'none';
     document.getElementById('noticia-article').style.display = 'block';
@@ -72,7 +92,7 @@ async function cargarDetalleNoticia() {
     cargarComentarios();
 }
 
-/* --- PUNTO 3: RENDERIZADO DE FIRMA DE AUTOR CON OPCIÓN DE FILTRADO --- */
+/* RENDERIZADO DE FIRMA DE AUTOR CON OPCIÓN DE FILTRADO */
 async function renderizarFirmaAutorNoticia(noticia) {
     const autorEl = document.getElementById('noticia-autor');
     if (!autorEl) return;
@@ -238,7 +258,7 @@ window.copiarEnlaceNoticia = function() {
     alert("¡Enlace copiado al portapapeles!");
 };
 
-/* --- PUNTO 4: COMENTARIOS COMPACTOS CON MINI-AVATAR (SIN PREFIJO "TUNO" Y SIN TUNA) --- */
+/* COMENTARIOS COMPACTOS CON MINI-AVATAR */
 async function cargarComentarios() {
     const box = document.getElementById('lista-comentarios');
     
