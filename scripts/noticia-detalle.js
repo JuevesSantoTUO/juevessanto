@@ -44,14 +44,19 @@ async function cargarDetalleNoticia() {
     const catEl = document.getElementById('noticia-categoria');
     if (catEl) catEl.innerText = noticia.categoria || 'General';
 
+    // Pintar etiquetas clicables en el detalle de la noticia
     const tagsContainer = document.getElementById('noticia-tags');
     if (tagsContainer && noticia.etiquetas && Array.isArray(noticia.etiquetas)) {
-        tagsContainer.innerHTML = noticia.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('');
+        tagsContainer.innerHTML = noticia.etiquetas.map(t => 
+            `<span class="tag-pildora" onclick="window.location.href='blog.html?tag=${encodeURIComponent(t)}'" style="cursor:pointer;">#${t}</span>`
+        ).join('');
     }
 
     document.getElementById('noticia-fecha').innerText = new Date(noticia.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     document.getElementById('noticia-titulo').innerText = noticia.titulo;
-    document.getElementById('noticia-autor').innerText = `Por ${noticia.autor}`;
+
+    // PUNTO 3: FIRMA DE AUTOR CON AVATAR, MOTE Y MENÚ DESPLEGABLE ESTILO PERIÓDICO
+    await renderizarFirmaAutorNoticia(noticia);
 
     if (noticia.imagen_url) {
         document.getElementById('noticia-imagen').src = noticia.imagen_url;
@@ -66,6 +71,98 @@ async function cargarDetalleNoticia() {
     actualizarLikesNoticia();
     cargarComentarios();
 }
+
+/* --- PUNTO 3: RENDERIZADO DE FIRMA DE AUTOR CON OPCIÓN DE FILTRADO --- */
+async function renderizarFirmaAutorNoticia(noticia) {
+    const autorEl = document.getElementById('noticia-autor');
+    if (!autorEl) return;
+
+    let profileAutor = null;
+    if (noticia.user_id) {
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', noticia.user_id)
+            .maybeSingle();
+        profileAutor = profile;
+    }
+
+    const mote = profileAutor?.mote || noticia.autor || 'Redacción';
+    const tuna = profileAutor?.tuna_nombre || 'Tuna Universitaria';
+    const avatarUrl = profileAutor?.avatar_url;
+    const inicial = mote.charAt(0).toUpperCase();
+
+    autorEl.innerHTML = `
+        <div class="blog-autor-card" style="display: flex; align-items: center; gap: 14px; margin: 15px 0; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid var(--color-acento);">
+            
+            <!-- AVATAR CIRCULAR CLICABLE -->
+            <div onclick="toggleDropdownAutorDetalle(event)" style="cursor: pointer; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: var(--color-acento); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; flex-shrink: 0; border: 1.5px solid var(--color-acento);">
+                ${avatarUrl 
+                    ? `<img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">` 
+                    : `<span style="font-size: 1.4rem;">${inicial}</span>`}
+            </div>
+
+            <!-- DATOS EN BLOQUE VERTICAL -->
+            <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; position: relative;">
+                
+                <!-- MOTE -->
+                <span onclick="toggleDropdownAutorDetalle(event)" style="font-weight: bold; color: #fff; font-size: 1.05rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                    ${mote}
+                </span>
+
+                <!-- TUNA -->
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--color-acento); display: inline-block;">
+                        ${tuna}
+                    </span>
+                </div>
+
+                <!-- DROPDOWN CON AMBAS OPCIONES -->
+                <div id="dropdown-autor-detalle" style="display: none; position: absolute; top: 100%; left: 0; background: #1a1a1a; border: 1px solid var(--color-acento); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); z-index: 100; min-width: 230px; overflow: hidden; margin-top: 6px;">
+                    <button type="button" onclick="irAFiltrarNoticiasAutor('${noticia.user_id}', '${mote}')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: #fff; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
+                        📰 Ver todas las noticias de ${mote}
+                    </button>
+                    <button type="button" onclick="abrirPerfilPublicoDetalle('${noticia.user_id}')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--color-acento); font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        👤 Ver Perfil de Tuno
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Cierre automático del desplegable al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.blog-autor-card')) {
+            const drop = document.getElementById('dropdown-autor-detalle');
+            if (drop) drop.style.display = 'none';
+        }
+    });
+}
+
+// Función auxiliar para redirigir al blog aplicando el filtro del autor
+window.irAFiltrarNoticiasAutor = function(userId, mote) {
+    const dropdown = document.getElementById('dropdown-autor-detalle');
+    if (dropdown) dropdown.style.display = 'none';
+    
+    // Redirige a blog.html pasando los parámetros del autor en la URL
+    window.location.href = `blog.html?autorId=${encodeURIComponent(userId)}&mote=${encodeURIComponent(mote)}`;
+};
+
+window.toggleDropdownAutorDetalle = function(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('dropdown-autor-detalle');
+    if (dropdown) {
+        dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+    }
+};
+
+window.abrirPerfilPublicoDetalle = function(userId) {
+    const dropdown = document.getElementById('dropdown-autor-detalle');
+    if (dropdown) dropdown.style.display = 'none';
+    if (typeof window.abrirModalPerfilPublico === 'function') {
+        window.abrirModalPerfilPublico(userId);
+    }
+};
 
 /* FUNCIÓN DE INYECCIÓN DINÁMICA DE META TAGS OPEN GRAPH */
 function actualizarMetaTags(noticia) {
@@ -141,7 +238,7 @@ window.copiarEnlaceNoticia = function() {
     alert("¡Enlace copiado al portapapeles!");
 };
 
-/* GESTIÓN DE COMENTARIOS */
+/* --- PUNTO 4: COMENTARIOS COMPACTOS CON MINI-AVATAR (SIN PREFIJO "TUNO" Y SIN TUNA) --- */
 async function cargarComentarios() {
     const box = document.getElementById('lista-comentarios');
     
@@ -160,6 +257,21 @@ async function cargarComentarios() {
     document.getElementById('num-comentarios').innerText = comentarios.length;
     box.innerHTML = '';
 
+    // Mapear perfiles de comentaristas para avatar y mote real
+    const userIds = [...new Set(comentarios.map(c => c.user_id).filter(Boolean))];
+    let profilesMap = {};
+
+    if (userIds.length > 0) {
+        const { data: profiles } = await supabaseClient
+            .from('profiles')
+            .select('id, mote, avatar_url')
+            .in('id', userIds);
+
+        if (profiles) {
+            profiles.forEach(p => { profilesMap[p.id] = p; });
+        }
+    }
+
     for (const c of comentarios) {
         const fecha = new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
         
@@ -167,21 +279,54 @@ async function cargarComentarios() {
         const numLikes = likesCom ? likesCom.length : 0;
         const dioLike = usuarioSesion && likesCom?.some(l => l.user_id === usuarioSesion.id);
 
+        const profileComentario = profilesMap[c.user_id];
+        
+        // Limpiar prefijo "Tuno" si estuviera almacenado en registros antiguos
+        let moteLimpio = profileComentario?.mote || c.nombre_usuario || 'Tuno';
+        moteLimpio = moteLimpio.replace(/^Tuno\s+/i, '');
+
+        const avatarUrl = profileComentario?.avatar_url;
+        const inicial = moteLimpio.charAt(0).toUpperCase();
+
         const item = document.createElement('div');
         item.className = 'comentario-item';
+        item.style.padding = '12px';
+        item.style.marginBottom = '12px';
+        item.style.background = 'rgba(255,255,255,0.02)';
+        item.style.borderRadius = '8px';
+
         item.innerHTML = `
-            <div class="comentario-header">
-                <span class="comentario-autor">${c.nombre_usuario}</span>
-                <span class="comentario-fecha">${fecha}</span>
-            </div>
-            <div class="comentario-texto">${c.comentario}</div>
-            <div class="comentario-footer" style="display: flex; justify-content: space-between; align-items: center;">
-                <button class="btn-like-comentario ${dioLike ? 'liked' : ''}" onclick="toggleLikeComentario('${c.id}')">
-                    ❤️ ${numLikes} Me gusta
-                </button>
-                <button class="btn-like-comentario" style="color: #ffaa00; font-size: 0.75rem;" onclick="abrirModalReporte('${c.id}')" title="Denunciar comentario no pertinente">
-                    🚩 Reportar
-                </button>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                
+                <!-- MINI-AVATAR (32px) CLICABLE -->
+                <div onclick="abrirPerfilPublicoDetalle('${c.user_id}')" style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; background: var(--color-acento); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; color: #000; flex-shrink: 0; border: 1px solid var(--color-acento);">
+                    ${avatarUrl 
+                        ? `<img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">` 
+                        : `<span>${inicial}</span>`}
+                </div>
+
+                <!-- CONTENIDO DEL COMENTARIO -->
+                <div style="flex-grow: 1;">
+                    <div class="comentario-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span onclick="abrirPerfilPublicoDetalle('${c.user_id}')" class="comentario-autor" style="cursor: pointer; color: #fff; font-weight: bold; font-size: 0.88rem;">
+                            ${moteLimpio}
+                        </span>
+                        <span class="comentario-fecha" style="font-size: 0.72rem; color: #777;">${fecha}</span>
+                    </div>
+
+                    <div class="comentario-texto" style="font-size: 0.85rem; color: #ddd; line-height: 1.4; margin-bottom: 8px;">
+                        ${c.comentario}
+                    </div>
+
+                    <div class="comentario-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                        <button class="btn-like-comentario ${dioLike ? 'liked' : ''}" onclick="toggleLikeComentario('${c.id}')">
+                            ❤️ ${numLikes} Me gusta
+                        </button>
+                        <button class="btn-like-comentario" style="color: #ffaa00; font-size: 0.75rem;" onclick="abrirModalReporte('${c.id}')" title="Denunciar comentario no pertinente">
+                            🚩 Reportar
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
         box.appendChild(item);
@@ -198,10 +343,9 @@ window.publicarComentario = async function(e) {
     const texto = document.getElementById('txt-nuevo-comentario').value.trim();
     if (!texto) return;
 
-    const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', usuarioSesion.id).maybeSingle();
-    const { data: inscripcion } = await supabaseClient.from('inscripciones').select('nombre, mote').eq('user_id', usuarioSesion.id).maybeSingle();
+    const { data: profile } = await supabaseClient.from('profiles').select('mote').eq('id', usuarioSesion.id).maybeSingle();
 
-    const nombrePublico = inscripcion ? (inscripcion.mote ? `Tuno ${inscripcion.mote}` : inscripcion.nombre) : usuarioSesion.email.split('@')[0];
+    const nombrePublico = profile?.mote || usuarioSesion.email.split('@')[0];
 
     const { error } = await supabaseClient.from('blog_comentarios').insert([{
         blog_id: noticiaActualId,

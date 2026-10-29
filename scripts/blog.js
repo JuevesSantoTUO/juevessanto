@@ -14,19 +14,37 @@ async function cargarBlogPublico() {
         return;
     }
 
-    const { data: publicaciones, error } = await supabaseClient
+    // 1. LEER PARÁMETROS DE LA URL
+    const params = new URLSearchParams(window.location.search);
+    const autorIdParam = params.get('autorId');
+    const tagParam = params.get('tag');
+
+    // 2. CONSTRUIR CONSULTA A SUPABASE
+    let query = supabaseClient
         .from('blog')
         .select('*')
-        .eq('estado', 'publicado')
-        .order('created_at', { ascending: false });
+        .eq('estado', 'publicado');
+
+    if (autorIdParam) {
+        query = query.eq('user_id', autorIdParam);
+    }
+
+    const { data: publicaciones, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
         document.getElementById('blog-grid').innerHTML = `<p style="color:#ff4444; grid-column:1/-1; text-align:center;">Error al cargar las publicaciones.</p>`;
         return;
     }
 
+    // 3. GUARDAR RESULTADOS EN LA VARIABLE GLOBAL
     publicacionesGlobales = publicaciones || [];
-    renderizarGridBlog(publicacionesGlobales);
+
+    // 4. APLICAR FILTRO SI VENÍA UN TAG EN LA URL, O MOSTRAR TODAS
+    if (tagParam) {
+        window.filtrarNoticiasPorTag(tagParam);
+    } else {
+        renderizarGridBlog(publicacionesGlobales);
+    }
 }
 
 function renderizarGridBlog(lista) {
@@ -34,7 +52,7 @@ function renderizarGridBlog(lista) {
     if (!grid) return;
 
     if (lista.length === 0) {
-        grid.innerHTML = `<p style="color:#888; grid-column:1/-1; text-align:center; padding: 40px 0;">No hay publicaciones en esta categoría.</p>`;
+        grid.innerHTML = `<p style="color:#888; grid-column:1/-1; text-align:center; padding: 40px 0;">No hay publicaciones disponibles.</p>`;
         return;
     }
 
@@ -42,9 +60,9 @@ function renderizarGridBlog(lista) {
     lista.forEach(item => {
         const fecha = new Date(item.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
         
-        // Píldoras de etiquetas
+        // Etiquetas clicables
         const tagsHTML = (item.etiquetas && Array.isArray(item.etiquetas) && item.etiquetas.length > 0)
-            ? item.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('')
+            ? item.etiquetas.map(t => `<span class="tag-pildora" onclick="event.stopPropagation(); filtrarNoticiasPorTag('${t}')" style="cursor:pointer;">#${t}</span>`).join('')
             : '';
 
         const card = document.createElement('div');
@@ -67,6 +85,16 @@ function renderizarGridBlog(lista) {
         grid.appendChild(card);
     });
 }
+
+/* FILTRADO POR ETIQUETA (HASHTAG) */
+window.filtrarNoticiasPorTag = function(tag) {
+    document.querySelectorAll('.cat-filter-btn').forEach(b => b.classList.remove('activo'));
+    
+    const filtradas = publicacionesGlobales.filter(p => 
+        p.etiquetas && Array.isArray(p.etiquetas) && p.etiquetas.includes(tag)
+    );
+    renderizarGridBlog(filtradas);
+};
 
 /* FILTRADO POR CATEGORÍA EN LA VISTA PÚBLICA */
 window.filtrarBlogPorCategoria = function(categoria, btn) {

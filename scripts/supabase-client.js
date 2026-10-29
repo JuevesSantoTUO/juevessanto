@@ -615,17 +615,23 @@ function inyectarModalPerfilGlobal() {
 
             <div class="perfil-seccion">
                 <h4 class="perfil-subtitulo">🖼️ Imagen de Avatar y Foto de Perfil</h4>
-                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
-                    <div class="input-group" style="margin-bottom: 10px;">
-                        <label style="font-size: 0.8rem; color: #ccc;">URL de Imagen de Avatar</label>
-                        <input type="url" id="perfil-avatar-url-input" placeholder="https://ejemplo.com/mi-foto.jpg">
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                        <label class="btn-sutil-logout" style="cursor: pointer; padding: 6px 12px; font-size: 0.8rem; border-color: var(--color-acento); color: var(--color-acento);">
-                            📁 Subir Archivo local
+                <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    
+                    <!-- ACCIÓN PRINCIPAL: SUBIDA DIRECTA DE ARCHIVO LOCAL -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <label class="btn-sutil-logout" style="cursor: pointer; padding: 10px 16px; font-size: 0.85rem; border-color: var(--color-acento); color: var(--color-acento); display: flex; align-items: center; justify-content: center; gap: 8px; flex-grow: 1;">
+                            📁 Subir Foto / Archivo Local
                             <input type="file" id="perfil-avatar-file-input" accept="image/*" style="display: none;" onchange="procesarSubidaArchivoAvatar(event)">
                         </label>
-                        <button type="button" class="btn-tuna-ui" style="padding: 6px 15px; font-size: 0.8rem;" onclick="guardarAvatarPerfil()">Guardar Avatar</button>
+                    </div>
+
+                    <!-- OPCIÓN ALTERNATIVA: URL EXTERNA -->
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 0.75rem; color: #aaa;">O pega la URL de una imagen externa</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="url" id="perfil-avatar-url-input" placeholder="https://ejemplo.com/mi-foto.jpg" style="flex-grow: 1;">
+                            <button type="button" class="btn-tuna-ui" style="padding: 8px 14px; font-size: 0.78rem; flex-shrink: 0;" onclick="guardarAvatarPerfil()">Guardar URL</button>
+                        </div>
                     </div>
                 </div>
             </div>
