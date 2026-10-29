@@ -7,6 +7,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let supabaseClient = null;
 let currentAuthMode = 'login';
+let listaOtrasTunasTemporales = [];
 
 if (typeof supabase !== 'undefined') {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -283,7 +284,6 @@ window.cerrarModalAuth = function() {
 };
 
 /* --- PROCESO UNIFICADO DE LOGIN / REGISTRO --- */
-/* --- PROCESO UNIFICADO DE LOGIN / REGISTRO --- */
 window.procesarAuth = async function(event) {
     event.preventDefault();
 
@@ -322,7 +322,6 @@ window.procesarAuth = async function(event) {
 
         const currentRedirectUrl = window.location.origin + window.location.pathname;
 
-        // SIGNUP: La metadata se envía a Supabase y el Trigger se encarga del guardado automático
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
@@ -500,7 +499,6 @@ window.registrarParticipante = async function(event) {
     }
 
     try {
-        // Obtener datos consolidados desde profiles
         const { data: userProfile } = await supabaseClient
             .from('profiles')
             .select('*')
@@ -527,7 +525,6 @@ window.registrarParticipante = async function(event) {
             anioActivo = parseInt(cfgAnio.valor);
         }
 
-        // Leer datos: preferir inputs si el usuario los modifica en el form, sino los de profiles
         const nombreVal = document.getElementById('p-nombre')?.value.trim() || userProfile?.nombre || '';
         const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || userProfile?.apellidos || '';
         const moteVal = document.getElementById('p-mote')?.value.trim() || userProfile?.mote || '';
@@ -559,12 +556,9 @@ window.registrarParticipante = async function(event) {
                 if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
             }
         } else {
-            // Actualización/Sincronización final en profiles
             await supabaseClient.from('profiles').upsert({
                 id: session.user.id,
                 email: session.user.email,
-                nombre: nombreVal,
-                apellidos: apellidosVal,
                 mote: moteVal,
                 tuna_nombre: tunaVal,
                 acepta_newsletter: deseaNewsletter,
@@ -588,7 +582,7 @@ window.registrarParticipante = async function(event) {
     }
 };
 
-/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO --- */
+/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO (AVATAR + OTRAS TUNAS) --- */
 function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
@@ -597,14 +591,41 @@ function inyectarModalPerfilGlobal() {
         <div class="modal-contenido perfil-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
 
-            <div class="perfil-card-header">
-                <div class="perfil-avatar"><span id="perfil-mote-inicial">T</span></div>
+            <div class="perfil-card-header" style="align-items: center; gap: 15px;">
+                <div class="perfil-avatar-wrapper" style="position: relative;">
+                    <div class="perfil-avatar" id="perfil-avatar-box" style="width: 75px; height: 75px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento);">
+                        <span id="perfil-mote-inicial">T</span>
+                        <img id="perfil-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+
                 <div class="perfil-datos-principal">
-                    <h3 id="perfil-nombre-completo">Cargando...</h3>
-                    <p id="perfil-tuna-tag" class="perfil-tuna-badge">Tuna no especificada</p>
+                    <h3 id="perfil-nombre-completo" style="margin: 0 0 5px 0;">Cargando...</h3>
+                    <p id="perfil-tuna-tag" class="perfil-tuna-badge" style="margin: 0 0 8px 0;">Tuna no especificada</p>
+                    
+                    <!-- PÍLDORAS OTRAS TUNAS EN CABECERA -->
+                    <div id="perfil-otras-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
+
                     <div class="perfil-stats">
                         <div class="stat-item"><span id="perfil-total-asistencias" class="stat-num">0</span><span class="stat-label">Madrugás</span></div>
                         <div class="stat-item"><span id="perfil-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">🖼️ Imagen de Avatar y Foto de Perfil</h4>
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 0.8rem; color: #ccc;">URL de Imagen de Avatar</label>
+                        <input type="url" id="perfil-avatar-url-input" placeholder="https://ejemplo.com/mi-foto.jpg">
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <label class="btn-sutil-logout" style="cursor: pointer; padding: 6px 12px; font-size: 0.8rem; border-color: var(--color-acento); color: var(--color-acento);">
+                            📁 Subir Archivo local
+                            <input type="file" id="perfil-avatar-file-input" accept="image/*" style="display: none;" onchange="procesarSubidaArchivoAvatar(event)">
+                        </label>
+                        <button type="button" class="btn-tuna-ui" style="padding: 6px 15px; font-size: 0.8rem;" onclick="guardarAvatarPerfil()">Guardar Avatar</button>
                     </div>
                 </div>
             </div>
@@ -620,6 +641,20 @@ function inyectarModalPerfilGlobal() {
                             <tr><td colspan="6" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">🎓 Histórico de Otras Tunas de Pertenencia</h4>
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <p style="font-size: 0.78rem; color: #aaa; margin-bottom: 8px;">Añade otras tunas en las que hayas estado en el pasado (ej. Tuna de Facultad / Distrito):</p>
+                    
+                    <div class="input-group" style="position: relative; margin-bottom: 10px;">
+                        <input type="text" id="perfil-otratuna-search" placeholder="Buscar tuna para añadir..." autocomplete="off">
+                        <ul id="perfil-otratuna-results-list" class="autocomplete-results" style="display:none; position:absolute; width:100%; z-index:99; max-height:120px; overflow-y:auto; background:#222; border:1px solid var(--color-acento); list-style:none; padding:0; margin:0;"></ul>
+                    </div>
+
+                    <div id="perfil-pildoras-otras-tunas" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
                 </div>
             </div>
 
@@ -667,6 +702,7 @@ function inyectarModalPerfilGlobal() {
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    configurarBuscadorOtrasTunasPerfil();
 }
 
 window.abrirModalPerfil = async function() {
@@ -687,18 +723,33 @@ window.abrirModalPerfil = async function() {
 
     const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
 
-    const nombreCompleto = profile?.nombre 
-        ? `${profile.nombre} ${profile.apellidos || ''}` 
-        : (ultInscripcion?.nombre ? `${ultInscripcion.nombre} ${ultInscripcion.apellidos}` : session.user.email);
-
     const mote = profile?.mote || ultInscripcion?.mote || '';
     const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna no especificada';
 
-    document.getElementById('perfil-nombre-completo').innerText = mote ? `${nombreCompleto} ("${mote}")` : nombreCompleto;
+    document.getElementById('perfil-nombre-completo').innerText = mote ? `"${mote}"` : session.user.email;
     document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
     
-    const inicial = (mote || nombreCompleto || 'T').charAt(0).toUpperCase();
-    document.getElementById('perfil-mote-inicial').innerText = inicial;
+    // RENDERIZAR AVATAR
+    const avatarImg = document.getElementById('perfil-avatar-img');
+    const inicialTxt = document.getElementById('perfil-mote-inicial');
+    const inputUrlAvatar = document.getElementById('perfil-avatar-url-input');
+
+    if (profile && profile.avatar_url) {
+        if (avatarImg) { avatarImg.src = profile.avatar_url; avatarImg.style.display = 'block'; }
+        if (inicialTxt) inicialTxt.style.display = 'none';
+        if (inputUrlAvatar) inputUrlAvatar.value = profile.avatar_url;
+    } else {
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (inicialTxt) {
+            inicialTxt.style.display = 'block';
+            inicialTxt.innerText = (mote || 'T').charAt(0).toUpperCase();
+        }
+        if (inputUrlAvatar) inputUrlAvatar.value = '';
+    }
+
+    // RENDERIZAR OTRAS TUNAS
+    listaOtrasTunasTemporales = profile?.otras_tunas || [];
+    renderizarPildorasOtrasTunasPerfil();
 
     const checkNews = document.getElementById('perfil-check-newsletter');
     const statusNews = document.getElementById('perfil-newsletter-status');
@@ -749,6 +800,310 @@ window.abrirModalPerfil = async function() {
     }
 };
 
+/* --- FUNCIONES DE AVATAR Y OTRAS TUNAS --- */
+window.guardarAvatarPerfil = async function() {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const status = document.getElementById('perfil-estado-msg');
+    const avatarUrl = document.getElementById('perfil-avatar-url-input').value.trim();
+
+    if (status) status.innerText = "Guardando avatar...";
+
+    const { error } = await supabaseClient
+        .from('profiles')
+        .update({ avatar_url: avatarUrl || null })
+        .eq('id', session.user.id);
+
+    if (error) {
+        if (status) status.innerText = "Error guardando avatar: " + error.message;
+    } else {
+        if (status) status.innerText = "¡Avatar actualizado correctamente!";
+        window.abrirModalPerfil();
+    }
+};
+
+/* --- COMPRESIÓN Y REDIMENSIONADO DE IMÁGENES EN CLIENTE --- */
+function comprimirImagenAvatar(file, maxDimension = 800, calidad = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensionar proporcionalmente si supera la dimensión máxima (800px)
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+
+                // Dibujar en Canvas HTML5
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convertir Canvas a Blob (JPEG comprimido)
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error("Error al procesar el lienzo de la imagen."));
+                        }
+                    },
+                    'image/jpeg',
+                    calidad
+                );
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+}
+
+/* --- SUBIDA OPTIMIZADA AL STORAGE DE SUPABASE --- */
+window.procesarSubidaArchivoAvatar = async function(event) {
+    const file = event.target.files[0];
+    if (!file || !supabaseClient) return;
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const status = document.getElementById('perfil-estado-msg');
+    if (status) status.innerText = "Optimizando y comprimiendo imagen...";
+
+    try {
+        // 1. Comprimir la imagen antes de enviar (Max 800px, 80% calidad JPEG)
+        const blobComprimido = await comprimirImagenAvatar(file, 800, 0.8);
+
+        if (status) status.innerText = "Subiendo avatar optimizado...";
+
+        // 2. Definir ruta única por usuario
+        const filePath = `avatars/${session.user.id}_avatar.jpg`;
+
+        // 3. Subir el Blob comprimido a Supabase Storage
+        const { error: uploadError } = await supabaseClient.storage
+            .from('avatars')
+            .upload(filePath, blobComprimido, {
+                contentType: 'image/jpeg',
+                upsert: true
+            });
+
+        if (uploadError) {
+            // Si la subida en Storage falla, se guarda en Base64 ligero en la BD
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Img = e.target.result;
+                await supabaseClient.from('profiles').update({ avatar_url: base64Img }).eq('id', session.user.id);
+                if (status) status.innerText = "¡Avatar guardado!";
+                window.abrirModalPerfil();
+            };
+            reader.readAsDataURL(blobComprimido);
+        } else {
+            // 4. Obtener URL pública con parámetro de refresco de caché
+            const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
+            const publicUrlWithCache = `${publicUrl}?v=${Date.now()}`;
+
+            await supabaseClient.from('profiles').update({ avatar_url: publicUrlWithCache }).eq('id', session.user.id);
+            if (status) status.innerText = "¡Avatar actualizado con éxito!";
+            window.abrirModalPerfil();
+        }
+    } catch (e) {
+        if (status) status.innerText = "Error procesando imagen: " + e.message;
+    }
+};
+
+function configurarBuscadorOtrasTunasPerfil() {
+    const searchInput = document.getElementById('perfil-otratuna-search');
+    const resultsList = document.getElementById('perfil-otratuna-results-list');
+    if (!searchInput || !resultsList) return;
+
+    let timeout = null;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        const query = e.target.value.trim();
+        if (query.length < 2) { resultsList.style.display = 'none'; return; }
+
+        timeout = setTimeout(async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('tunas')
+                .select('nombre')
+                .ilike('nombre', `%${query}%`)
+                .limit(6);
+
+            if (!error && data && data.length > 0) {
+                resultsList.innerHTML = '';
+                data.forEach(tuna => {
+                    const li = document.createElement('li');
+                    li.innerText = tuna.nombre;
+                    li.style.padding = '8px 12px';
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        agregarOtraTunaAlPerfil(tuna.nombre);
+                        searchInput.value = '';
+                        resultsList.style.display = 'none';
+                    });
+                    resultsList.appendChild(li);
+                });
+                resultsList.style.display = 'block';
+            } else { resultsList.style.display = 'none'; }
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+}
+
+async function agregarOtraTunaAlPerfil(nombreTuna) {
+    if (!listaOtrasTunasTemporales.includes(nombreTuna)) {
+        listaOtrasTunasTemporales.push(nombreTuna);
+        await guardarOtrasTunasBaseDatos();
+    }
+}
+
+async function eliminarOtraTunaDelPerfil(nombreTuna) {
+    listaOtrasTunasTemporales = listaOtrasTunasTemporales.filter(t => t !== nombreTuna);
+    await guardarOtrasTunasBaseDatos();
+}
+
+async function guardarOtrasTunasBaseDatos() {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    await supabaseClient
+        .from('profiles')
+        .update({ otras_tunas: listaOtrasTunasTemporales })
+        .eq('id', session.user.id);
+
+    renderizarPildorasOtrasTunasPerfil();
+}
+
+function renderizarPildorasOtrasTunasPerfil() {
+    const contenedorEdit = document.getElementById('perfil-pildoras-otras-tunas');
+    const contenedorHeader = document.getElementById('perfil-otras-tunas-header');
+
+    if (contenedorEdit) {
+        contenedorEdit.innerHTML = listaOtrasTunasTemporales.map(t => `
+            <span style="background: rgba(212,175,55,0.15); border: 1px solid var(--color-acento); color: var(--color-acento); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 6px;">
+                ${t}
+                <button type="button" onclick="eliminarOtraTunaDelPerfil('${t}')" style="background:none; border:none; color:#ff5555; cursor:pointer; font-weight:bold; font-size:0.8rem; padding:0;">&times;</button>
+            </span>
+        `).join('');
+    }
+
+    if (contenedorHeader) {
+        contenedorHeader.innerHTML = listaOtrasTunasTemporales.map(t => `
+            <span style="background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                🎓 ${t}
+            </span>
+        `).join('');
+    }
+}
+
+/* --- MODAL DE PERFIL PÚBLICO (PARA BLOG Y COMENTARIOS) --- */
+window.abrirModalPerfilPublico = async function(userId) {
+    if (!supabaseClient || !userId) return;
+
+    const [{ data: profile }, { data: inscripciones }] = await Promise.all([
+        supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false })
+    ]);
+
+    if (!profile) return;
+
+    const mote = profile.mote || 'Tuno';
+    const tunaNombre = profile.tuna_nombre || 'Tuna no especificada';
+    const inicial = mote.charAt(0).toUpperCase();
+
+    let modalPublico = document.getElementById('modal-perfil-publico');
+    if (!modalPublico) {
+        modalPublico = document.createElement('div');
+        modalPublico.id = 'modal-perfil-publico';
+        modalPublico.className = 'modal-interno';
+        document.body.appendChild(modalPublico);
+    }
+
+    const totalMadrugas = inscripciones ? inscripciones.length : 0;
+    const primerReg = inscripciones ? (inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1]) : null;
+    const anioDebut = primerReg ? primerReg.anio : '-';
+
+    const pildorasOtrasTunas = (profile.otras_tunas || []).map(t => `
+        <span style="background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+            🎓 ${t}
+        </span>
+    `).join('');
+
+    const filasHistorico = (inscripciones && inscripciones.length > 0) 
+        ? inscripciones.map(i => `
+            <tr>
+                <td><strong>${i.anio}</strong></td>
+                <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
+                <td>${i.asiste_comida ? '✅' : '❌'}</td>
+                <td>${i.asiste_ronda ? '✅' : '❌'}</td>
+                <td>${i.asiste_madruga ? '✅' : '❌'}</td>
+                <td>${i.instrumento}</td>
+            </tr>
+        `).join('')
+        : `<tr><td colspan="6" style="text-align:center; color:#aaa;">Sin inscripciones públicas.</td></tr>`;
+
+    modalPublico.innerHTML = `
+        <div class="modal-contenido perfil-modal-box">
+            <button class="cerrar-modal" onclick="document.getElementById('modal-perfil-publico').style.display='none'">&times;</button>
+
+            <div class="perfil-card-header" style="align-items: center; gap: 15px;">
+                <div class="perfil-avatar" style="width: 75px; height: 75px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento);">
+                    ${profile.avatar_url 
+                        ? `<img src="${profile.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` 
+                        : `<span>${inicial}</span>`}
+                </div>
+
+                <div class="perfil-datos-principal">
+                    <h3 style="margin: 0 0 5px 0;">"${mote}"</h3>
+                    <p class="perfil-tuna-badge" style="margin: 0 0 8px 0;">${tunaNombre}</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">${pildorasOtrasTunas}</div>
+
+                    <div class="perfil-stats">
+                        <div class="stat-item"><span class="stat-num">${totalMadrugas}</span><span class="stat-label">Madrugás</span></div>
+                        <div class="stat-item"><span class="stat-num">${anioDebut}</span><span class="stat-label">Año Debut</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="perfil-seccion" style="margin-top: 20px;">
+                <h4 class="perfil-subtitulo">📜 Histórico de Asistencias</h4>
+                <div class="tabla-contenedor-perfil">
+                    <table class="tabla-tunos">
+                        <thead>
+                            <tr><th>Año</th><th>Tuna</th><th>Comida</th><th>Ronda</th><th>Madrugá</th><th>Instrumento</th></tr>
+                        </thead>
+                        <tbody>${filasHistorico}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modalPublico.style.display = 'flex';
+};
+
+/* --- RESTO DE FUNCIONES SECUNDARIAS --- */
 window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
     if (!supabaseClient) return;
     const { data: { session } } = await supabaseClient.auth.getSession();
