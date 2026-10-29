@@ -196,10 +196,10 @@ body.admin-body {
    3. FORMULARIOS, INPUTS Y CALENDARIO (DATETIME & NUMBER)
    ========================================================================== */
 
-/* Forzado de esquema oscuro para que el picker desplegable nativo use fondo negro */
-#card-config-fecha input[type="datetime-local"],
-#card-config-fecha input[type="number"],
-.wp-admin-section input {
+/* Regla general de inputs excluyendo explícitamente checkboxes y radios */
+.wp-admin-section input:not([type="checkbox"]):not([type="radio"]),
+.wp-admin-section select,
+.wp-admin-section textarea {
     color-scheme: dark;
     background-color: #161616 !important;
     border: 1px solid rgba(212, 175, 55, 0.3) !important;
@@ -214,12 +214,27 @@ body.admin-body {
     box-sizing: border-box;
 }
 
-#card-config-fecha input[type="datetime-local"]:focus,
-#card-config-fecha input[type="number"]:focus,
-.wp-admin-section input:focus {
+.wp-admin-section input:not([type="checkbox"]):not([type="radio"]):focus,
+.wp-admin-section select:focus,
+.wp-admin-section textarea:focus {
     border-color: var(--color-acento) !important;
     box-shadow: 0 0 8px rgba(212, 175, 55, 0.3) !important;
     background-color: #1c1c1c !important;
+}
+
+/* --- ESTILADO ESPECÍFICO PARA CHECKBOXES Y RADIOS --- */
+.wp-admin-section input[type="checkbox"],
+.wp-admin-section input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    accent-color: var(--color-acento) !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
 }
 
 /* Icono del calendario desplegable en Chrome / Edge / Safari */
