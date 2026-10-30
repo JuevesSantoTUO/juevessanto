@@ -43,6 +43,9 @@
                 <li id="menu-item-inscripciones" onclick="cambiarSeccionAdmin('inscripciones', this)">
                     <span class="menu-icon">📋</span> Inscripciones
                 </li>
+                <li id="menu-item-validaciones" onclick="cambiarSeccionAdmin('validaciones', this)">
+                    <span class="menu-icon">✅</span> Validar Solicitudes
+                </li>
                 <li id="menu-item-blog" onclick="cambiarSeccionAdmin('blog', this)">
                     <span class="menu-icon">📰</span> Noticias / Blog
                 </li>
@@ -546,6 +549,67 @@
                         </div>
                         <div id="news-form-status" class="mensaje-estado" style="margin-top: 10px;"></div>
                     </form>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: VALIDACIÓN DE INSCRIPCIONES E HISTÓRICOS (AGRUPADA Y CON FILTROS MIXTOS) -->
+            <section id="sec-validaciones" class="wp-admin-section">
+                <div class="wp-header-title">
+                    <h2>✅ Validación de Solicitudes y Años Históricos</h2>
+                    <p>Autoriza o rechaza las peticiones de asistencia y años anteriores enviadas por los tunos.</p>
+                </div>
+
+                <!-- FILTROS MIXTOS AVANZADOS -->
+                <div class="wp-widget-box" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Buscar Tuno / Mote</label>
+                            <input type="text" id="filter-val-search" placeholder="Nombre o mote..." oninput="filtrarValidacionesAdmin()">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Año</label>
+                            <select id="filter-val-anio" onchange="filtrarValidacionesAdmin()">
+                                <option value="todos">Todos los años</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Tuna</label>
+                            <select id="filter-val-tuna" onchange="filtrarValidacionesAdmin()">
+                                <option value="todos">Todas las tunas</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Filtrar por Estado</label>
+                            <select id="filter-val-estado" onchange="filtrarValidacionesAdmin()">
+                                <option value="todos">Todos los estados</option>
+                                <option value="pendiente">Pendientes</option>
+                                <option value="validado">Validados</option>
+                                <option value="rechazado">Rechazados</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tuno / Mote</th>
+                                    <th>Último Año / Solicitudes</th>
+                                    <th>Tuna Principal</th>
+                                    <th>Instrumento</th>
+                                    <th>Estado Actual</th>
+                                    <th style="text-align: center;">Acciones / Desplegar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-validaciones-body">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 25px; color: #888;">Cargando solicitudes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
