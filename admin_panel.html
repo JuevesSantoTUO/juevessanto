@@ -46,6 +46,9 @@
                 <li id="menu-item-validaciones" onclick="cambiarSeccionAdmin('validaciones', this)">
                     <span class="menu-icon">✅</span> Validar Solicitudes
                 </li>
+                <li id="menu-item-medallas" onclick="cambiarSeccionAdmin('medallas', this)">
+                    <span class="menu-icon">🏅</span> Gestión Medallas
+                </li>
                 <li id="menu-item-blog" onclick="cambiarSeccionAdmin('blog', this)">
                     <span class="menu-icon">📰</span> Noticias / Blog
                 </li>
@@ -200,6 +203,118 @@
                 </div>
             </section>
 
+            <!-- SECCIÓN: GESTIÓN DE MEDALLAS Y DISTINCIONES -->
+            <section id="sec-medallas" class="wp-admin-section">
+                <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2>🏅 Catálogo y Asignación de Medallas</h2>
+                        <p>Crea nuevas distinciones en PNG o asigna medallas manualmente a los tunos.</p>
+                    </div>
+                    <button class="btn-tuna-ui" onclick="abrirModalNuevaMedalla()">➕ Crear Nueva Medalla</button>
+                </div>
+
+                <!-- MÓDULO ASIGNAR MEDALLA MANUAL CON BUSCADOR PREDICTIVO -->
+                <div class="wp-widget-box" style="margin-bottom: 25px; background: rgba(212,175,55,0.03); border: 1px solid rgba(212,175,55,0.2); position: relative;">
+                    <h3 style="color: var(--color-acento); font-size: 1rem; margin-bottom: 15px;">🎖️ Asignar Medalla Manual a un Tuno</h3>
+                    <form id="form-asignar-medalla" onsubmit="asignarMedallaManualAdmin(event)">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 12px; align-items: end;">
+                            
+                            <!-- BUSCADOR PREDICTIVO -->
+                            <div class="input-group" style="margin-bottom:0; position: relative;">
+                                <label>Buscar Tuno (Mote o Email) *</label>
+                                <input type="text" id="asig-tuno-search" placeholder="Escribe para buscar..." autocomplete="off" oninput="filtrarTunosPredictivo(this.value)">
+                                <input type="hidden" id="asig-tuno-selected-id">
+                                
+                                <div id="asig-tuno-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1a1a; border: 1px solid var(--color-acento); max-height: 200px; overflow-y: auto; z-index: 100; border-radius: 0 0 6px 6px; box-shadow: 0 6px 15px rgba(0,0,0,0.9);"></div>
+                            </div>
+
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Seleccionar Medalla *</label>
+                                <select id="asig-medalla-select" required><option value="">Cargando medallas...</option></select>
+                            </div>
+                            
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Año Otorgado *</label>
+                                <input type="number" id="asig-anio-input" value="2027" required min="1950" max="2035">
+                            </div>
+
+                            <button type="submit" class="btn-tuna-ui" style="height: 42px;">Otorgar Medalla</button>
+                        </div>
+                    </form>
+                    <div id="asig-medalla-status" class="mensaje-estado" style="margin-top: 10px;"></div>
+                </div>
+
+                <!-- LISTADO DE MEDALLAS REGISTRADAS -->
+                <div class="wp-widget-box" style="padding: 0; overflow: hidden;">
+                    <h3 style="padding: 15px 20px; margin: 0; border-bottom: 1px solid rgba(212,175,55,0.1);">📜 Medallas del Sistema</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="wp-admin-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px; text-align: center;">Icono</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Tipo</th>
+                                    <th style="text-align: center; width: 140px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-medallas-body">
+                                <tr><td colspan="5" style="text-align:center; padding: 20px; color: #888;">Cargando medallas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODAL REUTILIZABLE PARA CREAR Y EDITAR MEDALLA -->
+            <div id="box-crear-medalla" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; padding: 20px; overflow-y: auto;">
+                <div class="modal-content" style="max-width: 520px; margin: 50px auto; background: #181818; border: 1px solid var(--color-acento); padding: 25px; border-radius: 8px;">
+                    <h3 id="modal-medalla-titulo" style="color: var(--color-acento); margin-top: 0;">Crear Nueva Medalla</h3>
+                    <form id="form-crear-medalla" onsubmit="guardarMedallaAdmin(event)" style="margin-top: 15px;">
+                        <input type="hidden" id="medalla-id-input">
+
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Nombre de la Distinción *</label>
+                            <input type="text" id="medalla-nombre" placeholder="Ej: Pandereta de Oro" required>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Descripción / Motivo</label>
+                            <input type="text" id="medalla-descripcion" placeholder="Ej: Otorgada por méritos musicales especiales...">
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Imagen PNG de la Medalla (Subir archivo local)</label>
+                            <input type="file" id="medalla-file-input" accept="image/png,image/webp" style="background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; color: #ccc; width: 100%;">
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>O Pegar URL Pública de Imagen</label>
+                            <input type="url" id="medalla-url-input" placeholder="https://...">
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Tipo de Asignación *</label>
+                            <select id="medalla-es-auto" onchange="toggleCriterioAutoMedalla(this.value)">
+                                <option value="false">Manual (Otorgada por Admins)</option>
+                                <option value="true">Automática (Por N° de Asistencias)</option>
+                            </select>
+                        </div>
+
+                        <div id="group-criterio-auto" class="input-group" style="margin-bottom: 15px; display: none;">
+                            <label>N° Asistencias Requeridas</label>
+                            <input type="number" id="medalla-criterio-num" placeholder="Ej: 15" min="1">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                            <button type="button" class="btn-sutil-logout" onclick="cerrarModalMedalla()">Cancelar</button>
+                            <button type="submit" class="btn-tuna-ui">Guardar Medalla</button>
+                        </div>
+                        <div id="medalla-status" class="mensaje-estado" style="margin-top: 10px;"></div>
+                    </form>
+                </div>
+            </div>
+
             <!-- SECCIÓN 3: BLOG Y NOTICIAS (ADMIN, GESTOR Y EDITOR) -->
             <section id="sec-blog" class="wp-admin-section">
                 <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
@@ -336,7 +451,7 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN 4: DIRECTORIO Y CENSO DE TUNAS -->
+            <!-- SECCIÓN 4: DIRECTORIO Y CENSO DE TUNOS -->
             <section id="sec-tunas" class="wp-admin-section">
                 <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
                     <div>
