@@ -1340,3 +1340,146 @@ window.cerrarSesionUsuario = async function() {
         comprobarEstadoSesion();
     }
 };
+
+/* ==========================================================================
+   MODAL DE PERFIL PÚBLICO DE TUNOS (VISUALIZACIÓN DESDE EL BLOG)
+   ========================================================================== */
+function inyectarModalPerfilPublicoGlobal() {
+    if (document.getElementById('modal-perfil-publico')) return;
+
+    const modalHTML = `
+    <div id="modal-perfil-publico" class="modal-interno" style="display: none;">
+        <div class="modal-contenido perfil-modal-box" style="max-width: 550px !important;">
+            <button class="cerrar-modal" onclick="cerrarModalPerfilPublico()">&times;</button>
+
+            <div class="perfil-card-header" style="align-items: center; gap: 15px; margin-bottom: 15px;">
+                <div class="perfil-avatar" id="pub-avatar-box" style="width: 70px; height: 70px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento); flex-shrink: 0;">
+                    <span id="pub-mote-inicial">T</span>
+                    <img id="pub-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                </div>
+
+                <div class="perfil-datos-principal" style="width: 100%;">
+                    <h3 id="pub-nombre-mote" style="margin: 0 0 4px 0; color: #fff; font-size: 1.2rem;">Cargando...</h3>
+                    <p id="pub-tuna-tag" class="perfil-tuna-badge" style="margin: 0 0 8px 0; color: var(--color-acento); font-size: 0.82rem; font-weight: bold;">Tuna no especificada</p>
+                    
+                    <div id="pub-personas-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;"></div>
+
+                    <div class="perfil-stats" style="display: flex; gap: 20px;">
+                        <div class="stat-item"><span id="pub-total-asistencias" class="stat-num">0</span><span class="stat-label">Madrugás</span></div>
+                        <div class="stat-item"><span id="pub-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo" style="color: var(--color-acento); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">📜 Histórico de Asistencias Validadas</h4>
+                <div class="tabla-contenedor-perfil" style="max-height: 200px; overflow-y: auto;">
+                    <table class="tabla-tunos">
+                        <thead>
+                            <tr><th>Año</th><th>Tuna</th><th>Instrumento</th></tr>
+                        </thead>
+                        <tbody id="pub-historico-body">
+                            <tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+window.abrirModalPerfilPublico = async function(userId) {
+    if (!supabaseClient || !userId) return;
+
+    inyectarModalPerfilPublicoGlobal();
+
+    const modal = document.getElementById('modal-perfil-publico');
+    if (modal) modal.style.display = 'flex';
+
+    // Poner valores por defecto mientras carga
+    document.getElementById('pub-nombre-mote').innerText = "Cargando perfil...";
+    document.getElementById('pub-tuna-tag').innerText = "";
+    document.getElementById('pub-total-asistencias').innerText = "0";
+    document.getElementById('pub-fajin-anio').innerText = "-";
+    
+    const containerOtras = document.getElementById('pub-personas-tunas-header');
+    if (containerOtras) containerOtras.innerHTML = "";
+    
+    document.getElementById('pub-historico-body').innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>`;
+
+    const avatarImg = document.getElementById('pub-avatar-img');
+    const inicialTxt = document.getElementById('pub-mote-inicial');
+    if (avatarImg) avatarImg.style.display = 'none';
+    if (inicialTxt) { inicialTxt.style.display = 'block'; inicialTxt.innerText = "T"; }
+
+    try {
+        const [{ data: profile }, { data: inscripciones }] = await Promise.all([
+            supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
+            supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false })
+        ]);
+
+        const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
+
+        const mote = profile?.mote || ultInscripcion?.mote || 'Tuno';
+        const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna Universitaria';
+
+        document.getElementById('pub-nombre-mote').innerText = `"${mote}"`;
+        document.getElementById('pub-tuna-tag').innerText = tunaNombre;
+
+        if (profile && profile.avatar_url) {
+            if (avatarImg) { avatarImg.src = profile.avatar_url; avatarImg.style.display = 'block'; }
+            if (inicialTxt) inicialTxt.style.display = 'none';
+        } else {
+            if (inicialTxt) {
+                inicialTxt.style.display = 'block';
+                inicialTxt.innerText = mote.charAt(0).toUpperCase();
+            }
+        }
+
+        // Renderizar otras tunas si las tiene
+        const otrasTunas = profile?.otras_tunas || [];
+        if (containerOtras && otrasTunas.length > 0) {
+            containerOtras.innerHTML = otrasTunas.map(t => `
+                <span style="background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                    🎓 ${t}
+                </span>
+            `).join('');
+        }
+
+        if (inscripciones && inscripciones.length > 0) {
+            const validadas = inscripciones.filter(i => i.asiste_madruga && i.estado_validacion === 'validado');
+            document.getElementById('pub-total-asistencias').innerText = validadas.length;
+
+            const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
+            document.getElementById('pub-fajin-anio').innerText = primerReg ? primerReg.anio : '-';
+
+            const tbody = document.getElementById('pub-historico-body');
+            tbody.innerHTML = '';
+
+            inscripciones.forEach(i => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${i.anio}</strong> ${i.estado_validacion === 'validado' ? '✅' : '⏳'}</td>
+                    <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
+                    <td style="font-size:0.8rem">${i.instrumento || 'Instrumento'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            document.getElementById('pub-total-asistencias').innerText = '0';
+            document.getElementById('pub-fajin-anio').innerText = '-';
+            document.getElementById('pub-historico-body').innerHTML = `
+                <tr><td colspan="3" style="text-align:center; color:#aaa;">No hay registros públicos disponibles.</td></tr>
+            `;
+        }
+    } catch (e) {
+        console.error("Error al cargar perfil público:", e);
+    }
+};
+
+window.cerrarModalPerfilPublico = function() {
+    const modal = document.getElementById('modal-perfil-publico');
+    if (modal) modal.style.display = 'none';
+};
