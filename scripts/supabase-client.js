@@ -580,7 +580,7 @@ window.registrarParticipante = async function(event) {
     }
 };
 
-/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO (AVATAR + OTRAS TUNAS) --- */
+/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO (AVATAR + MEDALLAS + OTRAS TUNAS) --- */
 function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
@@ -608,6 +608,14 @@ function inyectarModalPerfilGlobal() {
                         <div class="stat-item"><span id="perfil-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
                     </div>
                 </div>
+            </div>
+
+            <!-- SECCIÓN: PREMIOS Y MEDALLAS (DISCRETA Y SIN MARCO VISIBLE) -->
+            <div id="perfil-seccion-medallas" class="perfil-seccion" style="display: none; margin-top: 15px; margin-bottom: 15px; padding: 10px 0; border-top: 1px dashed rgba(212,175,55,0.2); border-bottom: 1px dashed rgba(212,175,55,0.2);">
+                <h4 class="perfil-subtitulo" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-acento); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    🏅 Distinciones & Medallas
+                </h4>
+                <div id="perfil-contenedor-medallas" style="display: flex; gap: 15px; overflow-x: auto; padding: 5px 0; scrollbar-width: thin;"></div>
             </div>
 
             <div class="perfil-seccion">
@@ -719,11 +727,18 @@ window.abrirModalPerfil = async function() {
     const modal = document.getElementById('modal-perfil');
     if (modal) modal.style.display = 'flex';
 
-    const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }] = await Promise.all([
+    // Consulta con ordenación por anio_conseguido ascendente
+    const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
         supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
         supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
-        supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false })
+        supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false }),
+        supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', session.user.id).order('anio_conseguido', { ascending: true })
     ]);
+
+    // Ordenación defensiva antes de renderizar
+    if (userMedallas && userMedallas.length > 0) {
+        userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
+    }
 
     const anioActualEnCurso = cfgAnio && cfgAnio.valor ? parseInt(cfgAnio.valor) : 2027;
     const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
@@ -734,6 +749,9 @@ window.abrirModalPerfil = async function() {
     document.getElementById('perfil-nombre-completo').innerText = mote ? `"${mote}"` : session.user.email;
     document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
     
+    // Cargar Medallas
+    renderizarMedallasPerfil('perfil-seccion-medallas', 'perfil-contenedor-medallas', userMedallas);
+
     const avatarImg = document.getElementById('perfil-avatar-img');
     const inicialTxt = document.getElementById('perfil-mote-inicial');
     const inputUrlAvatar = document.getElementById('perfil-avatar-url-input');
@@ -815,6 +833,41 @@ window.abrirModalPerfil = async function() {
         `;
     }
 };
+
+/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS (CORREGIDO Y OPTIMIZADO) */
+function renderizarMedallasPerfil(idSeccion, idContenedor, listaMedallas) {
+    const sec = document.getElementById(idSeccion);
+    const container = document.getElementById(idContenedor);
+    if (!sec || !container) return;
+
+    if (!listaMedallas || listaMedallas.length === 0) {
+        sec.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    sec.style.display = 'block';
+    container.innerHTML = listaMedallas.map(m => {
+        const med = m.medallas || m;
+        if (!med) return '';
+
+        const urlImg = (med.imagen_url && med.imagen_url.trim() !== '') ? med.imagen_url.trim() : null;
+
+        const visualHtml = urlImg 
+            ? `<img src="${urlImg}" alt="${med.nombre || 'Medalla'}" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));">`
+            : `<div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(212,175,55,0.15); border: 1px solid var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🏅</div>`;
+
+        return `
+            <div title="${med.descripcion || ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 70px; flex-shrink: 0;">
+                <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
+                    ${visualHtml}
+                </div>
+                <span style="font-size: 0.7rem; font-weight: bold; color: #fff; line-height: 1.1;">${med.nombre || ''}</span>
+                <span style="font-size: 0.65rem; color: var(--color-acento); font-weight: bold; margin-top: 2px;">${m.anio_conseguido || ''}</span>
+            </div>
+        `;
+    }).join('');
+}
 
 window.guardarAvatarPerfil = async function() {
     if (!supabaseClient) return;
@@ -1084,7 +1137,7 @@ window.procesarAnadirAnioHistoricoModal = async function(e) {
     const nombreVal = profile?.nombre || ultIns?.nombre || 'Francisco José';
     const apellidosVal = profile?.apellidos || ultIns?.apellidos || 'Maestre Muñoz';
     const moteVal = profile?.mote || ultIns?.mote || 'Rumbito';
-    const tunaVal = profile?.tuna_nombre || ultIns?.tuna_nombre || 'Tuna Antiga de la Universidad de Oviedo';
+    const tunaVal = profile?.tuna_nombre || ultIns?.tuna_nombre || 'Tuna Antigua de la Universidad de Oviedo';
     const telefonoVal = ultIns?.telefono || '600000000';
 
     const payload = {
@@ -1371,6 +1424,14 @@ function inyectarModalPerfilPublicoGlobal() {
                 </div>
             </div>
 
+            <!-- SECCIÓN: PREMIOS Y MEDALLAS PÚBLICAS -->
+            <div id="pub-seccion-medallas" class="perfil-seccion" style="display: none; margin-top: 10px; margin-bottom: 10px; padding: 10px 0; border-top: 1px dashed rgba(212,175,55,0.2); border-bottom: 1px dashed rgba(212,175,55,0.2);">
+                <h4 class="perfil-subtitulo" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-acento); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    🏅 Distinciones & Medallas
+                </h4>
+                <div id="pub-contenedor-medallas" style="display: flex; gap: 15px; overflow-x: auto; padding: 5px 0; scrollbar-width: thin;"></div>
+            </div>
+
             <div class="perfil-seccion">
                 <h4 class="perfil-subtitulo" style="color: var(--color-acento); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">📜 Histórico de Asistencias Validadas</h4>
                 <div class="tabla-contenedor-perfil" style="max-height: 200px; overflow-y: auto;">
@@ -1398,7 +1459,6 @@ window.abrirModalPerfilPublico = async function(userId) {
     const modal = document.getElementById('modal-perfil-publico');
     if (modal) modal.style.display = 'flex';
 
-    // Poner valores por defecto mientras carga
     document.getElementById('pub-nombre-mote').innerText = "Cargando perfil...";
     document.getElementById('pub-tuna-tag').innerText = "";
     document.getElementById('pub-total-asistencias').innerText = "0";
@@ -1415,10 +1475,17 @@ window.abrirModalPerfilPublico = async function(userId) {
     if (inicialTxt) { inicialTxt.style.display = 'block'; inicialTxt.innerText = "T"; }
 
     try {
-        const [{ data: profile }, { data: inscripciones }] = await Promise.all([
+        // Consulta con ordenación por anio_conseguido ascendente
+        const [{ data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
             supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
-            supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false })
+            supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false }),
+            supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
+
+        // Ordenación defensiva antes de renderizar
+        if (userMedallas && userMedallas.length > 0) {
+            userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
+        }
 
         const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
 
@@ -1427,6 +1494,9 @@ window.abrirModalPerfilPublico = async function(userId) {
 
         document.getElementById('pub-nombre-mote').innerText = `"${mote}"`;
         document.getElementById('pub-tuna-tag').innerText = tunaNombre;
+
+        // Renderizar Medallas Públicas
+        renderizarMedallasPerfil('pub-seccion-medallas', 'pub-contenedor-medallas', userMedallas);
 
         if (profile && profile.avatar_url) {
             if (avatarImg) { avatarImg.src = profile.avatar_url; avatarImg.style.display = 'block'; }
@@ -1438,7 +1508,6 @@ window.abrirModalPerfilPublico = async function(userId) {
             }
         }
 
-        // Renderizar otras tunas si las tiene
         const otrasTunas = profile?.otras_tunas || [];
         if (containerOtras && otrasTunas.length > 0) {
             containerOtras.innerHTML = otrasTunas.map(t => `

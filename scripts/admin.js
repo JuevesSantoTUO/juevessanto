@@ -8,8 +8,10 @@ let noticiasGlobalesAdmin = [];
 let tunasGlobalesAdmin = [];
 let usuariosGlobalesAdmin = [];
 let solicitudesGlobalesAdmin = [];
+let medallasGlobalesAdmin = [];
+let listaTunosPredictiva = [];
 let quillEditor = null;
-let idTunoAbiertoActual = null; // Variable para recordar qué acordeón estaba abierto
+let idTunoAbiertoActual = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     verificarAccesoAdminPanel();
@@ -65,6 +67,7 @@ function gestionarVisibilidadSegunRol(role) {
         const itemDenuncias = document.getElementById('menu-item-denuncias');
         const itemNews = document.getElementById('menu-item-newsletter');
         const itemVal = document.getElementById('menu-item-validaciones');
+        const itemMed = document.getElementById('menu-item-medallas');
         
         const btnQuickIns = document.getElementById('btn-quick-inscripciones');
         if (btnQuickIns) btnQuickIns.style.display = 'none';
@@ -74,6 +77,7 @@ function gestionarVisibilidadSegunRol(role) {
         if (itemDenuncias) itemDenuncias.style.display = 'none';
         if (itemNews) itemNews.style.display = 'none';
         if (itemVal) itemVal.style.display = 'none';
+        if (itemMed) itemMed.style.display = 'none';
     }
 }
 
@@ -99,6 +103,9 @@ window.cambiarSeccionAdmin = function(seccionId, elem) {
             break;
         case 'validaciones':
             cargarSolicitudesPendientesAdmin();
+            break;
+        case 'medallas':
+            cargarModuloMedallasAdmin();
             break;
         case 'blog':
             cargarNoticiasAdmin();
@@ -331,7 +338,7 @@ window.exportarInscripcionesCSV = function() {
     document.body.removeChild(link);
 };
 
-/* --- MÓDULO DE VALIDACIÓN DE SOLICITUDES Y AÑOS HISTÓRICOS (ACORDEÓN PERSISTENTE) --- */
+/* --- MÓDULO DE VALIDACIÓN DE SOLICITUDES Y AÑOS HISTÓRICOS --- */
 async function cargarSolicitudesPendientesAdmin() {
     if (!supabaseClient) return;
     const tbody = document.getElementById('tabla-admin-validaciones-body');
@@ -402,6 +409,7 @@ function renderizarTablaValidacionesAgrupada(lista) {
         const key = item.user_id || item.email;
         if (!agrupadosPorTuno[key]) {
             agrupadosPorTuno[key] = {
+                userId: item.user_id,
                 nombre: item.nombre,
                 apellidos: item.apellidos,
                 mote: item.mote,
@@ -451,7 +459,6 @@ function renderizarTablaValidacionesAgrupada(lista) {
 
         const trDetalle = document.createElement('tr');
         trDetalle.id = idFilaDetalle;
-        // Si este tuno era el que estaba abierto antes de actualizar, lo mantenemos abierto
         if (idTunoAbiertoActual === key) {
             trDetalle.style.display = 'table-row';
         } else {
@@ -487,8 +494,8 @@ function renderizarTablaValidacionesAgrupada(lista) {
                     <td style="padding: 8px 12px; font-size:0.8rem;">${reg.instrumento}</td>
                     <td style="padding: 8px 12px;">${badgeAnioEstado}</td>
                     <td style="padding: 8px 12px; text-align: center;">
-                        <button class="btn-export-ui excel" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'validado', '${key}')">✅ Aprobar</button>
-                        <button class="btn-eliminar-ins" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'rechazado', '${key}')">❌ Rechazar</button>
+                        <button class="btn-export-ui excel" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'validado', '${key}', '${reg.user_id}')">✅ Aprobar</button>
+                        <button class="btn-eliminar-ins" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'rechazado', '${key}', '${reg.user_id}')">❌ Rechazar</button>
                     </td>
                 </tr>
             `;
@@ -509,17 +516,17 @@ window.toggleDesplegableTuno = function(idFila, tunoKey) {
     if (fila) {
         if (fila.style.display === 'none' || fila.style.display === '') {
             fila.style.display = 'table-row';
-            idTunoAbiertoActual = tunoKey; // Guardamos que este tuno está abierto
+            idTunoAbiertoActual = tunoKey;
         } else {
             fila.style.display = 'none';
-            if (idTunoAbiertoActual === tunoKey) idTunoAbiertoActual = null; // Si se cierra, limpiamos
+            if (idTunoAbiertoActual === tunoKey) idTunoAbiertoActual = null;
         }
     }
 };
 
-window.cambiarEstadoValidacion = async function(idInscripcion, nuevoEstado, tunoKeyContexto = null) {
+window.cambiarEstadoValidacion = async function(idInscripcion, nuevoEstado, tunoKeyContexto = null, userIdContexto = null) {
     if (tunoKeyContexto) {
-        idTunoAbiertoActual = tunoKeyContexto; // Memorizamos qué acordeón debe seguir abierto al refrescar
+        idTunoAbiertoActual = tunoKeyContexto;
     }
 
     const confirma = (nuevoEstado === 'validado');
@@ -531,13 +538,261 @@ window.cambiarEstadoValidacion = async function(idInscripcion, nuevoEstado, tuno
 
     if (error) {
         alert("Error al actualizar estado: " + error.message);
-        console.error("RPC Error:", error);
     } else {
+        if (userIdContexto && userIdContexto !== 'null') {
+            await supabaseClient.rpc('recalcular_medallas_usuario', { p_user_id: userIdContexto });
+        }
         await cargarSolicitudesPendientesAdmin();
     }
 };
 
-/* --- GESTIÓN DE BLOG, TUNAS Y USUARIOS (INALTERADO) --- */
+/* --- MÓDULO DE GESTIÓN Y EDICIÓN DE MEDALLAS (BUSCADOR PREDICTIVO Y EDICIÓN) --- */
+async function cargarModuloMedallasAdmin() {
+    if (!supabaseClient) return;
+
+    // 1. Cargar Catálogo de Medallas
+    const { data: medallas } = await supabaseClient
+        .from('medallas')
+        .select('*')
+        .order('created_at', { ascending: true });
+        
+    medallasGlobalesAdmin = medallas || [];
+    renderizarTablaMedallasAdmin(medallasGlobalesAdmin);
+
+    // 2. Cargar lista de usuarios en memoria para el buscador predictivo
+    const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('id, mote, email')
+        .order('mote', { ascending: true });
+
+    listaTunosPredictiva = profiles || [];
+
+    // 3. Cargar catálogo de medallas para el desplegable de asignación
+    const selectMed = document.getElementById('asig-medalla-select');
+    if (selectMed) {
+        if (medallasGlobalesAdmin.length > 0) {
+            selectMed.innerHTML = '<option value="">Selecciona medalla...</option>' + medallasGlobalesAdmin.map(m => `
+                <option value="${m.id}">${m.nombre} (${m.es_automatica ? 'Auto' : 'Manual'})</option>
+            `).join('');
+        } else {
+            selectMed.innerHTML = '<option value="">No hay medallas creadas</option>';
+        }
+    }
+}
+
+// BUSCADOR PREDICTIVO EN TIEMPO REAL
+window.filtrarTunosPredictivo = function(texto) {
+    const box = document.getElementById('asig-tuno-results');
+    const inputHidden = document.getElementById('asig-tuno-selected-id');
+    if (!box) return;
+
+    inputHidden.value = '';
+    const q = texto.toLowerCase().trim();
+
+    if (q.length === 0) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+
+    const coincidentes = listaTunosPredictiva.filter(p => {
+        const moteMatch = p.mote && p.mote.toLowerCase().includes(q);
+        const emailMatch = p.email && p.email.toLowerCase().includes(q);
+        return moteMatch || emailMatch;
+    });
+
+    if (coincidentes.length === 0) {
+        box.innerHTML = '<div style="padding: 10px; color: #888; font-size: 0.8rem;">No se encontraron tunos</div>';
+    } else {
+        box.innerHTML = coincidentes.map(p => `
+            <div onclick="seleccionarTunoPredictivo('${p.id}', '${(p.mote || '').replace(/'/g, "\\'")}', '${p.email}')" 
+                 style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.85rem; color: #fff;">
+                <strong style="color: var(--color-acento);">${p.mote ? `"${p.mote}"` : 'Sin mote'}</strong> 
+                <span style="color: #aaa; font-size: 0.75rem;">(${p.email})</span>
+            </div>
+        `).join('');
+    }
+
+    box.style.display = 'block';
+};
+
+window.seleccionarTunoPredictivo = function(id, mote, email) {
+    document.getElementById('asig-tuno-selected-id').value = id;
+    document.getElementById('asig-tuno-search').value = mote ? `"${mote}" (${email})` : email;
+    document.getElementById('asig-tuno-results').style.display = 'none';
+};
+
+document.addEventListener('click', (e) => {
+    const box = document.getElementById('asig-tuno-results');
+    const input = document.getElementById('asig-tuno-search');
+    if (box && e.target !== input && !box.contains(e.target)) {
+        box.style.display = 'none';
+    }
+});
+
+// ASIGNACIÓN MANUAL
+window.asignarMedallaManualAdmin = async function(e) {
+    e.preventDefault();
+    const status = document.getElementById('asig-medalla-status');
+    const userId = document.getElementById('asig-tuno-selected-id').value;
+    const medallaId = document.getElementById('asig-medalla-select').value;
+    const anio = parseInt(document.getElementById('asig-anio-input').value);
+
+    if (!userId) {
+        status.innerText = "Selecciona un tuno del buscador predictivo.";
+        status.style.color = "#ff4444";
+        return;
+    }
+
+    status.innerText = "Asignando medalla...";
+    status.style.color = "#ffaa00";
+
+    const { error } = await supabaseClient.from('usuarios_medallas').insert([{
+        user_id: userId,
+        medalla_id: medallaId,
+        anio_conseguido: anio
+    }]);
+
+    if (error) {
+        status.innerText = (error.code === '23505') ? "Este tuno ya posee esa medalla." : "Error: " + error.message;
+        status.style.color = "#ff4444";
+    } else {
+        status.innerText = "¡Medalla asignada correctamente!";
+        status.style.color = "#2ecc71";
+        document.getElementById('asig-tuno-search').value = '';
+        document.getElementById('asig-tuno-selected-id').value = '';
+        setTimeout(() => { status.innerText = ''; }, 3000);
+    }
+};
+
+// RENDERIZADO DE TABLA DE MEDALLAS CON BOTÓN DE EDICIÓN
+function renderizarTablaMedallasAdmin(lista) {
+    const tbody = document.getElementById('tabla-admin-medallas-body');
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #888;">No hay medallas registradas.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(m => {
+        const imgTag = (m.imagen_url && m.imagen_url.trim() !== '') 
+            ? `<img src="${m.imagen_url}" alt="${m.nombre}" style="width: 32px; height: 32px; object-fit: contain;">` 
+            : `<span style="font-size: 1.2rem;" title="Sin imagen asignada">🎖️</span>`;
+
+        return `
+            <tr>
+                <td style="text-align: center;">${imgTag}</td>
+                <td><strong>${m.nombre}</strong></td>
+                <td><span style="font-size:0.8rem; color:#ccc;">${m.descripcion || '-'}</span></td>
+                <td>${m.es_automatica ? `<span class="badge-asistencia si">Auto (${m.criterio_asistencias} asist.)</span>` : '<span class="badge-asistencia" style="background:rgba(212,175,55,0.2); color:var(--color-acento);">Manual</span>'}</td>
+                <td style="text-align: center;">
+                    <button class="btn-export-ui csv" style="padding: 3px 8px; font-size: 0.75rem;" onclick="editarMedallaAdmin('${m.id}')">✏️ Editar</button>
+                    <button class="btn-eliminar-ins" style="padding: 3px 8px; font-size: 0.75rem;" onclick="eliminarMedallaAdmin('${m.id}', '${m.nombre}')">🗑️</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+window.editarMedallaAdmin = function(id) {
+    const m = medallasGlobalesAdmin.find(item => item.id === id);
+    if (!m) return;
+
+    document.getElementById('medalla-id-input').value = m.id;
+    document.getElementById('medalla-nombre').value = m.nombre || '';
+    document.getElementById('medalla-descripcion').value = m.descripcion || '';
+    document.getElementById('medalla-url-input').value = m.imagen_url || '';
+    document.getElementById('medalla-file-input').value = '';
+    document.getElementById('medalla-es-auto').value = m.es_automatica ? 'true' : 'false';
+    document.getElementById('medalla-criterio-num').value = m.criterio_asistencias || 0;
+
+    toggleCriterioAutoMedalla(m.es_automatica ? 'true' : 'false');
+    document.getElementById('modal-medalla-titulo').innerText = "Editar Medalla";
+    document.getElementById('box-crear-medalla').style.display = 'block';
+};
+
+window.abrirModalNuevaMedalla = function() {
+    document.getElementById('medalla-id-input').value = '';
+    document.getElementById('medalla-nombre').value = '';
+    document.getElementById('medalla-descripcion').value = '';
+    document.getElementById('medalla-url-input').value = '';
+    document.getElementById('medalla-file-input').value = '';
+    document.getElementById('medalla-es-auto').value = 'false';
+    toggleCriterioAutoMedalla('false');
+    
+    document.getElementById('modal-medalla-titulo').innerText = "Crear Nueva Medalla";
+    document.getElementById('box-crear-medalla').style.display = 'block';
+};
+
+window.cerrarModalMedalla = function() {
+    document.getElementById('box-crear-medalla').style.display = 'none';
+};
+
+window.toggleCriterioAutoMedalla = function(val) {
+    const grp = document.getElementById('group-criterio-auto');
+    if (grp) grp.style.display = (val === 'true') ? 'block' : 'none';
+};
+
+window.guardarMedallaAdmin = async function(e) {
+    e.preventDefault();
+    const status = document.getElementById('medalla-status');
+    status.innerText = "Guardando medalla...";
+
+    const medallaId = document.getElementById('medalla-id-input').value;
+    const nombre = document.getElementById('medalla-nombre').value.trim();
+    const descripcion = document.getElementById('medalla-descripcion').value.trim();
+    const esAuto = document.getElementById('medalla-es-auto').value === 'true';
+    const criterioNum = parseInt(document.getElementById('medalla-criterio-num').value) || 0;
+
+    const fileInput = document.getElementById('medalla-file-input');
+    let urlImagen = document.getElementById('medalla-url-input').value.trim();
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileName = `medalla_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+        const { error: uploadError } = await supabaseClient.storage.from('medallas').upload(fileName, file);
+
+        if (uploadError) {
+            status.innerText = "Error al subir la imagen: " + uploadError.message;
+            return;
+        }
+
+        const { data: { publicUrl } } = supabaseClient.storage.from('medallas').getPublicUrl(fileName);
+        urlImagen = publicUrl;
+    }
+
+    const payload = {
+        nombre: nombre,
+        descripcion: descripcion,
+        imagen_url: urlImagen || '',
+        es_automatica: esAuto,
+        criterio_asistencias: esAuto ? criterioNum : 0
+    };
+
+    let error;
+    if (medallaId) {
+        ({ error } = await supabaseClient.from('medallas').update(payload).eq('id', medallaId));
+    } else {
+        ({ error } = await supabaseClient.from('medallas').insert([payload]));
+    }
+
+    if (error) {
+        status.innerText = "Error: " + error.message;
+    } else {
+        status.innerText = "¡Medalla guardada correctamente!";
+        cerrarModalMedalla();
+        cargarModuloMedallasAdmin();
+    }
+};
+
+window.eliminarMedallaAdmin = async function(medallaId, nombre) {
+    if (!confirm(`¿Eliminar la medalla "${nombre}" del catálogo?`)) return;
+    await supabaseClient.from('medallas').delete().eq('id', medallaId);
+    cargarModuloMedallasAdmin();
+};
+
+/* --- GESTIÓN DE BLOG, TUNAS Y USUARIOS --- */
 function inicializarEditorQuill() {
     if (quillEditor || !document.getElementById('editor-quill-container')) return;
     quillEditor = new Quill('#editor-quill-container', {
@@ -597,6 +852,7 @@ function renderizarTablaBlogAdmin(lista) {
         tr.innerHTML = `
             <td><span class="noticia-badge-cat">${item.categoria || 'General'}</span><div class="tuno-nombre-destacado">${item.titulo}</div></td>
             <td>${item.es_privado ? 'Privada' : 'Pública'}</td>
+            <td>${Array.isArray(item.etiquetas) ? item.etiquetas.join(', ') : ''}</td>
             <td>${item.autor}</td>
             <td><span class="badge-asistencia ${item.estado === 'publicado' ? 'si' : 'no'}">${item.estado.toUpperCase()}</span></td>
             <td>${fecha}</td>
@@ -624,13 +880,11 @@ window.editarNoticiaAdmin = function(id) {
     const noticia = noticiasGlobalesAdmin.find(n => n.id === id);
     if (!noticia) return;
 
-    // Rellenar campos del formulario
     document.getElementById('blog-id').value = noticia.id;
     document.getElementById('blog-titulo-input').value = noticia.titulo || '';
     document.getElementById('blog-imagen-input').value = noticia.imagen_url || '';
     document.getElementById('blog-categoria-select').value = noticia.categoria || 'General';
     
-    // Cargar etiquetas separadas por comas
     const etiquetasInput = document.getElementById('blog-etiquetas-input');
     if (etiquetasInput) {
         etiquetasInput.value = Array.isArray(noticia.etiquetas) ? noticia.etiquetas.join(', ') : '';
@@ -639,7 +893,6 @@ window.editarNoticiaAdmin = function(id) {
     document.getElementById('blog-autor-input').value = noticia.autor || 'Redacción Jueves Santo';
     document.getElementById('blog-estado-select').value = noticia.estado || 'borrador';
     
-    // Estados de privacidad y restricción
     const chkPrivado = document.getElementById('blog-check-privado');
     const chkRestringido = document.getElementById('blog-check-restringido');
     if (chkPrivado) chkPrivado.checked = noticia.es_privado || false;
@@ -647,10 +900,8 @@ window.editarNoticiaAdmin = function(id) {
 
     document.getElementById('blog-resumen-input').value = noticia.resumen || '';
     
-    // Mostrar el panel de edición
     document.getElementById('box-editor-blog').style.display = 'block';
 
-    // Manejo del contenido según el tipo de editor
     const tipoEditorSelect = document.getElementById('blog-modo-editor');
     
     if (noticia.tipo_editor === 'rumbi' && typeof window.cargarDatosRumbiEditor === 'function') {
@@ -661,18 +912,15 @@ window.editarNoticiaAdmin = function(id) {
         if (tipoEditorSelect) tipoEditorSelect.value = 'quill';
         alternarModoEditorBlog('quill');
         
-        // CORRECCIÓN CLAVE: Asegurar que Quill inyecte el contenido de forma segura
         let contenidoHtml = noticia.contenido || '';
         if (contenidoHtml === 'EMPTY') {
-            contenidoHtml = ''; // Si venía como texto "EMPTY", lo dejamos limpio para redactar
+            contenidoHtml = '';
         }
 
-        // Damos un pequeño respiro para que el DOM pinte el editor Quill
         setTimeout(() => {
             if (quillEditor) {
                 quillEditor.root.innerHTML = contenidoHtml;
             } else {
-                // Fallback por si la instancia tardó más en crearse
                 const inputOculto = document.getElementById('blog-contenido-input');
                 if (inputOculto) inputOculto.value = contenidoHtml;
             }
@@ -749,7 +997,7 @@ window.eliminarUsuarioLOPD = async function(userId, email) {
 async function comprobarDenunciasPendientesBadge() {
     if (!supabaseClient) return;
     const { data } = await supabaseClient.from('blog_denuncias').select('id').eq('estado', 'pendiente');
-    badge = document.getElementById('badge-count-denuncias');
+    let badge = document.getElementById('badge-count-denuncias');
     if (badge && data && data.length > 0) { badge.innerText = data.length; badge.style.display = 'inline-block'; }
     else if (badge) { badge.style.display = 'none'; }
 }
