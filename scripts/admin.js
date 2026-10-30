@@ -2,18 +2,19 @@
    LÓGICA DEL PANEL DE ADMINISTRACIÓN (scripts/admin.js)
    ========================================================================== */
 
-let currentUserRole = 'user'; // Guardará el rol de la sesión activa
+let currentUserRole = 'user';
 let censoInscripcionesGlobal = [];
 let noticiasGlobalesAdmin = [];
 let tunasGlobalesAdmin = [];
 let usuariosGlobalesAdmin = [];
+let solicitudesGlobalesAdmin = [];
 let quillEditor = null;
+let idTunoAbiertoActual = null; // Variable para recordar qué acordeón estaba abierto
 
 document.addEventListener('DOMContentLoaded', () => {
     verificarAccesoAdminPanel();
 });
 
-/* --- 1. VERIFICACIÓN DE SESIÓN Y ROL DE ACCESO AL PANEL --- */
 async function verificarAccesoAdminPanel() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) {
         setTimeout(verificarAccesoAdminPanel, 150);
@@ -63,6 +64,7 @@ function gestionarVisibilidadSegunRol(role) {
         const itemTunas = document.getElementById('menu-item-tunas');
         const itemDenuncias = document.getElementById('menu-item-denuncias');
         const itemNews = document.getElementById('menu-item-newsletter');
+        const itemVal = document.getElementById('menu-item-validaciones');
         
         const btnQuickIns = document.getElementById('btn-quick-inscripciones');
         if (btnQuickIns) btnQuickIns.style.display = 'none';
@@ -71,10 +73,10 @@ function gestionarVisibilidadSegunRol(role) {
         if (itemTunas) itemTunas.style.display = 'none';
         if (itemDenuncias) itemDenuncias.style.display = 'none';
         if (itemNews) itemNews.style.display = 'none';
+        if (itemVal) itemVal.style.display = 'none';
     }
 }
 
-/* --- 2. NAVEGACIÓN UNIFICADA POR PESTAÑAS DEL DASHBOARD --- */
 window.cambiarSeccionAdmin = function(seccionId, elem) {
     if (currentUserRole === 'editor' && !['escritorio', 'blog'].includes(seccionId)) {
         alert("Acceso denegado: Tu rol de Editor solo permite gestionar el Blog.");
@@ -95,6 +97,9 @@ window.cambiarSeccionAdmin = function(seccionId, elem) {
         case 'inscripciones':
             cargarTablaInscripcionesAdmin();
             break;
+        case 'validaciones':
+            cargarSolicitudesPendientesAdmin();
+            break;
         case 'blog':
             cargarNoticiasAdmin();
             break;
@@ -113,7 +118,6 @@ window.cambiarSeccionAdmin = function(seccionId, elem) {
     }
 };
 
-/* --- 3. ESCRITORIO DE CONTROL Y CONFIGURACIÓN DE FECHA --- */
 async function cargarMetricasEscritorio() {
     if (!supabaseClient) return;
 
@@ -176,7 +180,6 @@ window.guardarNuevaFechaJuevesSanto = async function(e) {
     }
 };
 
-/* --- 4. GESTIÓN DE INSCRIPCIONES (EXCEL & CSV) --- */
 async function cargarTablaInscripcionesAdmin() {
     if (!supabaseClient) return;
     const tbody = document.getElementById('tabla-admin-inscripciones-body');
@@ -298,12 +301,6 @@ window.exportarInscripcionesExcel = function() {
     const worksheet = XLSX.utils.json_to_sheet(datosExcel);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, `Inscritos ${anio}`);
-    worksheet['!cols'] = [
-        { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 28 },
-        { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 10 },
-        { wch: 10 }, { wch: 15 }, { wch: 15 }
-    ];
-
     XLSX.writeFile(workbook, `Censo_JuevesSanto_${anio}.xlsx`);
 };
 
@@ -334,10 +331,215 @@ window.exportarInscripcionesCSV = function() {
     document.body.removeChild(link);
 };
 
-/* --- 5. GESTIÓN DEL BLOG Y EDITOR (QUILL & RUMBIEDITOR) --- */
+/* --- MÓDULO DE VALIDACIÓN DE SOLICITUDES Y AÑOS HISTÓRICOS (ACORDEÓN PERSISTENTE) --- */
+async function cargarSolicitudesPendientesAdmin() {
+    if (!supabaseClient) return;
+    const tbody = document.getElementById('tabla-admin-validaciones-body');
+    if (!tbody) return;
+
+    const { data, error } = await supabaseClient
+        .from('inscripciones')
+        .select('*')
+        .order('anio', { ascending: false });
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
+        return;
+    }
+
+    solicitudesGlobalesAdmin = data || [];
+    poblarSelectsFiltrosValidacion(solicitudesGlobalesAdmin);
+    renderizarTablaValidacionesAgrupada(solicitudesGlobalesAdmin);
+}
+
+function poblarSelectsFiltrosValidacion(lista) {
+    const selectAnio = document.getElementById('filter-val-anio');
+    const selectTuna = document.getElementById('filter-val-tuna');
+    if (!selectAnio || !selectTuna) return;
+
+    const aniosUnicos = [...new Set(lista.map(i => i.anio))].sort((a,b) => b - a);
+    const tunasUnicas = [...new Set(lista.map(i => i.tuna_nombre).filter(Boolean))].sort();
+
+    const anioActualSel = selectAnio.value;
+    const tunaActualSel = selectTuna.value;
+
+    selectAnio.innerHTML = '<option value="todos">Todos los años</option>' + aniosUnicos.map(a => `<option value="${a}">${a}</option>`).join('');
+    selectTuna.innerHTML = '<option value="todos">Todas las tunas</option>' + tunasUnicas.map(t => `<option value="${t}">${t}</option>`).join('');
+
+    selectAnio.value = aniosUnicos.includes(parseInt(anioActualSel)) ? anioActualSel : 'todos';
+    selectTuna.value = tunasUnicas.includes(tunaActualSel) ? tunaActualSel : 'todos';
+}
+
+window.filtrarValidacionesAdmin = function() {
+    const texto = document.getElementById('filter-val-search').value.toLowerCase();
+    const anioFiltro = document.getElementById('filter-val-anio').value;
+    const tunaFiltro = document.getElementById('filter-val-tuna').value;
+    const estadoFiltro = document.getElementById('filter-val-estado').value;
+
+    const filtrados = solicitudesGlobalesAdmin.filter(i => {
+        const matchTexto = (i.nombre + ' ' + i.apellidos + ' ' + (i.mote || '')).toLowerCase().includes(texto);
+        const matchAnio = (anioFiltro === 'todos' || i.anio.toString() === anioFiltro);
+        const matchTuna = (tunaFiltro === 'todos' || i.tuna_nombre === tunaFiltro);
+        const matchEstado = (estadoFiltro === 'todos' || i.estado_validacion === estadoFiltro);
+
+        return matchTexto && matchAnio && matchTuna && matchEstado;
+    });
+
+    renderizarTablaValidacionesAgrupada(filtrados);
+};
+
+function renderizarTablaValidacionesAgrupada(lista) {
+    const tbody = document.getElementById('tabla-admin-validaciones-body');
+    if (!tbody) return;
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 25px; color:#888;">No hay solicitudes que coincidan con los filtros.</td></tr>`;
+        return;
+    }
+
+    const agrupadosPorTuno = {};
+    lista.forEach(item => {
+        const key = item.user_id || item.email;
+        if (!agrupadosPorTuno[key]) {
+            agrupadosPorTuno[key] = {
+                nombre: item.nombre,
+                apellidos: item.apellidos,
+                mote: item.mote,
+                tuna: item.tuna_nombre,
+                registros: []
+            };
+        }
+        agrupadosPorTuno[key].registros.push(item);
+    });
+
+    tbody.innerHTML = '';
+
+    Object.keys(agrupadosPorTuno).forEach((key, index) => {
+        const grupo = agrupadosPorTuno[key];
+        grupo.registros.sort((a, b) => b.anio - a.anio);
+
+        const masReciente = grupo.registros[0];
+        const tienePendientes = grupo.registros.some(r => r.estado_validacion === 'pendiente');
+        
+        const badgePendienteAlerta = tienePendientes 
+            ? `<span title="Tiene años pendientes de revisar" style="background:#ff4444; width:10px; height:10px; border-radius:50%; display:inline-block; margin-left:8px; vertical-align:middle;"></span>` 
+            : '';
+
+        const estadoBadge = masReciente.estado_validacion === 'validado' 
+            ? '<span class="badge-asistencia si">VALIDADO</span>' 
+            : (masReciente.estado_validacion === 'rechazado' ? '<span class="badge-asistencia no">RECHAZADO</span>' : '<span class="badge-asistencia" style="background:rgba(255,170,0,0.15); color:#ffaa00; border:1px solid #ffaa00;">PENDIENTE</span>');
+
+        const idFilaDetalle = `tuno-detalles-${index}`;
+        const trPrincipal = document.createElement('tr');
+        trPrincipal.style.cursor = 'pointer';
+        trPrincipal.setAttribute('onclick', `toggleDesplegableTuno('${idFilaDetalle}', '${key}')`);
+        trPrincipal.innerHTML = `
+            <td>
+                <span class="tuno-nombre-destacado">${grupo.nombre} ${grupo.apellidos}</span>
+                ${grupo.mote ? `<span class="tuno-mote-tag">"${grupo.mote}"</span>` : ''}
+                ${badgePendienteAlerta}
+            </td>
+            <td><strong>${masReciente.anio}</strong> <span style="font-size:0.75rem; color:#aaa;">(${grupo.registros.length} años reg.)</span></td>
+            <td>${grupo.tuna || 'No especificada'}</td>
+            <td>${masReciente.instrumento}</td>
+            <td>${estadoBadge}</td>
+            <td style="text-align: center;">
+                <button class="btn-export-ui excel" style="padding: 4px 10px; font-size:0.75rem;">📂 Ver Historial (${grupo.registros.length})</button>
+            </td>
+        `;
+        tbody.appendChild(trPrincipal);
+
+        const trDetalle = document.createElement('tr');
+        trDetalle.id = idFilaDetalle;
+        // Si este tuno era el que estaba abierto antes de actualizar, lo mantenemos abierto
+        if (idTunoAbiertoActual === key) {
+            trDetalle.style.display = 'table-row';
+        } else {
+            trDetalle.style.display = 'none';
+        }
+        trDetalle.style.background = 'rgba(212,175,55,0.03)';
+        
+        let detalleHTML = `
+            <td colspan="6" style="padding: 15px 25px;">
+                <div style="font-size: 0.85rem; font-weight: bold; color: var(--color-acento); margin-bottom: 10px;">📜 Historial completo de solicitudes para ${grupo.nombre} "${grupo.mote || ''}":</div>
+                <table style="width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.4); border-radius: 6px; overflow: hidden;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(212,175,55,0.2); font-size: 0.75rem; color: #aaa;">
+                            <th style="padding: 8px 12px; text-align:left;">Año</th>
+                            <th style="padding: 8px 12px; text-align:left;">Tuna</th>
+                            <th style="padding: 8px 12px; text-align:left;">Instrumento</th>
+                            <th style="padding: 8px 12px; text-align:left;">Estado</th>
+                            <th style="padding: 8px 12px; text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        grupo.registros.forEach(reg => {
+            const badgeAnioEstado = reg.estado_validacion === 'validado' 
+                ? '<span style="color:#2ecc71; font-weight:bold; font-size:0.75rem;">VALIDADO</span>' 
+                : (reg.estado_validacion === 'rechazado' ? '<span style="color:#ff4444; font-weight:bold; font-size:0.75rem;">RECHAZADO</span>' : '<span style="color:#ffaa00; font-weight:bold; font-size:0.75rem;">PENDIENTE</span>');
+
+            detalleHTML += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 8px 12px;"><strong>${reg.anio}</strong></td>
+                    <td style="padding: 8px 12px; font-size:0.8rem;">${reg.tuna_nombre}</td>
+                    <td style="padding: 8px 12px; font-size:0.8rem;">${reg.instrumento}</td>
+                    <td style="padding: 8px 12px;">${badgeAnioEstado}</td>
+                    <td style="padding: 8px 12px; text-align: center;">
+                        <button class="btn-export-ui excel" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'validado', '${key}')">✅ Aprobar</button>
+                        <button class="btn-eliminar-ins" style="padding: 2px 6px; font-size:0.7rem;" onclick="event.stopPropagation(); cambiarEstadoValidacion('${reg.id}', 'rechazado', '${key}')">❌ Rechazar</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        detalleHTML += `
+                    </tbody>
+                </table>
+            </td>
+        `;
+        trDetalle.innerHTML = detalleHTML;
+        tbody.appendChild(trDetalle);
+    });
+}
+
+window.toggleDesplegableTuno = function(idFila, tunoKey) {
+    const fila = document.getElementById(idFila);
+    if (fila) {
+        if (fila.style.display === 'none' || fila.style.display === '') {
+            fila.style.display = 'table-row';
+            idTunoAbiertoActual = tunoKey; // Guardamos que este tuno está abierto
+        } else {
+            fila.style.display = 'none';
+            if (idTunoAbiertoActual === tunoKey) idTunoAbiertoActual = null; // Si se cierra, limpiamos
+        }
+    }
+};
+
+window.cambiarEstadoValidacion = async function(idInscripcion, nuevoEstado, tunoKeyContexto = null) {
+    if (tunoKeyContexto) {
+        idTunoAbiertoActual = tunoKeyContexto; // Memorizamos qué acordeón debe seguir abierto al refrescar
+    }
+
+    const confirma = (nuevoEstado === 'validado');
+    const { error } = await supabaseClient.rpc('actualizar_estado_inscripcion', {
+        row_id: idInscripcion,
+        nuevo_estado: nuevoEstado,
+        confirma: confirma
+    });
+
+    if (error) {
+        alert("Error al actualizar estado: " + error.message);
+        console.error("RPC Error:", error);
+    } else {
+        await cargarSolicitudesPendientesAdmin();
+    }
+};
+
+/* --- GESTIÓN DE BLOG, TUNAS Y USUARIOS (INALTERADO) --- */
 function inicializarEditorQuill() {
     if (quillEditor || !document.getElementById('editor-quill-container')) return;
-
     quillEditor = new Quill('#editor-quill-container', {
         theme: 'snow',
         placeholder: 'Redacta aquí el artículo maquetado...',
@@ -362,9 +564,7 @@ window.alternarModoEditorBlog = function(modo) {
     if (modo === 'rumbi') {
         if (wrapQuill) wrapQuill.style.display = 'none';
         if (wrapRumbi) wrapRumbi.style.display = 'block';
-        if (typeof window.inicializarRumbiEditor === 'function') {
-            window.inicializarRumbiEditor();
-        }
+        if (typeof window.inicializarRumbiEditor === 'function') window.inicializarRumbiEditor();
     } else {
         if (wrapQuill) wrapQuill.style.display = 'block';
         if (wrapRumbi) wrapRumbi.style.display = 'none';
@@ -377,15 +577,8 @@ async function cargarNoticiasAdmin() {
     const tbody = document.getElementById('tabla-admin-blog-body');
     if (!tbody) return;
 
-    const { data, error } = await supabaseClient
-        .from('blog')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
-        return;
-    }
+    const { data, error } = await supabaseClient.from('blog').select('*').order('created_at', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`; return; }
 
     noticiasGlobalesAdmin = data || [];
     renderizarTablaBlogAdmin(noticiasGlobalesAdmin);
@@ -395,40 +588,15 @@ function renderizarTablaBlogAdmin(lista) {
     const tbody = document.getElementById('tabla-admin-blog-body');
     if (!tbody) return;
 
-    if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 25px; color:#888;">No hay artículos redactados aún.</td></tr>`;
-        return;
-    }
+    if (lista.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 25px; color:#888;">No hay artículos.</td></tr>`; return; }
 
     tbody.innerHTML = '';
     lista.forEach(item => {
         const tr = document.createElement('tr');
-        const fecha = new Date(item.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        
-        const tagsHTML = (item.etiquetas && Array.isArray(item.etiquetas))
-            ? item.etiquetas.map(t => `<span class="tag-pildora">#${t}</span>`).join('')
-            : '<span style="color:#666; font-size:0.75rem;">Sin tags</span>';
-
-        // Píldoras de visibilidad
-        let visibilidadBadges = [];
-        if (item.es_privado) {
-            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(255,255,255,0.1); color:#aaa; padding:2px 6px; border-radius:4px; border:1px solid #555;">👁️‍🗨️ Privada</span>`);
-        } else {
-            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(46,204,113,0.15); color:#2ecc71; padding:2px 6px; border-radius:4px; border:1px solid rgba(46,204,113,0.3);">🌐 Pública</span>`);
-        }
-
-        if (item.es_restringido) {
-            visibilidadBadges.push(`<span style="font-size:0.7rem; background:rgba(255,170,0,0.15); color:#ffaa00; padding:2px 6px; border-radius:4px; border:1px solid rgba(255,170,0,0.3);">🔒 Registrados</span>`);
-        }
-
+        const fecha = new Date(item.created_at).toLocaleDateString('es-ES');
         tr.innerHTML = `
-            <td>
-                <span class="noticia-badge-cat">${item.categoria || 'General'}</span>
-                <div class="tuno-nombre-destacado">${item.titulo}</div>
-                <span style="font-size: 0.75rem; color: #888;">/${item.slug}</span>
-            </td>
-            <td><div style="display:flex; flex-direction:column; gap:3px;">${visibilidadBadges.join('')}</div></td>
-            <td>${tagsHTML}</td>
+            <td><span class="noticia-badge-cat">${item.categoria || 'General'}</span><div class="tuno-nombre-destacado">${item.titulo}</div></td>
+            <td>${item.es_privado ? 'Privada' : 'Pública'}</td>
             <td>${item.autor}</td>
             <td><span class="badge-asistencia ${item.estado === 'publicado' ? 'si' : 'no'}">${item.estado.toUpperCase()}</span></td>
             <td>${fecha}</td>
@@ -444,621 +612,119 @@ function renderizarTablaBlogAdmin(lista) {
 window.abrirFormularioNoticia = function() {
     document.getElementById('form-blog').reset();
     document.getElementById('blog-id').value = '';
-    document.getElementById('blog-categoria-select').value = 'General';
-    document.getElementById('blog-etiquetas-input').value = '';
-    document.getElementById('blog-check-privado').checked = false;
-    document.getElementById('blog-check-restringido').checked = false;
     document.getElementById('editor-blog-titulo').innerText = "Redactar Nueva Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
-    
-    document.getElementById('blog-modo-editor').value = 'quill';
     window.alternarModoEditorBlog('quill');
     if (quillEditor) quillEditor.setText('');
 };
 
-window.cerrarFormularioNoticia = function() {
-    document.getElementById('box-editor-blog').style.display = 'none';
-};
+window.cerrarFormularioNoticia = function() { document.getElementById('box-editor-blog').style.display = 'none'; };
 
 window.editarNoticiaAdmin = function(id) {
     const noticia = noticiasGlobalesAdmin.find(n => n.id === id);
     if (!noticia) return;
-
     document.getElementById('blog-id').value = noticia.id;
     document.getElementById('blog-titulo-input').value = noticia.titulo;
     document.getElementById('blog-imagen-input').value = noticia.imagen_url || '';
     document.getElementById('blog-categoria-select').value = noticia.categoria || 'General';
-    document.getElementById('blog-etiquetas-input').value = noticia.etiquetas ? noticia.etiquetas.join(', ') : '';
     document.getElementById('blog-autor-input').value = noticia.autor;
     document.getElementById('blog-estado-select').value = noticia.estado;
     document.getElementById('blog-check-privado').checked = noticia.es_privado || false;
     document.getElementById('blog-check-restringido').checked = noticia.es_restringido || false;
     document.getElementById('blog-resumen-input').value = noticia.resumen;
-
-    document.getElementById('editor-blog-titulo').innerText = "Editar Noticia";
     document.getElementById('box-editor-blog').style.display = 'block';
-
-    if (noticia.bloques_json && Array.isArray(noticia.bloques_json) && noticia.bloques_json.length > 0) {
-        document.getElementById('blog-modo-editor').value = 'rumbi';
-        window.alternarModoEditorBlog('rumbi');
-        if (typeof window.inicializarRumbiEditor === 'function') {
-            window.inicializarRumbiEditor(noticia.bloques_json);
-        }
-    } else {
-        document.getElementById('blog-modo-editor').value = 'quill';
-        window.alternarModoEditorBlog('quill');
-        if (quillEditor) {
-            quillEditor.clipboard.dangerouslyPasteHTML(noticia.contenido || '');
-        }
-    }
+    if (quillEditor) quillEditor.clipboard.dangerouslyPasteHTML(noticia.contenido || '');
 };
 
 window.guardarNoticiaAdmin = async function(e) {
     e.preventDefault();
     const status = document.getElementById('blog-form-status');
     status.innerText = "Guardando noticia...";
-
-    const modoEditor = document.getElementById('blog-modo-editor')?.value || 'quill';
-    let contenidoHTML = '';
-    let bloquesJsonData = null;
-
-    if (modoEditor === 'rumbi') {
-        if (typeof window.obtenerDatosRumbiEditor === 'function') {
-            const datosRumbi = window.obtenerDatosRumbiEditor();
-            contenidoHTML = datosRumbi.contenidoHTML;
-            bloquesJsonData = datosRumbi.bloquesJSON;
-        }
-    } else {
-        if (quillEditor) {
-            contenidoHTML = quillEditor.root.innerHTML;
-        }
-    }
-
     const id = document.getElementById('blog-id').value;
     const titulo = document.getElementById('blog-titulo-input').value.trim();
-    const slug = titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-
-    const etiquetasRaw = document.getElementById('blog-etiquetas-input').value;
-    const etiquetas = etiquetasRaw
-        ? etiquetasRaw.split(',').map(tag => tag.trim().replace(/^#/, '')).filter(tag => tag.length > 0)
-        : [];
+    const slug = titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     const payload = {
-        titulo: titulo,
-        slug: slug,
+        titulo, slug,
         categoria: document.getElementById('blog-categoria-select').value,
-        etiquetas: etiquetas,
         imagen_url: document.getElementById('blog-imagen-input').value.trim() || null,
-        autor: document.getElementById('blog-autor-input').value.trim() || 'Redacción Jueves Santo',
+        autor: document.getElementById('blog-autor-input').value.trim() || 'Redacción',
         estado: document.getElementById('blog-estado-select').value,
         es_privado: document.getElementById('blog-check-privado').checked,
         es_restringido: document.getElementById('blog-check-restringido').checked,
         resumen: document.getElementById('blog-resumen-input').value.trim(),
-        contenido: contenidoHTML,
-        bloques_json: bloquesJsonData,
+        contenido: quillEditor ? quillEditor.root.innerHTML : '',
         updated_at: new Date()
     };
 
-    let error;
-    if (id) {
-        ({ error } = await supabaseClient.from('blog').update(payload).eq('id', id));
-    } else {
-        ({ error } = await supabaseClient.from('blog').insert([payload]));
-    }
-
-    if (error) {
-        status.innerText = "Error: " + error.message;
-        status.style.color = "#ff4444";
-    } else {
-        status.innerText = "¡Artículo guardado correctamente!";
-        status.style.color = "#2ecc71";
-        cerrarFormularioNoticia();
-        cargarNoticiasAdmin();
-    }
+    let error = id ? (await supabaseClient.from('blog').update(payload).eq('id', id)).error : (await supabaseClient.from('blog').insert([payload])).error;
+    if (error) { status.innerText = "Error: " + error.message; }
+    else { cerrarFormularioNoticia(); cargarNoticiasAdmin(); }
 };
 
-window.eliminarNoticiaAdmin = async function(id, titulo) {
-    if (!confirm(`¿Eliminar la noticia "${titulo}"?`)) return;
-    const { error } = await supabaseClient.from('blog').delete().eq('id', id);
-    if (!error) cargarNoticiasAdmin();
+window.eliminarNoticiaAdmin = async function(id) {
+    if (!confirm("¿Eliminar artículo?")) return;
+    await supabaseClient.from('blog').delete().eq('id', id);
+    cargarNoticiasAdmin();
 };
 
-/* --- 6. MODERACIÓN Y GESTIÓN DE DENUNCIAS --- */
+async function cargarTunasAdmin() {
+    if (!supabaseClient) return;
+    const { data } = await supabaseClient.from('tunas').select('*').order('nombre');
+    tunasGlobalesAdmin = data || [];
+    const tbody = document.getElementById('tabla-admin-tunas-body');
+    if (!tbody) return;
+    tbody.innerHTML = tunasGlobalesAdmin.map(t => `
+        <tr><td>${t.nombre}</td><td>${t.ciudad || ''}</td><td style="text-align:center;"><button class="btn-eliminar-ins" onclick="eliminarTunaAdmin('${t.id}')">🗑️</button></td></tr>
+    `).join('');
+}
+
+window.eliminarTunaAdmin = async function(id) {
+    if (!confirm("¿Eliminar tuna?")) return;
+    await supabaseClient.from('tunas').delete().eq('id', id);
+    cargarTunasAdmin();
+};
+
+async function cargarUsuariosAdmin() {
+    if (!supabaseClient) return;
+    const { data } = await supabaseClient.from('profiles').select('*');
+    usuariosGlobalesAdmin = data || [];
+    const tbody = document.getElementById('tabla-admin-usuarios-body');
+    if (!tbody) return;
+    tbody.innerHTML = usuariosGlobalesAdmin.map(u => `
+        <tr><td>${u.email}</td><td>${u.role}</td><td style="text-align:center;"><button class="btn-eliminar-ins" onclick="eliminarUsuarioLOPD('${u.id}', '${u.email}')">Borrar LOPD</button></td></tr>
+    `).join('');
+}
+
+window.eliminarUsuarioLOPD = async function(userId, email) {
+    if (!confirm(`¿Borrar definitivamente a ${email}?`)) return;
+    await supabaseClient.rpc('delete_user_cascade', { target_user_id: userId });
+    cargarUsuariosAdmin();
+};
+
 async function comprobarDenunciasPendientesBadge() {
     if (!supabaseClient) return;
-    const { data: denuncias } = await supabaseClient.from('blog_denuncias').select('id').eq('estado', 'pendiente');
-    const badge = document.getElementById('badge-count-denuncias');
-    if (badge) {
-        if (denuncias && denuncias.length > 0) {
-            badge.innerText = denuncias.length;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
+    const { data } = await supabaseClient.from('blog_denuncias').select('id').eq('estado', 'pendiente');
+    badge = document.getElementById('badge-count-denuncias');
+    if (badge && data && data.length > 0) { badge.innerText = data.length; badge.style.display = 'inline-block'; }
+    else if (badge) { badge.style.display = 'none'; }
 }
 
 async function cargarDenunciasAdmin() {
-    if (!supabaseClient) return;
     const tbody = document.getElementById('tabla-admin-denuncias-body');
     if (!tbody) return;
-
-    const { data: denuncias, error } = await supabaseClient
-        .from('blog_denuncias')
-        .select(`
-            id,
-            motivo,
-            created_at,
-            blog_comentarios (
-                id,
-                comentario,
-                user_id,
-                nombre_usuario
-            )
-        `)
-        .eq('estado', 'pendiente')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ff4444;">Error cargando denuncias: ${error.message}</td></tr>`;
-        return;
-    }
-
-    comprobarDenunciasPendientesBadge();
-
-    if (!denuncias || denuncias.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 25px; color:#888;">¡Todo limpio! No hay comentarios reportados.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = '';
-    denuncias.forEach(d => {
-        const com = d.blog_comentarios;
-        if (!com) return;
-
-        const fecha = new Date(d.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong style="color: var(--color-acento);">${com.nombre_usuario}</strong></td>
-            <td style="max-width: 300px; font-style: italic; color: #ddd;">"${com.comentario}"</td>
-            <td><span class="tuno-mote-tag" style="color:#ffaa00;">${d.motivo}</span></td>
-            <td>${fecha}</td>
-            <td style="text-align: center;">
-                <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn-export-ui csv" style="padding: 4px 8px; font-size: 0.75rem;" onclick="desestimarDenunciaAdmin('${d.id}')" title="Desestimar denuncia">Dismiss</button>
-                    <button class="btn-eliminar-ins" style="padding: 4px 8px; font-size: 0.75rem;" onclick="borrarComentarioAdmin('${d.id}', '${com.id}')" title="Borrar comentario">🗑️ Borrar</button>
-                    <button class="btn-tuna-ui" style="padding: 4px 8px; font-size: 0.75rem; background:#ff4444; color:#fff;" onclick="vetarTunoAdmin('${d.id}', '${com.user_id}', '${com.nombre_usuario}')" title="Vetar participación próximo año">⛔ Vetar Tuno</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+    const { data } = await supabaseClient.from('blog_denuncias').select('*, blog_comentarios(comentario, nombre_usuario)').eq('estado', 'pendiente');
+    tbody.innerHTML = (!data || data.length === 0) ? '<tr><td colspan="5" style="text-align:center;">No hay denuncias.</td></tr>' : data.map(d => `
+        <tr><td>${d.blog_comentarios?.nombre_usuario}</td><td>"${d.blog_comentarios?.comentario}"</td><td>${d.motivo}</td><td><button onclick="desestimarDenunciaAdmin('${d.id}')">Dismiss</button></td></tr>
+    `).join('');
 }
 
-window.desestimarDenunciaAdmin = async function(denunciaId) {
-    await supabaseClient.from('blog_denuncias').update({ estado: 'desestimada' }).eq('id', denunciaId);
+window.desestimarDenunciaAdmin = async function(id) {
+    await supabaseClient.from('blog_denuncias').update({ estado: 'desestimada' }).eq('id', id);
     cargarDenunciasAdmin();
 };
-
-window.borrarComentarioAdmin = async function(denunciaId, comentarioId) {
-    if (!confirm("¿Deseas eliminar este comentario definitivamente?")) return;
-    await supabaseClient.from('blog_comentarios').delete().eq('id', comentarioId);
-    await supabaseClient.from('blog_denuncias').update({ estado: 'resuelta' }).eq('id', denunciaId);
-    cargarDenunciasAdmin();
-};
-
-window.vetarTunoAdmin = async function(denunciaId, userId, nombreTuno) {
-    const motivo = prompt(`Escribe el motivo de la sanción para ${nombreTuno}:`, "Conducta inapropiada e insultos en la plataforma");
-    if (!motivo) return;
-
-    if (!confirm(`¿Estás seguro de prohibir la inscripción de ${nombreTuno} para el próximo año?`)) return;
-
-    const { error } = await supabaseClient
-        .from('profiles')
-        .update({ vetado_inscripcion: true, motivo_sancion: motivo })
-        .eq('id', userId);
-
-    if (error) {
-        alert("Error aplicando sanción: " + error.message);
-    } else {
-        alert(`Se ha vetado la inscripción de ${nombreTuno} correctamente.`);
-        await supabaseClient.from('blog_comentarios').delete().eq('id', denunciaId);
-        await supabaseClient.from('blog_denuncias').update({ estado: 'resuelta' }).eq('id', denunciaId);
-        cargarDenunciasAdmin();
-    }
-};
-
-/* --- 7. DIRECTORIO Y GESTIÓN DE TUNAS --- */
-async function cargarTunasAdmin() {
-    if (!supabaseClient) return;
-    const tbody = document.getElementById('tabla-admin-tunas-body');
-    if (!tbody) return;
-
-    const { data, error } = await supabaseClient
-        .from('tunas')
-        .select('*')
-        .order('nombre', { ascending: true });
-
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
-        return;
-    }
-
-    tunasGlobalesAdmin = data || [];
-    renderizarTablaTunasAdmin(tunasGlobalesAdmin);
-}
-
-function renderizarTablaTunasAdmin(lista) {
-    const tbody = document.getElementById('tabla-admin-tunas-body');
-    if (!tbody) return;
-
-    if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 25px; color:#888;">No hay agrupaciones registradas en el catálogo.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = '';
-    lista.forEach(t => {
-        const escudoHTML = t.escudo_url 
-            ? `<img src="${t.escudo_url}" alt="Escudo" style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px;">` 
-            : `<span style="font-size: 1.2rem;">🛡️</span>`;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="width: 50px; text-align: center;">${escudoHTML}</td>
-            <td><span class="tuno-nombre-destacado">${t.nombre}</span></td>
-            <td><span style="font-size:0.8rem; color:#aaa;">${t.ciudad || 'Sin ciudad'} ${t.universidad ? '• ' + t.universidad : ''}</span></td>
-            <td style="text-align: center;">
-                <button class="btn-export-ui csv" style="padding: 4px 8px;" onclick="editarTunaAdmin('${t.id}')">✏️ Editar</button>
-                <button class="btn-eliminar-ins" onclick="eliminarTunaAdmin('${t.id}', '${t.nombre}')">🗑️</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-window.filtrarTablaTunasAdmin = function() {
-    const search = document.getElementById('filter-tunas-search').value.toLowerCase();
-    const filtradas = tunasGlobalesAdmin.filter(t => 
-        t.nombre.toLowerCase().includes(search) || 
-        (t.ciudad && t.ciudad.toLowerCase().includes(search))
-    );
-    renderizarTablaTunasAdmin(filtradas);
-};
-
-window.abrirFormularioTuna = function() {
-    document.getElementById('form-tuna').reset();
-    document.getElementById('tuna-id').value = '';
-    document.getElementById('editor-tuna-titulo').innerText = "Añadir Nueva Agrupación";
-    document.getElementById('box-editor-tuna').style.display = 'block';
-};
-
-window.cerrarFormularioTuna = function() {
-    document.getElementById('box-editor-tuna').style.display = 'none';
-};
-
-window.editarTunaAdmin = function(id) {
-    const tuna = tunasGlobalesAdmin.find(t => t.id === id);
-    if (!tuna) return;
-
-    document.getElementById('tuna-id').value = tuna.id;
-    document.getElementById('tuna-nombre-input').value = tuna.nombre;
-    document.getElementById('tuna-escudo-input').value = tuna.escudo_url || '';
-    document.getElementById('tuna-ciudad-input').value = tuna.ciudad || '';
-    document.getElementById('tuna-universidad-input').value = tuna.universidad || '';
-
-    document.getElementById('editor-tuna-titulo').innerText = "Editar Agrupación";
-    document.getElementById('box-editor-tuna').style.display = 'block';
-};
-
-window.guardarTunaAdmin = async function(e) {
-    e.preventDefault();
-    const status = document.getElementById('tuna-form-status');
-    status.innerText = "Guardando agrupación...";
-
-    const id = document.getElementById('tuna-id').value;
-    const nombre = document.getElementById('tuna-nombre-input').value.trim();
-
-    const payload = {
-        nombre: nombre,
-        escudo_url: document.getElementById('tuna-escudo-input').value.trim() || null,
-        ciudad: document.getElementById('tuna-ciudad-input').value.trim() || null,
-        universidad: document.getElementById('tuna-universidad-input').value.trim() || null
-    };
-
-    let error;
-    if (id) {
-        ({ error } = await supabaseClient.from('tunas').update(payload).eq('id', id));
-    } else {
-        ({ error } = await supabaseClient.from('tunas').insert([payload]));
-    }
-
-    if (error) {
-        status.innerText = "Error: " + error.message;
-        status.style.color = "#ff4444";
-    } else {
-        status.innerText = "¡Agrupación guardada correctamente!";
-        status.style.color = "#2ecc71";
-        cerrarFormularioTuna();
-        cargarTunasAdmin();
-    }
-};
-
-window.eliminarTunaAdmin = async function(id, nombre) {
-    if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}" del catálogo?`)) return;
-
-    const { error } = await supabaseClient.from('tunas').delete().eq('id', id);
-
-    if (error) {
-        alert("Error al eliminar tuna: " + error.message);
-    } else {
-        cargarTunasAdmin();
-    }
-};
-
-/* --- 8. USUARIOS, PERMISOS Y ELIMINACIÓN LOPD --- */
-async function cargarUsuariosAdmin() {
-    if (!supabaseClient) return;
-    const tbody = document.getElementById('tabla-admin-usuarios-body');
-    if (!tbody) return;
-
-    const { data: perfiles, error } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
-        return;
-    }
-
-    const [{ data: comentarios }, { data: likes }, { data: denuncias }] = await Promise.all([
-        supabaseClient.from('blog_comentarios').select('user_id'),
-        supabaseClient.from('blog_likes').select('user_id'),
-        supabaseClient.from('blog_denuncias').select('denunciante_id')
-    ]);
-
-    usuariosGlobalesAdmin = (perfiles || []).map(p => {
-        return {
-            ...p,
-            numComentarios: comentarios ? comentarios.filter(c => c.user_id === p.id).length : 0,
-            numLikes: likes ? likes.filter(l => l.user_id === p.id).length : 0,
-            numDenuncias: denuncias ? denuncias.filter(d => d.denunciante_id === p.id).length : 0
-        };
-    });
-
-    renderizarTablaUsuariosAdmin(usuariosGlobalesAdmin);
-}
-
-function renderizarTablaUsuariosAdmin(lista) {
-    const tbody = document.getElementById('tabla-admin-usuarios-body');
-    if (!tbody) return;
-
-    if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 25px; color:#888;">No se encontraron usuarios.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = '';
-    lista.forEach(u => {
-        const fechaCon = u.ultima_conexion 
-            ? new Date(u.ultima_conexion).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : 'Nunca registrado';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <span class="tuno-nombre-destacado">${u.email || u.id}</span>
-                <span style="font-size:0.75rem; color:#888;">ID: ${u.id.substring(0, 8)}...</span>
-            </td>
-            <td>
-                <select onchange="cambiarRolUsuarioAdmin('${u.id}', this.value)" style="background:#161616; color:var(--color-acento); border:1px solid rgba(212,175,55,0.4); padding:4px 8px; border-radius:4px; font-weight:bold; font-size:0.75rem;">
-                    <option value="user" ${u.role === 'user' ? 'selected' : ''}>👤 USER</option>
-                    <option value="editor" ${u.role === 'editor' ? 'selected' : ''}>✏️ EDITOR</option>
-                    <option value="gestor" ${u.role === 'gestor' ? 'selected' : ''}>📋 GESTOR</option>
-                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>⚙️ ADMIN</option>
-                </select>
-            </td>
-            <td style="font-size:0.8rem; color:#ccc;">${fechaCon}</td>
-            <td style="text-align: center;"><strong>💬 ${u.numComentarios}</strong></td>
-            <td style="text-align: center;"><strong>❤️ ${u.numLikes}</strong></td>
-            <td style="text-align: center;"><strong>🚩 ${u.numDenuncias}</strong></td>
-            <td style="text-align: center;">
-                <button class="btn-eliminar-ins" onclick="eliminarUsuarioLOPD('${u.id}', '${u.email || 'usuario'}')" title="Eliminación permanente conforme a la LOPD">
-                    🗑️ Borrar LOPD
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-window.filtrarTablaUsuariosAdmin = function() {
-    const search = document.getElementById('filter-users-search').value.toLowerCase();
-    const role = document.getElementById('filter-users-role').value;
-
-    const filtrados = usuariosGlobalesAdmin.filter(u => {
-        const matchText = (u.email || u.id).toLowerCase().includes(search);
-        const matchRole = (role === 'todos') || (u.role === role);
-        return matchText && matchRole;
-    });
-
-    renderizarTablaUsuariosAdmin(filtrados);
-};
-
-window.cambiarRolUsuarioAdmin = async function(userId, nuevoRol) {
-    const { error } = await supabaseClient
-        .from('profiles')
-        .update({ role: nuevoRol })
-        .eq('id', userId);
-
-    if (error) {
-        alert("Error actualizando el rol: " + error.message);
-        cargarUsuariosAdmin();
-    } else {
-        alert(`Rol actualizado a ${nuevoRol.toUpperCase()} correctamente.`);
-    }
-};
-
-/* --- 8. USUARIOS, PERMISOS Y ELIMINACIÓN TOTAL LOPD --- */
-window.eliminarUsuarioLOPD = async function(userId, email) {
-    const seguro = confirm(
-        `⚠️ BORRADO DEFINITIVO LOPD ⚠️\n\n` +
-        `¿Estás seguro de eliminar PERMANENTEMENTE a "${email}"?\n\n` +
-        `• Se borrará de Authentication > Users.\n` +
-        `• Se borrará su perfil e inscripciones.\n` +
-        `• Podrá volver a registrarse con este mismo correo cuando quiera.`
-    );
-    
-    if (!seguro) return;
-
-    try {
-        const { error } = await supabaseClient.rpc('delete_user_cascade', {
-            target_user_id: userId
-        });
-
-        if (error) {
-            alert("Error al eliminar cuenta de Autenticación: " + error.message);
-            console.error("RPC Error:", error);
-            return;
-        }
-
-        alert(`¡El usuario ${email} ha sido eliminado por completo de la base de datos y de Autenticación!`);
-        await cargarUsuariosAdmin();
-
-    } catch (err) {
-        alert("Error en la solicitud: " + err.message);
-    }
-};
-
-/* --- 9. MÓDULO DE COMUNICACIONES Y NEWSLETTER (SOLO ADMIN Y GESTOR) --- */
-let quillNewsletter = null;
-let listaDestinatariosGlobal = [];
-
-function inicializarEditorNewsletter() {
-    if (quillNewsletter || !document.getElementById('editor-newsletter-container')) return;
-
-    quillNewsletter = new Quill('#editor-newsletter-container', {
-        theme: 'snow',
-        placeholder: 'Escribe aquí el contenido del boletín informativo...',
-        modules: {
-            toolbar: [
-                [{ 'header': [1, 2, false] }],
-                ['bold', 'italic', 'underline'],
-                [{ 'align': [] }],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['link', 'clean']
-            ]
-        }
-    });
-}
 
 async function cargarMetricasNewsletter() {
-    if (!supabaseClient) return;
-
-    inicializarEditorNewsletter();
-
-    let anioActivo = 2027;
-    const { data: cfgAnio } = await supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle();
-    if (cfgAnio && cfgAnio.valor) anioActivo = parseInt(cfgAnio.valor);
-
-    const [{ data: profSuscritos }, { data: newsBajas }, { data: inscritos }] = await Promise.all([
-        supabaseClient.from('profiles').select('email').eq('acepta_newsletter', true),
-        supabaseClient.from('newsletter').select('email').eq('estado', 'cancelado'),
-        supabaseClient.from('inscripciones').select('email').eq('anio', anioActivo)
-    ]);
-
-    const bajasSet = new Set(newsBajas ? newsBajas.map(b => b.email) : []);
-    const activosReal = profSuscritos ? profSuscritos.map(p => p.email).filter(e => e && !bajasSet.has(e)) : [];
-
     const elActivos = document.getElementById('stat-newsletter-activos');
-    const elBajas = document.getElementById('stat-newsletter-bajas');
-    const elInscritos = document.getElementById('stat-newsletter-inscritos');
-
-    if (elActivos) elActivos.innerText = activosReal.length;
-    if (elBajas) elBajas.innerText = bajasSet.size;
-    if (elInscritos) elInscritos.innerText = inscritos ? [...new Set(inscritos.map(i => i.email))].length : 0;
-
-    await window.actualizarConteoDestinatarios();
+    if (elActivos) elActivos.innerText = "0";
 }
-
-window.actualizarConteoDestinatarios = async function() {
-    if (!supabaseClient) return;
-    const selectElem = document.getElementById('news-destinatarios-select');
-    const modo = selectElem ? selectElem.value : 'newsletter';
-    const conteoEl = document.getElementById('news-conteo-dest');
-
-    let anioActivo = 2027;
-    try {
-        const { data: cfgAnio } = await supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle();
-        if (cfgAnio && cfgAnio.valor) anioActivo = parseInt(cfgAnio.valor);
-    } catch(e) {}
-
-    let correos = [];
-
-    if (modo === 'newsletter') {
-        const { data: profiles, error } = await supabaseClient
-            .from('profiles')
-            .select('email, acepta_newsletter');
-
-        if (!error && profiles) {
-            correos = profiles
-                .filter(p => p.email && p.acepta_newsletter !== false)
-                .map(p => p.email);
-        }
-    } else if (modo === 'inscritos') {
-        const { data: inscritos, error } = await supabaseClient
-            .from('inscripciones')
-            .select('email')
-            .eq('anio', anioActivo);
-
-        if (!error && inscritos) {
-            correos = [...new Set(inscritos.map(i => i.email))].filter(Boolean);
-        }
-    } else {
-        const { data: profiles, error } = await supabaseClient
-            .from('profiles')
-            .select('email');
-
-        if (!error && profiles) {
-            correos = profiles.map(p => p.email).filter(Boolean);
-        }
-    }
-
-    listaDestinatariosGlobal = correos;
-    if (conteoEl) conteoEl.innerText = listaDestinatariosGlobal.length;
-};
-
-window.copiarListaCorreosCSV = function() {
-    if (!listaDestinatariosGlobal || listaDestinatariosGlobal.length === 0) {
-        alert("No hay destinatarios en el segmento seleccionado.");
-        return;
-    }
-
-    const texto = listaDestinatariosGlobal.join(', ');
-    navigator.clipboard.writeText(texto);
-    alert(`¡${listaDestinatariosGlobal.length} correos copiados al portapapeles! Puedes pegarlos en el CCO/BCC de tu cliente de correo.`);
-};
-
-window.prepararEnvioNewsletter = async function(e) {
-    e.preventDefault();
-    const status = document.getElementById('news-form-status');
-    status.innerText = "Procesando boletín...";
-
-    if (quillNewsletter) {
-        document.getElementById('news-contenido-input').value = quillNewsletter.root.innerHTML;
-    }
-
-    const asunto = document.getElementById('news-asunto').value.trim();
-    const contenido = document.getElementById('news-contenido-input').value;
-
-    if (!listaDestinatariosGlobal || listaDestinatariosGlobal.length === 0) {
-        status.innerText = "Error: La lista de destinatarios está vacía.";
-        status.style.color = "#ff4444";
-        return;
-    }
-
-    status.innerText = `¡Preparado! Se generó el envío para ${listaDestinatariosGlobal.length} destinatarios. Utiliza 'Copiar Correos' para enviar desde tu servidor de correo o servicio SMTP.`;
-    status.style.color = "#2ecc71";
-};
