@@ -623,17 +623,61 @@ window.cerrarFormularioNoticia = function() { document.getElementById('box-edito
 window.editarNoticiaAdmin = function(id) {
     const noticia = noticiasGlobalesAdmin.find(n => n.id === id);
     if (!noticia) return;
+
+    // Rellenar campos del formulario
     document.getElementById('blog-id').value = noticia.id;
-    document.getElementById('blog-titulo-input').value = noticia.titulo;
+    document.getElementById('blog-titulo-input').value = noticia.titulo || '';
     document.getElementById('blog-imagen-input').value = noticia.imagen_url || '';
     document.getElementById('blog-categoria-select').value = noticia.categoria || 'General';
-    document.getElementById('blog-autor-input').value = noticia.autor;
-    document.getElementById('blog-estado-select').value = noticia.estado;
-    document.getElementById('blog-check-privado').checked = noticia.es_privado || false;
-    document.getElementById('blog-check-restringido').checked = noticia.es_restringido || false;
-    document.getElementById('blog-resumen-input').value = noticia.resumen;
+    
+    // Cargar etiquetas separadas por comas
+    const etiquetasInput = document.getElementById('blog-etiquetas-input');
+    if (etiquetasInput) {
+        etiquetasInput.value = Array.isArray(noticia.etiquetas) ? noticia.etiquetas.join(', ') : '';
+    }
+
+    document.getElementById('blog-autor-input').value = noticia.autor || 'Redacción Jueves Santo';
+    document.getElementById('blog-estado-select').value = noticia.estado || 'borrador';
+    
+    // Estados de privacidad y restricción
+    const chkPrivado = document.getElementById('blog-check-privado');
+    const chkRestringido = document.getElementById('blog-check-restringido');
+    if (chkPrivado) chkPrivado.checked = noticia.es_privado || false;
+    if (chkRestringido) chkRestringido.checked = noticia.es_restringido || false;
+
+    document.getElementById('blog-resumen-input').value = noticia.resumen || '';
+    
+    // Mostrar el panel de edición
     document.getElementById('box-editor-blog').style.display = 'block';
-    if (quillEditor) quillEditor.clipboard.dangerouslyPasteHTML(noticia.contenido || '');
+
+    // Manejo del contenido según el tipo de editor
+    const tipoEditorSelect = document.getElementById('blog-modo-editor');
+    
+    if (noticia.tipo_editor === 'rumbi' && typeof window.cargarDatosRumbiEditor === 'function') {
+        if (tipoEditorSelect) tipoEditorSelect.value = 'rumbi';
+        alternarModoEditorBlog('rumbi');
+        window.cargarDatosRumbiEditor(noticia.bloques_json);
+    } else {
+        if (tipoEditorSelect) tipoEditorSelect.value = 'quill';
+        alternarModoEditorBlog('quill');
+        
+        // CORRECCIÓN CLAVE: Asegurar que Quill inyecte el contenido de forma segura
+        let contenidoHtml = noticia.contenido || '';
+        if (contenidoHtml === 'EMPTY') {
+            contenidoHtml = ''; // Si venía como texto "EMPTY", lo dejamos limpio para redactar
+        }
+
+        // Damos un pequeño respiro para que el DOM pinte el editor Quill
+        setTimeout(() => {
+            if (quillEditor) {
+                quillEditor.root.innerHTML = contenidoHtml;
+            } else {
+                // Fallback por si la instancia tardó más en crearse
+                const inputOculto = document.getElementById('blog-contenido-input');
+                if (inputOculto) inputOculto.value = contenidoHtml;
+            }
+        }, 150);
+    }
 };
 
 window.guardarNoticiaAdmin = async function(e) {
