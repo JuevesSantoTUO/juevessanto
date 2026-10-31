@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inyectarModalPerfilGlobal();
     inyectarModalAuthGlobal();
     comprobarTokenRecuperacionPassword();
+    cargarLibreriaHtml2Canvas();
 
     if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange(() => {
@@ -28,6 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+/* --- CARGAR DINÁMICAMENTE HTML2CANVAS PARA GENERAR PNG --- */
+function cargarLibreriaHtml2Canvas() {
+    if (typeof html2canvas === 'undefined' && !document.getElementById('script-html2canvas')) {
+        const script = document.createElement('script');
+        script.id = 'script-html2canvas';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+    }
+}
 
 /* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN --- */
 async function comprobarTokenRecuperacionPassword() {
@@ -202,7 +213,7 @@ function inyectarModalAuthGlobal() {
                         <div class="input-group-checkbox">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
                                 <input type="checkbox" id="auth-check-newsletter" style="accent-color: var(--color-acento); margin-top: 2px;">
-                                <span>Deseo recibir boletines e información sobre la Madrugá y eventos por correo.</span>
+                                <span>Deseo recibir boletines e información sobre la Semana Santa y eventos por correo.</span>
                             </label>
                         </div>
                     </div>
@@ -589,6 +600,25 @@ function inyectarModalPerfilGlobal() {
         <div class="modal-contenido perfil-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
 
+            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px; position: relative;">
+                <button type="button" class="btn-tuna-ui" onclick="toggleMenuCompartirPerfil(event)" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; border-color: var(--color-acento);">
+                    📤 Compartir Perfil
+                </button>
+                
+                <div id="menu-compartir-desplegable" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 5px; background: #1a1a1a; border: 1px solid var(--color-acento, #d4af37); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index: 1000; width: 220px; overflow: hidden;">
+                    <button type="button" onclick="compartirPerfilRedes('whatsapp')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: #fff; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        💬 WhatsApp
+                    </button>
+                    <button type="button" onclick="compartirPerfilRedes('facebook')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: #fff; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        📘 Facebook
+                    </button>
+                    <button type="button" onclick="compartirPerfilRedes('descargar')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--color-acento, #d4af37); font-weight: bold; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        💾 Guardar / Descargar PNG
+                    </button>
+                </div>
+            </div>
+
             <div class="perfil-card-header" style="align-items: center; gap: 15px;">
                 <div class="perfil-avatar-wrapper" style="position: relative;">
                     <div class="perfil-avatar" id="perfil-avatar-box" style="width: 75px; height: 75px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento);">
@@ -597,15 +627,29 @@ function inyectarModalPerfilGlobal() {
                     </div>
                 </div>
 
-                <div class="perfil-datos-principal">
+                <div class="perfil-datos-principal" style="width: 100%;">
                     <h3 id="perfil-nombre-completo" style="margin: 0 0 5px 0;">Cargando...</h3>
                     <p id="perfil-tuna-tag" class="perfil-tuna-badge" style="margin: 0 0 8px 0;">Tuna no especificada</p>
                     
                     <div id="perfil-otras-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
 
-                    <div class="perfil-stats">
-                        <div class="stat-item"><span id="perfil-total-asistencias" class="stat-num">0</span><span class="stat-label">Madrugás</span></div>
-                        <div class="stat-item"><span id="perfil-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
+                    <div class="perfil-stats" style="display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; margin-top: 10px;">
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">SEMANAS SANTAS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">AÑO DEBUT</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">MADRUGÁS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">DOM. RAMOS</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -714,7 +758,106 @@ function inyectarModalPerfilGlobal() {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     configurarBuscadorOtrasTunasPerfil();
+
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('menu-compartir-desplegable');
+        if (menu && !e.target.closest('#menu-compartir-desplegable') && !e.target.closest('button[onclick*="toggleMenuCompartirPerfil"]')) {
+            menu.style.display = 'none';
+        }
+    });
 }
+
+window.toggleMenuCompartirPerfil = function(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('menu-compartir-desplegable');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+};
+
+/* --- LÓGICA DE GENERACIÓN PNG Y COMPARTIR EN REDES --- */
+window.compartirPerfilRedes = async function(plataforma) {
+    document.getElementById('menu-compartir-desplegable').style.display = 'none';
+
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) return;
+
+    await window.abrirModalPerfilPublico(session.user.id);
+    const modalPub = document.getElementById('modal-perfil-publico');
+    const pubContent = modalPub ? modalPub.querySelector('.perfil-modal-box') : null;
+
+    if (!pubContent) return;
+
+    if (typeof html2canvas === 'undefined') {
+        alert("Cargando motor de imagen... Inténtalo de nuevo en 2 segundos.");
+        return;
+    }
+
+    // Inyectar marca de agua promocional temporal para la captura
+    const watermarkHTML = `
+        <div id="temp-watermark-share" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(212,175,55,0.3); text-align: center;">
+            <p style="margin: 0; font-size: 0.78rem; color: #ddd; font-family: sans-serif;">
+                ✨ Mira mi perfil en la web de <strong>Jueves Santo Oviedo</strong>
+            </p>
+            <p style="margin: 3px 0 0 0; font-size: 0.72rem; color: var(--color-acento, #d4af37); font-weight: bold;">
+                Accede a la web: https://juevessantotuo.github.io/juevessanto/index.html
+            </p>
+        </div>
+    `;
+    pubContent.insertAdjacentHTML('beforeend', watermarkHTML);
+
+    try {
+        const canvas = await html2canvas(pubContent, {
+            backgroundColor: '#111111',
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+
+        document.getElementById('temp-watermark-share')?.remove();
+
+        const urlWeb = "https://juevessantotuo.github.io/juevessanto/index.html";
+        const textoShare = `✨ Mira mi perfil en la web de Jueves Santo Oviedo\nAccede a la web: ${urlWeb}`;
+
+        canvas.toBlob(async (blob) => {
+            if (plataforma === 'descargar') {
+                const link = document.createElement('a');
+                link.download = `Perfil_JuevesSanto_Tuno.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } else if (plataforma === 'whatsapp') {
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'perfil.png', { type: 'image/png' })] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Mi Perfil - Jueves Santo Oviedo',
+                            text: textoShare,
+                            files: [new File([blob], 'perfil.png', { type: 'image/png' })]
+                        });
+                    } catch (e) {}
+                } else {
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoShare)}`, '_blank');
+                    const link = document.createElement('a');
+                    link.download = `Perfil_JuevesSanto_Tuno.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }
+            } else if (plataforma === 'facebook') {
+                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlWeb)}&quote=${encodeURIComponent(textoShare)}`;
+                window.open(fbUrl, '_blank', 'width=600,height=400');
+                const link = document.createElement('a');
+                link.download = `Perfil_JuevesSanto_Tuno.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        }, 'image/png');
+
+    } catch (err) {
+        document.getElementById('temp-watermark-share')?.remove();
+        console.error("Error al generar la imagen del perfil:", err);
+        alert("No se pudo generar la imagen para compartir.");
+    }
+};
 
 window.abrirModalPerfil = async function() {
     if (!supabaseClient) return;
@@ -727,7 +870,6 @@ window.abrirModalPerfil = async function() {
     const modal = document.getElementById('modal-perfil');
     if (modal) modal.style.display = 'flex';
 
-    // Consulta con ordenación por anio_conseguido ascendente
     const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
         supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
         supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
@@ -735,7 +877,6 @@ window.abrirModalPerfil = async function() {
         supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', session.user.id).order('anio_conseguido', { ascending: true })
     ]);
 
-    // Ordenación defensiva antes de renderizar
     if (userMedallas && userMedallas.length > 0) {
         userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
     }
@@ -748,8 +889,7 @@ window.abrirModalPerfil = async function() {
 
     document.getElementById('perfil-nombre-completo').innerText = mote ? `"${mote}"` : session.user.email;
     document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
-    
-    // Cargar Medallas
+
     renderizarMedallasPerfil('perfil-seccion-medallas', 'perfil-contenedor-medallas', userMedallas);
 
     const avatarImg = document.getElementById('perfil-avatar-img');
@@ -783,16 +923,27 @@ window.abrirModalPerfil = async function() {
     }
 
     if (inscripciones && inscripciones.length > 0) {
-        const madrugasValidadasHistoricas = inscripciones.filter(i => 
+        const asistenciasValidadasHistoricas = inscripciones.filter(i => 
             i.asiste_madruga && 
             i.estado_validacion === 'validado' && 
             i.anio < anioActualEnCurso
         );
 
-        document.getElementById('perfil-total-asistencias').innerText = madrugasValidadasHistoricas.length;
+        const totalSemanasSantas = asistenciasValidadasHistoricas.length;
+        const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => i.anio < 2011).length;
+        const numMadrugas = asistenciasValidadasHistoricas.filter(i => i.anio >= 2011).length;
+
+        const elTotalStat = document.getElementById('perfil-total-asistencias');
+        const elMadrugasStat = document.getElementById('perfil-num-madrugas');
+        const elDomRamosStat = document.getElementById('perfil-num-domingo-ramos');
+
+        if (elTotalStat) elTotalStat.innerText = totalSemanasSantas;
+        if (elMadrugasStat) elMadrugasStat.innerText = numMadrugas;
+        if (elDomRamosStat) elDomRamosStat.innerText = numDomingoRamos;
 
         const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
-        document.getElementById('perfil-fajin-anio').innerText = primerReg ? primerReg.anio : '-';
+        const elFajinAnio = document.getElementById('perfil-fajin-anio');
+        if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
 
         document.getElementById('perfil-edit-telefono').value = ultInscripcion.telefono || '';
         document.getElementById('perfil-edit-instrumento').value = ultInscripcion.instrumento || 'Guitarra';
@@ -828,13 +979,16 @@ window.abrirModalPerfil = async function() {
     } else {
         document.getElementById('perfil-total-asistencias').innerText = '0';
         document.getElementById('perfil-fajin-anio').innerText = '-';
+        document.getElementById('perfil-num-madrugas').innerText = '0';
+        document.getElementById('perfil-num-domingo-ramos').innerText = '0';
+        
         document.getElementById('perfil-historico-body').innerHTML = `
             <tr><td colspan="6" style="text-align:center; color:#aaa;">Aún no tienes inscripciones registradas.</td></tr>
         `;
     }
 };
 
-/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS (CORREGIDO Y OPTIMIZADO) */
+/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS */
 function renderizarMedallasPerfil(idSeccion, idContenedor, listaMedallas) {
     const sec = document.getElementById(idSeccion);
     const container = document.getElementById(idContenedor);
@@ -1071,7 +1225,7 @@ function renderizarPildorasOtrasTunasPerfil() {
     }
 }
 
-/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO (SIN ALERTAS NATIVAS) --- */
+/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO --- */
 window.abrirModalAnadirAnioHistorico = function() {
     let modalHist = document.getElementById('modal-historico-input');
     if (!modalHist) {
@@ -1084,7 +1238,7 @@ window.abrirModalAnadirAnioHistorico = function() {
                 <h3 class="protocolo-titulo" style="text-align: center; margin-bottom: 15px;">📜 Añadir Año al Histórico</h3>
                 <form id="form-historico-anadir" onsubmit="procesarAnadirAnioHistoricoModal(event)">
                     <div class="input-group">
-                        <label>AÑO DE LA MADRUGÁ *</label>
+                        <label>AÑO DE LA SEMANA SANTA *</label>
                         <input type="number" id="hist-anio-input" placeholder="Ej: 2025" min="1950" max="2035" required style="width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #fff; font-size: 0.95rem; box-sizing: border-box; outline: none;">
                     </div>
                     <div class="input-group">
@@ -1417,9 +1571,23 @@ function inyectarModalPerfilPublicoGlobal() {
                     
                     <div id="pub-personas-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;"></div>
 
-                    <div class="perfil-stats" style="display: flex; gap: 20px;">
-                        <div class="stat-item"><span id="pub-total-asistencias" class="stat-num">0</span><span class="stat-label">Madrugás</span></div>
-                        <div class="stat-item"><span id="pub-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
+                    <div class="perfil-stats" style="display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start;">
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">SEMANAS SANTAS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">AÑO DEBUT</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">MADRUGÁS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">DOM. RAMOS</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1463,6 +1631,8 @@ window.abrirModalPerfilPublico = async function(userId) {
     document.getElementById('pub-tuna-tag').innerText = "";
     document.getElementById('pub-total-asistencias').innerText = "0";
     document.getElementById('pub-fajin-anio').innerText = "-";
+    document.getElementById('pub-num-madrugas').innerText = "0";
+    document.getElementById('pub-num-domingo-ramos').innerText = "0";
     
     const containerOtras = document.getElementById('pub-personas-tunas-header');
     if (containerOtras) containerOtras.innerHTML = "";
@@ -1475,14 +1645,12 @@ window.abrirModalPerfilPublico = async function(userId) {
     if (inicialTxt) { inicialTxt.style.display = 'block'; inicialTxt.innerText = "T"; }
 
     try {
-        // Consulta con ordenación por anio_conseguido ascendente
         const [{ data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
             supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false }),
             supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
 
-        // Ordenación defensiva antes de renderizar
         if (userMedallas && userMedallas.length > 0) {
             userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
         }
@@ -1495,7 +1663,6 @@ window.abrirModalPerfilPublico = async function(userId) {
         document.getElementById('pub-nombre-mote').innerText = `"${mote}"`;
         document.getElementById('pub-tuna-tag').innerText = tunaNombre;
 
-        // Renderizar Medallas Públicas
         renderizarMedallasPerfil('pub-seccion-medallas', 'pub-contenedor-medallas', userMedallas);
 
         if (profile && profile.avatar_url) {
@@ -1519,10 +1686,18 @@ window.abrirModalPerfilPublico = async function(userId) {
 
         if (inscripciones && inscripciones.length > 0) {
             const validadas = inscripciones.filter(i => i.asiste_madruga && i.estado_validacion === 'validado');
-            document.getElementById('pub-total-asistencias').innerText = validadas.length;
+            const totalSemanasSantas = validadas.length;
+
+            const numDomingoRamos = validadas.filter(i => i.anio < 2011).length;
+            const numMadrugas = validadas.filter(i => i.anio >= 2011).length;
+
+            document.getElementById('pub-total-asistencias').innerText = totalSemanasSantas;
+            document.getElementById('pub-num-madrugas').innerText = numMadrugas;
+            document.getElementById('pub-num-domingo-ramos').innerText = numDomingoRamos;
 
             const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
-            document.getElementById('pub-fajin-anio').innerText = primerReg ? primerReg.anio : '-';
+            const elFajinAnio = document.getElementById('pub-fajin-anio');
+            if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
 
             const tbody = document.getElementById('pub-historico-body');
             tbody.innerHTML = '';
@@ -1539,6 +1714,9 @@ window.abrirModalPerfilPublico = async function(userId) {
         } else {
             document.getElementById('pub-total-asistencias').innerText = '0';
             document.getElementById('pub-fajin-anio').innerText = '-';
+            document.getElementById('pub-num-madrugas').innerText = '0';
+            document.getElementById('pub-num-domingo-ramos').innerText = '0';
+
             document.getElementById('pub-historico-body').innerHTML = `
                 <tr><td colspan="3" style="text-align:center; color:#aaa;">No hay registros públicos disponibles.</td></tr>
             `;
