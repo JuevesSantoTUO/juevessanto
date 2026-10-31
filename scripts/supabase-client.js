@@ -533,10 +533,10 @@ window.registrarParticipante = async function(event) {
             anioActivo = parseInt(cfgAnio.valor);
         }
 
-        const nombreVal = document.getElementById('p-nombre')?.value.trim() || userProfile?.nombre || '';
-        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || userProfile?.apellidos || '';
-        const moteVal = document.getElementById('p-mote')?.value.trim() || userProfile?.mote || '';
-        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || userProfile?.tuna_nombre || '';
+        const nombreVal = document.getElementById('p-nombre')?.value.trim() || userProfile?.nombre || session.user.user_metadata?.nombre || '';
+        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || userProfile?.apellidos || session.user.user_metadata?.apellidos || '';
+        const moteVal = document.getElementById('p-mote')?.value.trim() || userProfile?.mote || session.user.user_metadata?.mote || '';
+        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || userProfile?.tuna_nombre || session.user.user_metadata?.tuna_nombre || '';
         const deseaNewsletter = document.getElementById('p-check-newsletter')?.checked || false;
 
         const payload = {
@@ -568,6 +568,8 @@ window.registrarParticipante = async function(event) {
             await supabaseClient.from('profiles').upsert({
                 id: session.user.id,
                 email: session.user.email,
+                nombre: nombreVal,
+                apellidos: apellidosVal,
                 mote: moteVal,
                 tuna_nombre: tunaVal,
                 acepta_newsletter: deseaNewsletter,
@@ -615,7 +617,7 @@ function inyectarModalPerfilGlobal() {
         <div class="modal-contenido perfil-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
 
-            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL (CON MARGEN PARA NO SOLAPAR X) -->
+            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL -->
             <div style="display: flex; justify-content: flex-end; margin-bottom: 10px; margin-right: 25px; position: relative;">
                 <button type="button" class="btn-tuna-ui" onclick="toggleMenuCompartirPerfil(event)" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; border-color: var(--color-acento);">
                     📤 Compartir Perfil
@@ -648,7 +650,6 @@ function inyectarModalPerfilGlobal() {
                     
                     <div id="perfil-otras-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
 
-                    <!-- GRID RESPONSIVE DE CONTADORES UNIFORMES -->
                     <div class="perfil-stats-grid">
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="perfil-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
@@ -670,7 +671,7 @@ function inyectarModalPerfilGlobal() {
                 </div>
             </div>
 
-            <!-- SECCIÓN: PREMIOS Y MEDALLAS (DISCRETA Y SIN MARCO VISIBLE) -->
+            <!-- SECCIÓN: PREMIOS Y MEDALLAS -->
             <div id="perfil-seccion-medallas" class="perfil-seccion" style="display: none; margin-top: 15px; margin-bottom: 15px; padding: 10px 0; border-top: 1px dashed rgba(212,175,55,0.2); border-bottom: 1px dashed rgba(212,175,55,0.2);">
                 <h4 class="perfil-subtitulo" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-acento); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
                     🏅 Distinciones & Medallas
@@ -1240,8 +1241,8 @@ function renderizarPildorasOtrasTunasPerfil() {
     }
 }
 
-/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO --- */
-window.abrirModalAnadirAnioHistorico = function() {
+/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO (CORREGIDO Y SIN VALORES HARDCODEADOS) --- */
+window.abrirModalAnadirAnioHistorico = async function() {
     let modalHist = document.getElementById('modal-historico-input');
     if (!modalHist) {
         modalHist = document.createElement('div');
@@ -1255,6 +1256,16 @@ window.abrirModalAnadirAnioHistorico = function() {
                     <div class="input-group">
                         <label>AÑO DE LA SEMANA SANTA *</label>
                         <input type="number" id="hist-anio-input" placeholder="Ej: 2025" min="1950" max="2035" required style="width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #fff; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div class="input-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="hist-nombre-input" placeholder="Nombre" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Apellidos *</label>
+                            <input type="text" id="hist-apellidos-input" placeholder="Apellidos" required>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>INSTRUMENTO TOCADO *</label>
@@ -1275,7 +1286,21 @@ window.abrirModalAnadirAnioHistorico = function() {
         `;
         document.body.appendChild(modalHist);
     }
+
     document.getElementById('hist-anio-input').value = new Date().getFullYear() - 1;
+
+    // Autocompletar con los datos reales del usuario logueado
+    if (supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+            const { data: profile } = await supabaseClient.from('profiles').select('nombre, apellidos').eq('id', session.user.id).maybeSingle();
+            const nomInput = document.getElementById('hist-nombre-input');
+            const apeInput = document.getElementById('hist-apellidos-input');
+            if (nomInput) nomInput.value = profile?.nombre || session.user.user_metadata?.nombre || '';
+            if (apeInput) apeInput.value = profile?.apellidos || session.user.user_metadata?.apellidos || '';
+        }
+    }
+
     const statusBox = document.getElementById('historico-modal-status');
     if (statusBox) statusBox.innerText = '';
     modalHist.style.display = 'flex';
@@ -1285,6 +1310,8 @@ window.procesarAnadirAnioHistoricoModal = async function(e) {
     e.preventDefault();
     const anio = parseInt(document.getElementById('hist-anio-input').value);
     const instrumento = document.getElementById('hist-instrumento-input').value;
+    const nombreVal = document.getElementById('hist-nombre-input').value.trim();
+    const apellidosVal = document.getElementById('hist-apellidos-input').value.trim();
     const statusBox = document.getElementById('historico-modal-status');
 
     if (statusBox) {
@@ -1303,11 +1330,9 @@ window.procesarAnadirAnioHistoricoModal = async function(e) {
 
     const ultIns = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
 
-    const nombreVal = profile?.nombre || ultIns?.nombre || 'Francisco José';
-    const apellidosVal = profile?.apellidos || ultIns?.apellidos || 'Maestre Muñoz';
-    const moteVal = profile?.mote || ultIns?.mote || 'Rumbito';
-    const tunaVal = profile?.tuna_nombre || ultIns?.tuna_nombre || 'Tuna Antigua de la Universidad de Oviedo';
-    const telefonoVal = ultIns?.telefono || '600000000';
+    const moteVal = profile?.mote || ultIns?.mote || session.user.user_metadata?.mote || '';
+    const tunaVal = profile?.tuna_nombre || ultIns?.tuna_nombre || session.user.user_metadata?.tuna_nombre || '';
+    const telefonoVal = ultIns?.telefono || '';
 
     const payload = {
         user_id: session.user.id,
@@ -1339,6 +1364,16 @@ window.procesarAnadirAnioHistoricoModal = async function(e) {
             }
         }
     } else {
+        // Aseguramos que el perfil del usuario mantenga su nombre y apellidos correctos
+        await supabaseClient.from('profiles').upsert({
+            id: session.user.id,
+            email: session.user.email,
+            nombre: nombreVal,
+            apellidos: apellidosVal,
+            mote: moteVal,
+            tuna_nombre: tunaVal
+        });
+
         if (statusBox) {
             statusBox.style.color = "#2ecc71";
             statusBox.innerText = `✨ ¡Solicitud enviada! El año ${anio} quedará reflejado en cuanto el Administrador lo valide.`;
