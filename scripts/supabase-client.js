@@ -596,12 +596,27 @@ function inyectarModalPerfilGlobal() {
     if (document.getElementById('modal-perfil')) return;
 
     const modalHTML = `
+    <style>
+        .perfil-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+            width: 100%;
+        }
+        @media (max-width: 480px) {
+            .perfil-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px 10px;
+            }
+        }
+    </style>
     <div id="modal-perfil" class="modal-interno" style="display: none;">
         <div class="modal-contenido perfil-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
 
-            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px; position: relative;">
+            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL (CON MARGEN PARA NO SOLAPAR X) -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px; margin-right: 25px; position: relative;">
                 <button type="button" class="btn-tuna-ui" onclick="toggleMenuCompartirPerfil(event)" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; border-color: var(--color-acento);">
                     📤 Compartir Perfil
                 </button>
@@ -633,22 +648,23 @@ function inyectarModalPerfilGlobal() {
                     
                     <div id="perfil-otras-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
 
-                    <div class="perfil-stats" style="display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; margin-top: 10px;">
+                    <!-- GRID RESPONSIVE DE CONTADORES UNIFORMES -->
+                    <div class="perfil-stats-grid">
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="perfil-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">SEMANAS SANTAS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">SEMANAS SANTAS</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="perfil-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">AÑO DEBUT</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">AÑO DEBUT</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="perfil-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">MADRUGÁS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">MADRUGÁS</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="perfil-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">DOM. RAMOS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">DOM. RAMOS</span>
                         </div>
                     </div>
                 </div>
@@ -794,7 +810,6 @@ window.compartirPerfilRedes = async function(plataforma) {
         return;
     }
 
-    // Inyectar marca de agua promocional temporal para la captura
     const watermarkHTML = `
         <div id="temp-watermark-share" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(212,175,55,0.3); text-align: center;">
             <p style="margin: 0; font-size: 0.78rem; color: #ddd; font-family: sans-serif;">
@@ -1571,22 +1586,22 @@ function inyectarModalPerfilPublicoGlobal() {
                     
                     <div id="pub-personas-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;"></div>
 
-                    <div class="perfil-stats" style="display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="perfil-stats-grid">
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="pub-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">SEMANAS SANTAS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">SEMANAS SANTAS</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="pub-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">AÑO DEBUT</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">AÑO DEBUT</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="pub-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">MADRUGÁS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">MADRUGÁS</span>
                         </div>
                         <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                             <span id="pub-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
-                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 2px;">DOM. RAMOS</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">DOM. RAMOS</span>
                         </div>
                     </div>
                 </div>
