@@ -65,6 +65,9 @@
                 <li id="menu-item-newsletter" onclick="cambiarSeccionAdmin('newsletter', this)">
                     <span class="menu-icon">✉️</span> Comunicaciones / Newsletter
                 </li>
+                <li id="menu-item-relacionado" onclick="cambiarSeccionAdmin('relacionado', this)">
+                    <span class="icon">🔗</span> Relacionado / Actos
+                </li>
             </ul>
         </aside>
 
@@ -807,7 +810,164 @@
                 </div>
             </section>
 
-        </main>
+            <!-- SECCIÓN: GESTIÓN DE INSTITUCIONES Y ACTOS -->
+            <section id="sec-relacionado" class="wp-admin-section">
+                <div class="wp-admin-header">
+                    <h2>🔗 Gestión de Instituciones y Actos Especiales</h2>
+                    <p>Administra los enlaces oficiales a entidades y los eventos con sus detalles y protocolos.</p>
+                </div>
+
+                <!-- PESTAÑAS INTERNAS -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px;">
+                    <button type="button" class="btn-tuna-ui" onclick="toggleSubseccionRel('instituciones')">🏛️ Instituciones</button>
+                    <button type="button" class="btn-tuna-ui" onclick="toggleSubseccionRel('actos')">📅 Actos Especiales</button>
+                </div>
+
+                <!-- SUBSECCIÓN: INSTITUCIONES -->
+                <div id="sub-rel-instituciones">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--color-acento); margin: 0;">Portal de Instituciones Vinculadas</h3>
+                        <button class="btn-tuna-ui" onclick="abrirModalFormInstitucion()">➕ Añadir Institución</button>
+                    </div>
+                    <div class="tabla-contenedor">
+                        <table class="tabla-tunos">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px; text-align: center;">Orden</th>
+                                    <th style="width: 80px; text-align: center;">Logo</th>
+                                    <th>Nombre / Descripción</th>
+                                    <th>Enlace Web</th>
+                                    <th style="text-align: center; width: 180px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-instituciones-body">
+                                <tr><td colspan="5" style="text-align:center; color:#888;">Cargando instituciones...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUBSECCIÓN: ACTOS -->
+                <div id="sub-rel-actos" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--color-acento); margin: 0;">Catálogo de Actos Especiales</h3>
+                        <button class="btn-tuna-ui" onclick="abrirModalFormActo()">➕ Publicar Nuevo Acto</button>
+                    </div>
+                    <div class="tabla-contenedor">
+                        <table class="tabla-tunos">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Fecha</th>
+                                    <th style="width: 130px;">Etiqueta</th>
+                                    <th>Título del Acto</th>
+                                    <th style="width: 120px; text-align: center;">Vídeo YouTube</th>
+                                    <th style="text-align: center; width: 180px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-admin-actos-body">
+                                <tr><td colspan="5" style="text-align:center; color:#888;">Cargando actos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODAL: CREAR / EDITAR INSTITUCIÓN -->
+                <div id="modal-form-institucion" class="modal-interno" style="display:none;">
+                    <div class="modal-content" style="max-width: 550px; margin: 40px auto; background: #181818; border: 1px solid var(--color-acento); padding: 25px; border-radius: 8px; position: relative;">
+                        <button type="button" class="cerrar-modal" onclick="document.getElementById('modal-form-institucion').style.display='none'">&times;</button>
+                        <h3 id="modal-inst-titulo" style="color: var(--color-acento); margin-top: 0;">➕ Nueva Institución</h3>
+                        
+                        <form id="form-admin-institucion" onsubmit="guardarInstitucionAdmin(event)">
+                            <input type="hidden" id="inst-id">
+                            
+                            <div class="input-group">
+                                <label>Nombre de la Entidad *</label>
+                                <input type="text" id="inst-nombre" placeholder="Ej: Hermandad de los Estudiantes" required>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Descripción corta</label>
+                                <input type="text" id="inst-descripcion" placeholder="Ej: Sede de la Hermandad penitencial...">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Enlace Web (URL) *</label>
+                                <input type="url" id="inst-url" placeholder="https://..." required>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Ruta/URL del Logo</label>
+                                <input type="text" id="inst-logo" placeholder="Ej: img/relacionado/logo-estudiantes.png">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Orden de visualización</label>
+                                <input type="number" id="inst-orden" value="1" min="0">
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+                                <button type="button" class="btn-sutil-logout" onclick="document.getElementById('modal-form-institucion').style.display='none'">Cancelar</button>
+                                <button type="submit" class="btn-tuna-ui">💾 Guardar Institución</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODAL: CREAR / EDITAR ACTO ESPECIAL -->
+                <div id="modal-form-acto" class="modal-interno" style="display:none;">
+                    <div class="modal-content" style="max-width: 700px; margin: 40px auto; background: #181818; border: 1px solid var(--color-acento); padding: 25px; border-radius: 8px; position: relative;">
+                        <button type="button" class="cerrar-modal" onclick="document.getElementById('modal-form-acto').style.display='none'">&times;</button>
+                        <h3 id="modal-acto-titulo" style="color: var(--color-acento); margin-top: 0;">➕ Nuevo Acto Especial</h3>
+                        
+                        <form id="form-admin-acto" onsubmit="guardarActoAdmin(event)">
+                            <input type="hidden" id="acto-id">
+                            
+                            <div class="form-grid-perfil">
+                                <div class="input-group">
+                                    <label>Título del Acto *</label>
+                                    <input type="text" id="acto-titulo-input" placeholder="Ej: Función de Instituto 2026" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Slug (Identificador URL) *</label>
+                                    <input type="text" id="acto-slug" placeholder="Ej: funcion-2026" required>
+                                </div>
+                            </div>
+
+                            <div class="form-grid-perfil">
+                                <div class="input-group">
+                                    <label>Fecha del Acto *</label>
+                                    <input type="date" id="acto-fecha" required style="background:#151515; color:#fff; border:1px solid #333; padding:10px; border-radius:6px; width:100%;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Etiqueta / Tag</label>
+                                    <input type="text" id="acto-tag" placeholder="Ej: Acto Principal">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Descripción corta</label>
+                                <input type="text" id="acto-desc" placeholder="Resumen para la tarjeta...">
+                            </div>
+
+                            <div class="input-group">
+                                <label>URL de Vídeo YouTube</label>
+                                <input type="url" id="acto-youtube" placeholder="https://www.youtube.com/watch?v=...">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Contenido / Protocolo (Editor Visual)</label>
+                                <div id="editor-acto-quill-container" style="height: 220px; background: #151515; color: #fff; border: 1px solid #333; border-radius: 6px;"></div>
+                                <input type="hidden" id="acto-contenido">
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+                                <button type="button" class="btn-sutil-logout" onclick="document.getElementById('modal-form-acto').style.display='none'">Cancelar</button>
+                                <button type="submit" class="btn-tuna-ui">💾 Guardar Acto</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
 
     </div>
 
