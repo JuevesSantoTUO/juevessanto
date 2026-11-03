@@ -207,10 +207,42 @@
             <section id="sec-medallas" class="wp-admin-section">
                 <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
                     <div>
-                        <h2>🏅 Catálogo y Asignación de Medallas</h2>
-                        <p>Crea nuevas distinciones en PNG o asigna medallas manualmente a los tunos.</p>
+                        <h2>🏅 Catálogo, Asignación y Corrección de Medallas</h2>
+                        <p>Crea distinciones, otorga medallas y edita los años conseguidos por los tunos.</p>
                     </div>
                     <button class="btn-tuna-ui" onclick="abrirModalNuevaMedalla()">➕ Crear Nueva Medalla</button>
+                </div>
+
+                <!-- MÓDULO CORRECCIÓN RÁPIDA DE AÑOS DE MEDALLAS -->
+                <div class="wp-widget-box" style="margin-bottom: 25px; background: rgba(212,175,55,0.03); border: 1px solid rgba(212,175,55,0.2);">
+                    <h3 style="color: var(--color-acento); font-size: 1rem; margin-bottom: 15px;">✏️ Modificar Año de Medalla Conseguida (Ej: Corrección de Debut)</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) auto; gap: 12px; align-items: end;">
+                        <div class="input-group" style="margin-bottom:0; position: relative;">
+                            <label>Buscar Tuno para Auditar Medallas *</label>
+                            <input type="text" id="audit-tuno-search" placeholder="Escribe mote o email..." autocomplete="off" oninput="filtrarTunosAuditPredictivo(this.value)">
+                            <input type="hidden" id="audit-tuno-selected-id">
+                            <div id="audit-tuno-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1a1a; border: 1px solid var(--color-acento); max-height: 200px; overflow-y: auto; z-index: 100; border-radius: 0 0 6px 6px;"></div>
+                        </div>
+                        <button type="button" class="btn-tuna-ui" style="height: 42px;" onclick="cargarMedallasUsuarioAudit()">🔍 Cargar Medallas del Tuno</button>
+                    </div>
+
+                    <div id="contenedor-audit-medallas" style="margin-top: 15px; display: none;">
+                        <table class="wp-admin-table" style="background: rgba(0,0,0,0.4);">
+                            <thead>
+                                <tr>
+                                    <th>Medalla</th>
+                                    <th>Año Actual Conseguido</th>
+                                    <th>Nuevo Año</th>
+                                    <th style="text-align: center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-audit-medallas-body">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="audit-medalla-status" class="mensaje-estado" style="margin-top: 10px;"></div>
                 </div>
 
                 <!-- MÓDULO ASIGNAR MEDALLA MANUAL CON BUSCADOR PREDICTIVO -->
@@ -451,14 +483,39 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN 4: DIRECTORIO Y CENSO DE TUNOS -->
+            <!-- SECCIÓN 4: DIRECTORIO Y CENSO DE TUNOS (ACTUALIZADA) -->
             <section id="sec-tunas" class="wp-admin-section">
                 <div class="wp-header-title" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
                     <div>
                         <h2>🎸 Directorio y Censo de Tunas</h2>
-                        <p>Gestión del catálogo oficial de agrupaciones vinculadas al buscador predictivo.</p>
+                        <p>Gestión del catálogo oficial, control de asistencia histórica y orden en la web.</p>
                     </div>
                     <button class="btn-tuna-ui" onclick="abrirFormularioTuna()">➕ Nueva Tuna</button>
+                </div>
+
+                <!-- HERRAMIENTA "OBRAR EL MILAGRO": VINCULACIÓN MANUAL -->
+                <div class="wp-widget-box" style="margin-bottom: 25px; background: rgba(212,175,55,0.05); border: 1px dashed var(--color-acento);">
+                    <h3 style="color: var(--color-acento); font-size: 1rem; margin-bottom: 10px;">✨ "Obrar el Milagro": Vincular Usuario a Entrada del Censo Histórico</h3>
+                    <p style="font-size: 0.82rem; color: #ccc; margin-bottom: 15px;">
+                        Utiliza esta herramienta si un tuno se ha registrado con variaciones tipográficas (ej: sin tildes) para forzar la vinculación de su cuenta con el mote estándar.
+                    </p>
+
+                    <form id="form-milagro-vinculo" onsubmit="ejecutarMilagroVinculacion(event)">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) auto; gap: 12px; align-items: end;">
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Seleccionar Usuario Registrado *</label>
+                                <select id="milagro-user-select" required><option value="">Cargando usuarios...</option></select>
+                            </div>
+                            
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Escribir Mote Oficial Estándar *</label>
+                                <input type="text" id="milagro-mote-oficial" placeholder="Ej: Búho" required>
+                            </div>
+
+                            <button type="submit" class="btn-tuna-ui" style="height: 42px;">✨ Forzar Vinculación</button>
+                        </div>
+                    </form>
+                    <div id="milagro-status" class="mensaje-estado" style="margin-top: 10px;"></div>
                 </div>
 
                 <div id="box-editor-tuna" class="wp-widget-box" style="display: none; margin-bottom: 25px;">
@@ -466,26 +523,38 @@
                     <form id="form-tuna" onsubmit="guardarTunaAdmin(event)" style="margin-top: 15px;">
                         <input type="hidden" id="tuna-id">
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
                             <div class="input-group" style="margin-bottom:0;">
-                                <label>Nombre Oficial de la Tuna</label>
-                                <input type="text" id="tuna-nombre-input" placeholder="Ej: Tuna de Derecho de la Universidad de Oviedo" required>
+                                <label>Nombre Oficial de la Tuna *</label>
+                                <input type="text" id="tuna-nombre-input" placeholder="Ej: Tuna de Derecho de Oviedo" required>
                             </div>
                             <div class="input-group" style="margin-bottom:0;">
-                                <label>URL Escudo / Logo (Opcional)</label>
-                                <input type="url" id="tuna-escudo-input" placeholder="https://...">
+                                <label>URL Escudo / Logo</label>
+                                <input type="url" id="tuna-escudo-input" placeholder="https://... o ruta del bucket">
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
                             <div class="input-group" style="margin-bottom:0;">
                                 <label>Ciudad de Origen</label>
-                                <input type="text" id="tuna-ciudad-input" placeholder="Ej: Oviedo, Ceuta, Salamanca...">
+                                <input type="text" id="tuna-ciudad-input" placeholder="Ej: Oviedo">
                             </div>
                             <div class="input-group" style="margin-bottom:0;">
                                 <label>Universidad / Institución</label>
                                 <input type="text" id="tuna-universidad-input" placeholder="Ej: Universidad de Oviedo">
                             </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Orden de Muestra en Web</label>
+                                <input type="number" id="tuna-orden-input" value="0" min="0" placeholder="0">
+                            </div>
+                        </div>
+
+                        <!-- CHECKBOX DE ASISTENCIA HISTÓRICA -->
+                        <div class="input-group" style="margin-bottom: 20px; background: rgba(212,175,55,0.05); padding: 12px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2);">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; font-size: 0.9rem;">
+                                <input type="checkbox" id="tuna-check-asistido" style="accent-color: var(--color-acento); transform: scale(1.3);">
+                                <span><strong>Ha Asistido a la Semana Santa</strong> (Si está marcado, se mostrará públicamente en la página de Asistentes)</span>
+                            </label>
                         </div>
 
                         <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -497,9 +566,19 @@
                 </div>
 
                 <div class="wp-widget-box" style="margin-bottom: 20px;">
-                    <div class="input-group" style="margin-bottom:0; max-width: 400px;">
-                        <label>Filtrar Directorio</label>
-                        <input type="text" id="filter-tunas-search" placeholder="Buscar por nombre o ciudad..." oninput="filtrarTablaTunasAdmin()">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                        <div class="input-group" style="margin-bottom:0; max-width: 350px;">
+                            <label>Filtrar Directorio</label>
+                            <input type="text" id="filter-tunas-search" placeholder="Buscar por nombre o ciudad..." oninput="filtrarTablaTunasAdmin()">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0; max-width: 220px;">
+                            <label>Filtrar por Asistencia</label>
+                            <select id="filter-tunas-asistencia" onchange="filtrarTablaTunasAdmin()">
+                                <option value="todos">Todas las tunas</option>
+                                <option value="asistido">Solo Asistentes (Web)</option>
+                                <option value="no_asistido">No Asistentes</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -508,15 +587,17 @@
                         <table class="wp-admin-table">
                             <thead>
                                 <tr>
-                                    <th>Escudo</th>
+                                    <th style="width: 50px; text-align: center;">Orden</th>
+                                    <th style="width: 60px; text-align: center;">Escudo</th>
                                     <th>Nombre de la Agrupación</th>
                                     <th>Ciudad / Universidad</th>
+                                    <th style="text-align: center;">¿Ha Asistido?</th>
                                     <th style="text-align: center;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-admin-tunas-body">
                                 <tr>
-                                    <td colspan="4" style="text-align: center; padding: 25px; color: #888;">Cargando catálogo de tunas...</td>
+                                    <td colspan="6" style="text-align: center; padding: 25px; color: #888;">Cargando catálogo de tunas...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -555,13 +636,11 @@
                         <table class="wp-admin-table">
                             <thead>
                                 <tr>
-                                    <th>Usuario (Email)</th>
-                                    <th>Rol de Sistema</th>
-                                    <th>Última Conexión</th>
-                                    <th style="text-align: center;">Comentarios</th>
-                                    <th style="text-align: center;">Likes</th>
-                                    <th style="text-align: center;">Denuncias</th>
-                                    <th style="text-align: center;">Acciones LOPD</th>
+                                    <th>USUARIO (EMAIL)</th>
+                                    <th>ROL DE SISTEMA</th>
+                                    <th>TUNA PRINCIPAL</th>
+                                    <th>ÚLTIMA CONEXIÓN</th>
+                                    <th style="text-align: center;">ACCIONES</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-admin-usuarios-body">
