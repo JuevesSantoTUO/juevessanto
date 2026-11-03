@@ -701,3 +701,34 @@ main.contenedor {
 .rumbi-text-block .ql-align-left {
     text-align: left !important;
 }
+
+/* Estilos para maqueta de protocolo e inyección HTML de Supabase */
+#detalle-acto p {
+    color: #ddd !important;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+#detalle-acto h1, 
+#detalle-acto h2, 
+#detalle-acto h3, 
+#detalle-acto h4, 
+#detalle-acto h5 {
+    color: var(--color-acento) !important;
+}
+
+/* Recrear las secciones estilizadas con el borde dorado vertical */
+#detalle-acto .protocolo-seccion,
+#detalle-acto blockquote {
+    border-left: 3px solid var(--color-acento) !important;
+    padding-left: 15px !important;
+    margin-bottom: 25px !important;
+}
+
+#detalle-acto .protocolo-seccion h4,
+#detalle-acto blockquote h4 {
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
