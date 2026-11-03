@@ -1599,7 +1599,7 @@ window.cerrarSesionUsuario = async function() {
 };
 
 /* ==========================================================================
-   MODAL DE PERFIL PÚBLICO DE TUNOS (VISUALIZACIÓN DESDE EL BLOG)
+   MODAL DE PERFIL PÚBLICO DE TUNOS (CORREGIDO PARA SINCRONIZAR AÑO ACTIVO)
    ========================================================================== */
 function inyectarModalPerfilPublicoGlobal() {
     if (document.getElementById('modal-perfil-publico')) return;
@@ -1695,11 +1695,14 @@ window.abrirModalPerfilPublico = async function(userId) {
     if (inicialTxt) { inicialTxt.style.display = 'block'; inicialTxt.innerText = "T"; }
 
     try {
-        const [{ data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
+        const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
+            supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
             supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false }),
             supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
+
+        const anioActualEnCurso = cfgAnio && cfgAnio.valor ? parseInt(cfgAnio.valor) : 2027;
 
         if (userMedallas && userMedallas.length > 0) {
             userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
@@ -1735,11 +1738,16 @@ window.abrirModalPerfilPublico = async function(userId) {
         }
 
         if (inscripciones && inscripciones.length > 0) {
-            const validadas = inscripciones.filter(i => i.asiste_madruga && i.estado_validacion === 'validado');
-            const totalSemanasSantas = validadas.length;
+            // MISMA FILTRADO EXACTO QUE EN PERFIL PERSONAL: solo cuenta si la inscripción está validada y es ANTERIOR a la edición activa en curso
+            const asistenciasValidadasHistoricas = inscripciones.filter(i => 
+                i.asiste_madruga && 
+                i.estado_validacion === 'validado' && 
+                i.anio < anioActualEnCurso
+            );
 
-            const numDomingoRamos = validadas.filter(i => i.anio < 2011).length;
-            const numMadrugas = validadas.filter(i => i.anio >= 2011).length;
+            const totalSemanasSantas = asistenciasValidadasHistoricas.length;
+            const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => i.anio < 2011).length;
+            const numMadrugas = asistenciasValidadasHistoricas.filter(i => i.anio >= 2011).length;
 
             document.getElementById('pub-total-asistencias').innerText = totalSemanasSantas;
             document.getElementById('pub-num-madrugas').innerText = numMadrugas;
