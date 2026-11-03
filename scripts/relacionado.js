@@ -1,80 +1,128 @@
+/* ==========================================================================
+   LÓGICA DINÁMICA DE RELACIONADO Y ACTOS (SUPABASE V2)
+   ========================================================================== */
+
+let actosCargadosGlobal = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarInstitucionesSupabase();
+    cargarActosSupabase();
+});
+
 function cambiarTipoRel(evento, seccionId) {
-    // 1. Ocultar todas las secciones de contenido relacionado
-    document.querySelectorAll('.tab-contenido-rel').forEach(tab => {
-        tab.classList.remove('activo');
-    });
+    document.querySelectorAll('.tab-contenido-rel').forEach(tab => tab.classList.remove('activo'));
+    document.querySelectorAll('.tab-main').forEach(btn => btn.classList.remove('activo'));
 
-    // 2. Quitar el estado activo de todos los botones de pestañas
-    document.querySelectorAll('.tab-main').forEach(btn => {
-        btn.classList.remove('activo');
-    });
-
-    // 3. Mostrar la sección seleccionada y activar el botón correspondiente
     document.getElementById(seccionId).classList.add('activo');
     evento.currentTarget.classList.add('activo');
 }
 
-const datosActos = {
-    'funcion-2026': {
-        titulo: "Función Principal de Instituto 2026",
-        contenido: `
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/1RZUbVlYYv4?si=JbietYlk2nBSsxcW" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            <h3 class="protocolo-titulo">Protocolo de Asistencia</h3>
-            <div class="protocolo-seccion">
-                <h4>Lugar y Hora</h4>
-                <p>Parroquia de San Francisco de Javier (Oviedo). 12:30h.</p>
-            </div>
-            <div class="protocolo-seccion">
-                <h4>FUNCIÓN PRINCIPAL DE INSTITUTO MMXXVI</h4>
-                <p>Hermandad de Los Estudiantes de Oviedo.</p>
-            </div>
-            <div class="protocolo-seccion">
-                <h4>Las Palabras de Rumbito</h4>
-                <p style="text-align: justify;">El 1 de Marzo de 2026 se celebraba La Función Principal de Instituto de la Hermandad de Los Estvdiantes de Oviedo, momento en que se otorga la medalla de la Hermandad a los nuevos Hermanos, así como las menciones a autoridades y personas que, con su labor desinteresada, colaboran con la Hermandad en los diferentes actos. <br><br>
+/* --- CARGAR INSTITUCIONES DESDE SUPABASE --- */
+async function cargarInstitucionesSupabase() {
+    const contenedor = document.querySelector('.relacionado-grid');
+    if (!contenedor || !supabaseClient) return;
 
-                    En esta ocasión, se otrogó una Mención de Hermandad a un servidor (Rumbito). Quiero aprovechar esta plataforma para recibir con el mayor de los honores este reconocimiento, aunque también me gustaría aclarar que tratándose de un reconocimiento personal, no lo considero mío, si no de todos aquellos que habéis llegado a esta plataforma, app o webapp, porque en algún momento habéis estado acompañándonos en nuestro Jueves Santo. <br><br>
+    const { data: instituciones, error } = await supabaseClient
+        .from('relacionado_instituciones')
+        .select('*')
+        .eq('activo', true)
+        .order('orden', { ascending: true });
 
-                    Quiero hacer hincapié en nuestros inicios, en aquellos comienzos. Aquel paso nuevo, sin las decoraciones que ahora se presentan en los pasos del Santísimo Cristo de la Misericordia y el del Prendimiento. <br><br>
-
-                    No puedo, si no, recordar a mis compañeros en aquel entonces en activo y antiguos tunos de nuestra muy Gallarda y Trovadora, Tuna Universitaria de Oviedo. Gasol, con quien adapté las versiones de La Saeta y La Muerte no es el Final. Baldomero, Pubis, Febrero, Gordillo, Huevato, Lausín, Vizcaino... y todos los que se me olvidan, pero que estuvieron presentes desde 2008. <br><br>
-
-                    No quiero tampoco faltar a la verdad, y reconocer que en momentos de horas bajas, la ayuda y el mantenimiento de esta tradición se orquestó gracias a ese conglomerado de antiguos tunos de todas las tunas de Asturias (y al que también siento el orgullo de pertenecer), La Tuna Antigua de la Universidad de Oviedo. <br><br>
-
-                    Posteriormente, ya con todos los compañeros de las tunas de toda España que han colaborado con nosotros para hacer mucho más grande este día, en beneficio de la Tuna (como institución), de la Hermandad de Los Estvdiantes, y la procesión de la Madrugá de Oviedo, mantengo que este reconocimiento personal, lo es gracias a todos vosotros. <br><br>
-                </p>
-                <p style="text-align: center;">¡Muchas gracias a todos por este reconocimiento, y por acompañarnos en esta tradición tan nuestra! <br><br>
-                
-                ¡VIVA LA TUNA! <br>
-                ¡VIVA EL JUEVES SANTO DE OVIEDO! <br>
-                ¡VIVA LA HERMANDAD DE LOS ESTUDIANTES!
-                </p>
-            </div>
-        `
+    if (error || !instituciones || instituciones.length === 0) {
+        return; // Mantiene el HTML estático si hay algún fallo
     }
-    // Aquí puedes añadir más actos...
-};
 
-function abrirModalActo(id) {
+    contenedor.innerHTML = instituciones.map(inst => `
+        <a href="${inst.url_web}" target="_blank" rel="noopener noreferrer" class="entidad-card">
+            <div class="logo-box">
+                <img src="${inst.logo_url || 'img/relacionado/logo-ayto.png'}" alt="${inst.nombre}">
+            </div>
+            <h3>${inst.nombre}</h3>
+            <p>${inst.descripcion || ''}</p>
+            <span class="link-label">Visitar portal ↗</span>
+        </a>
+    `).join('');
+}
+
+/* --- CARGAR ACTOS ESPECIALES DESDE SUPABASE --- */
+async function cargarActosSupabase() {
+    const contenedor = document.querySelector('.actos-container');
+    if (!contenedor || !supabaseClient) return;
+
+    const { data: actos, error } = await supabaseClient
+        .from('relacionado_actos')
+        .select('*')
+        .eq('activo', true)
+        .order('fecha_acto', { ascending: false });
+
+    if (error || !actos || actos.length === 0) return;
+
+    actosCargadosGlobal = actos;
+
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    contenedor.innerHTML = actos.map(acto => {
+        const fechaObj = new Date(acto.fecha_acto);
+        const dia = String(fechaObj.getDate()).padStart(2, '0');
+        const mes = meses[fechaObj.getMonth()];
+        const anio = fechaObj.getFullYear();
+
+        return `
+            <article class="acto-card" style="margin-bottom: 20px;">
+                <div class="acto-fecha">
+                    <span class="dia">${dia}</span>
+                    <span class="mes">${mes}</span>
+                    <span class="año">${anio}</span>
+                </div>
+                <div class="acto-info">
+                    <div class="tag-acto">${acto.tag || 'Acto Especial'}</div>
+                    <h3>${acto.titulo}</h3>
+                    <p>${acto.descripcion_corta || ''}</p>
+                    <button class="btn-abrir-acto" onclick="abrirModalActoDinámico('${acto.id}')">Ver Protocolo y Detalles</button>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+
+/* --- ABRIR MODAL CON DATOS DE SUPABASE --- */
+window.abrirModalActoDinámico = function(actoId) {
+    const acto = actosCargadosGlobal.find(a => a.id === actoId);
     const modal = document.getElementById('modal-acto');
     const contenedor = document.getElementById('detalle-acto');
-    const acto = datosActos[id];
 
-    if (acto) {
-        contenedor.innerHTML = acto.contenido;
+    if (acto && modal && contenedor) {
+        let videoEmbed = '';
+        if (acto.youtube_url) {
+            let embedUrl = acto.youtube_url;
+            if (embedUrl.includes('watch?v=')) {
+                embedUrl = embedUrl.replace('watch?v=', 'embed/');
+            }
+            videoEmbed = `<div class="video-responsive" style="margin-bottom: 20px;"><iframe src="${embedUrl}" title="Vídeo del acto" frameborder="0" allowfullscreen></iframe></div>`;
+        }
+
+        contenedor.innerHTML = `
+            ${videoEmbed}
+            <h3 class="protocolo-titulo">${acto.titulo}</h3>
+            ${acto.contenido_html || ''}
+        `;
+
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
-}
+};
 
-function cerrarModalActo() {
-    document.getElementById('modal-acto').style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
+window.cerrarModalActo = function() {
+    const modal = document.getElementById('modal-acto');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+};
 
-// Cerrar al hacer clic fuera del contenido
 window.onclick = function(event) {
     const modal = document.getElementById('modal-acto');
-    if (event.target == modal) {
+    if (event.target === modal) {
         cerrarModalActo();
     }
-}
+};

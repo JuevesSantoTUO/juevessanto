@@ -13,6 +13,9 @@ let listaTunosPredictiva = [];
 let quillEditor = null;
 let idTunoAbiertoActual = null;
 let listaCorreosSegmentoActual = [];
+let institucionesAdminGlobal = [];
+let actosAdminGlobal = [];
+let quillActoEditor = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     verificarAccesoAdminPanel();
@@ -122,6 +125,9 @@ window.cambiarSeccionAdmin = function(seccionId, elem) {
             break;
         case 'newsletter':
             cargarMetricasNewsletter();
+            break;
+        case 'relacionado':
+            cargarAdminInstituciones()
             break;
     }
 };
@@ -1645,4 +1651,266 @@ window.guardarEdicionTunoAdmin = async function(e) {
         if (typeof cargarUsuariosAdmin === 'function') cargarUsuariosAdmin();
         if (typeof cargarTablaInscripcionesAdmin === 'function') cargarTablaInscripcionesAdmin();
     }, 1200);
+};
+
+/* ==========================================================================
+   GESTIÓN DE RELACIONADO Y ACTOS EN PANEL DE CONTROL
+   ========================================================================== */
+
+window.toggleSubseccionRel = function(tipo) {
+    const subInst = document.getElementById('sub-rel-instituciones');
+    const subActos = document.getElementById('sub-rel-actos');
+    if (subInst) subInst.style.display = (tipo === 'instituciones') ? 'block' : 'none';
+    if (subActos) subActos.style.display = (tipo === 'actos') ? 'block' : 'none';
+
+    if (tipo === 'instituciones') cargarAdminInstituciones();
+    else cargarAdminActos();
+};
+
+/* --- 1. INSTITUCIONES --- */
+
+async function cargarAdminInstituciones() {
+    if (!supabaseClient) return;
+    const tbody = document.getElementById('tabla-admin-instituciones-body');
+    if (!tbody) return;
+
+    const { data, error } = await supabaseClient
+        .from('relacionado_instituciones')
+        .select('*')
+        .order('orden', { ascending: true });
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">No hay instituciones registradas.</td></tr>`;
+        return;
+    }
+
+    institucionesAdminGlobal = data;
+
+    tbody.innerHTML = data.map(i => `
+        <tr>
+            <td style="text-align:center;"><strong>${i.orden}</strong></td>
+            <td style="text-align:center;">
+                <img src="${i.logo_url || 'img/relacionado/logo-ayto.png'}" style="width:30px; height:30px; object-fit:contain;" onerror="this.src='img/relacionado/logo-ayto.png'">
+            </td>
+            <td>
+                <strong>${i.nombre}</strong>
+                <div style="font-size:0.75rem; color:#aaa;">${i.descripcion || ''}</div>
+            </td>
+            <td><a href="${i.url_web}" target="_blank" rel="noopener noreferrer" style="color:var(--color-acento); font-size:0.8rem;">${i.url_web}</a></td>
+            <td style="text-align:center; white-space:nowrap;">
+                <button class="btn-export-ui csv" style="padding:4px 8px; font-size:0.75rem; margin-right:4px;" onclick="abrirModalFormInstitucion('${i.id}')">✏️ Editar</button>
+                <button class="btn-eliminar-ins" style="padding:4px 8px; font-size:0.75rem;" onclick="eliminarInstitucionAdmin('${i.id}', '${i.nombre.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+window.eliminarInstitucionAdmin = async function(id, nombre) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar la institución "${nombre}"?`)) return;
+    const { error } = await supabaseClient.from('relacionado_instituciones').delete().eq('id', id);
+    if (error) {
+        alert("Error al eliminar: " + error.message);
+    } else {
+        cargarAdminInstituciones();
+    }
+};
+
+window.abrirModalFormInstitucion = function(id = null) {
+    const modal = document.getElementById('modal-form-institucion');
+    const titulo = document.getElementById('modal-inst-titulo');
+    
+    document.getElementById('form-admin-institucion').reset();
+    document.getElementById('inst-id').value = '';
+
+    if (id) {
+        const inst = institucionesAdminGlobal.find(i => i.id === id);
+        if (inst) {
+            if (titulo) titulo.innerText = '✏️ Editar Institución';
+            document.getElementById('inst-id').value = inst.id;
+            document.getElementById('inst-nombre').value = inst.nombre || '';
+            document.getElementById('inst-descripcion').value = inst.descripcion || '';
+            document.getElementById('inst-url').value = inst.url_web || '';
+            document.getElementById('inst-logo').value = inst.logo_url || '';
+            document.getElementById('inst-orden').value = inst.orden || 0;
+        }
+    } else {
+        if (titulo) titulo.innerText = '➕ Nueva Institución';
+    }
+
+    if (modal) modal.style.display = 'block';
+};
+
+window.guardarInstitucionAdmin = async function(e) {
+    e.preventDefault();
+    if (!supabaseClient) return;
+
+    const id = document.getElementById('inst-id').value;
+    const payload = {
+        nombre: document.getElementById('inst-nombre').value.trim(),
+        descripcion: document.getElementById('inst-descripcion').value.trim(),
+        url_web: document.getElementById('inst-url').value.trim(),
+        logo_url: document.getElementById('inst-logo').value.trim(),
+        orden: parseInt(document.getElementById('inst-orden').value) || 0
+    };
+
+    if (id) payload.id = id;
+
+    const { error } = await supabaseClient.from('relacionado_instituciones').upsert(payload);
+
+    if (error) {
+        alert('Error al guardar institución: ' + error.message);
+    } else {
+        document.getElementById('modal-form-institucion').style.display = 'none';
+        cargarAdminInstituciones();
+    }
+};
+
+/* --- 2. ACTOS ESPECIALES --- */
+
+async function cargarAdminActos() {
+    if (!supabaseClient) return;
+    const tbody = document.getElementById('tabla-admin-actos-body');
+    if (!tbody) return;
+
+    const { data, error } = await supabaseClient
+        .from('relacionado_actos')
+        .select('*')
+        .order('fecha_acto', { ascending: false });
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ff4444;">Error: ${error.message}</td></tr>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">No hay actos registrados.</td></tr>`;
+        return;
+    }
+
+    actosAdminGlobal = data;
+
+    tbody.innerHTML = data.map(a => `
+        <tr>
+            <td><strong>${a.fecha_acto}</strong></td>
+            <td><span class="tuno-mote-tag">${a.tag || 'Acto'}</span></td>
+            <td><strong>${a.titulo}</strong></td>
+            <td style="text-align:center;">${a.youtube_url ? '🎬 Sí' : '❌ No'}</td>
+            <td style="text-align:center; white-space:nowrap;">
+                <button class="btn-export-ui csv" style="padding:4px 8px; font-size:0.75rem; margin-right:4px;" onclick="abrirModalFormActo('${a.id}')">✏️ Editar</button>
+                <button class="btn-eliminar-ins" style="padding:4px 8px; font-size:0.75rem;" onclick="eliminarActoAdmin('${a.id}', '${a.titulo.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+window.eliminarActoAdmin = async function(id, titulo) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el acto "${titulo}"?`)) return;
+    const { error } = await supabaseClient.from('relacionado_actos').delete().eq('id', id);
+    if (error) {
+        alert("Error al eliminar el acto: " + error.message);
+    } else {
+        cargarAdminActos();
+    }
+};
+
+window.guardarActoAdmin = async function(e) {
+    e.preventDefault();
+    if (!supabaseClient) return;
+
+    const id = document.getElementById('acto-id').value;
+    
+    // Obtener el HTML renderizado directamente desde Quill
+    const htmlContenido = quillActoEditor ? quillActoEditor.root.innerHTML : '';
+
+    const payload = {
+        titulo: document.getElementById('acto-titulo-input').value.trim(),
+        slug: document.getElementById('acto-slug').value.trim(),
+        fecha_acto: document.getElementById('acto-fecha').value,
+        tag: document.getElementById('acto-tag').value.trim(),
+        descripcion_corta: document.getElementById('acto-desc').value.trim(),
+        youtube_url: document.getElementById('acto-youtube').value.trim(),
+        contenido_html: htmlContenido
+    };
+
+    if (id) payload.id = id;
+
+    const { error } = await supabaseClient.from('relacionado_actos').upsert(payload);
+
+    if (error) {
+        alert('Error al guardar el acto: ' + error.message);
+    } else {
+        document.getElementById('modal-form-acto').style.display = 'none';
+        cargarAdminActos();
+    }
+};
+
+// Inicializador único y seguro de Quill
+function inicializarQuillActo() {
+    const container = document.getElementById('editor-acto-quill-container');
+    if (!container) return;
+
+    // Si ya fue creado previamente, no lo volvemos a instanciar
+    if (quillActoEditor) return;
+
+    quillActoEditor = new Quill('#editor-acto-quill-container', {
+        theme: 'snow',
+        placeholder: 'Escribe aquí el protocolo o contenido del acto...',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'align': [] }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'clean']
+            ]
+        }
+    });
+}
+
+window.abrirModalFormActo = function(id = null) {
+    const modal = document.getElementById('modal-form-acto');
+    const titulo = document.getElementById('modal-acto-titulo');
+
+    if (!modal) return;
+
+    // 1. PRIMERO HACEMOS VISIBLE EL MODAL EN EL DOM
+    modal.style.display = 'block';
+
+    // Resetear formulario
+    document.getElementById('form-admin-acto').reset();
+    document.getElementById('acto-id').value = '';
+
+    // 2. AHORA QUE ES VISIBLE, INICIALIZAMOS QUILL (SI AÚN NO EXISTE)
+    inicializarQuillActo();
+
+    let contenidoHtml = '';
+
+    if (id) {
+        const acto = actosAdminGlobal.find(a => a.id === id);
+        if (acto) {
+            if (titulo) titulo.innerText = '✏️ Editar Acto Especial';
+            document.getElementById('acto-id').value = acto.id;
+            document.getElementById('acto-titulo-input').value = acto.titulo || '';
+            document.getElementById('acto-slug').value = acto.slug || '';
+            document.getElementById('acto-fecha').value = acto.fecha_acto || '';
+            document.getElementById('acto-tag').value = acto.tag || '';
+            document.getElementById('acto-desc').value = acto.descripcion_corta || '';
+            document.getElementById('acto-youtube').value = acto.youtube_url || '';
+            contenidoHtml = acto.contenido_html || '';
+        }
+    } else {
+        if (titulo) titulo.innerText = '➕ Nuevo Acto Especial';
+    }
+
+    // 3. CARGAMOS EL CONTENIDO EN QUILL
+    if (quillActoEditor) {
+        quillActoEditor.clipboard.dangerouslyPasteHTML(0, contenidoHtml || '');
+    }
 };
