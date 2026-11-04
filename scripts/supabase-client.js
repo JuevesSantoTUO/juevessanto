@@ -1675,8 +1675,12 @@ window.abrirModalPerfilPublico = async function(userId) {
     inyectarModalPerfilPublicoGlobal();
 
     const modal = document.getElementById('modal-perfil-publico');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.offsetHeight; // Forzar reflow para asegurar renderizado en navegadores móviles
+    }
 
+    // Reset de valores en interfaz
     document.getElementById('pub-nombre-mote').innerText = "Cargando perfil...";
     document.getElementById('pub-tuna-tag').innerText = "";
     document.getElementById('pub-total-asistencias').innerText = "0";
@@ -1687,7 +1691,8 @@ window.abrirModalPerfilPublico = async function(userId) {
     const containerOtras = document.getElementById('pub-personas-tunas-header');
     if (containerOtras) containerOtras.innerHTML = "";
     
-    document.getElementById('pub-historico-body').innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>`;
+    const tbody = document.getElementById('pub-historico-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>`;
 
     const avatarImg = document.getElementById('pub-avatar-img');
     const inicialTxt = document.getElementById('pub-mote-inicial');
@@ -1702,12 +1707,14 @@ window.abrirModalPerfilPublico = async function(userId) {
             supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
 
+        // Año de la edición activa en curso (ej. 2027)
+        const anioActualEnCurso = (cfgAnio && cfgAnio.valor) ? parseInt(cfgAnio.valor) : 2027;
+
         if (userMedallas && userMedallas.length > 0) {
             userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
         }
 
         const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
-
         const mote = profile?.mote || ultInscripcion?.mote || 'Tuno';
         const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna Universitaria';
 
@@ -1736,51 +1743,58 @@ window.abrirModalPerfilPublico = async function(userId) {
         }
 
         if (inscripciones && inscripciones.length > 0) {
-            // Contabiliza inscripciones validadas o con asistencia confirmada
-            const asistenciasValidadasHistoricas = inscripciones.filter(i => 
-                i.estado_validacion === 'validado' || i.asistencia_confirmada
+            // SOLO SUMAR A LOS CONTADORES EDICIONES PASADAS (anio < anioActualEnCurso) Y VALIDADAS
+            const asistenciasValidadasPasadas = inscripciones.filter(i => 
+                (i.estado_validacion === 'validado' || i.asistencia_confirmada === true) && 
+                parseInt(i.anio) < anioActualEnCurso
             );
 
-            const totalSemanasSantas = asistenciasValidadasHistoricas.length;
-            const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => parseInt(i.anio) < 2011).length;
-            const numMadrugas = asistenciasValidadasHistoricas.filter(i => parseInt(i.anio) >= 2011).length;
+            const totalSemanasSantas = asistenciasValidadasPasadas.length;
+            const numDomingoRamos = asistenciasValidadasPasadas.filter(i => parseInt(i.anio) < 2011).length;
+            const numMadrugas = asistenciasValidadasPasadas.filter(i => parseInt(i.anio) >= 2011).length;
 
             document.getElementById('pub-total-asistencias').innerText = totalSemanasSantas;
             document.getElementById('pub-num-madrugas').innerText = numMadrugas;
             document.getElementById('pub-num-domingo-ramos').innerText = numDomingoRamos;
 
-            // Ordena cronológicamente para calcular el año de debut de forma exacta
+            // Año de debut (el año de la inscripción más antigua)
             const inscripcionesOrdenadas = [...inscripciones].sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
             const primerReg = inscripcionesOrdenadas.find(i => i.primer_anio) || inscripcionesOrdenadas[0];
             
             const elFajinAnio = document.getElementById('pub-fajin-anio');
             if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
 
-            const tbody = document.getElementById('pub-historico-body');
-            tbody.innerHTML = '';
-
-            inscripciones.forEach(i => {
-                const tr = document.createElement('tr');
-                const esValidado = (i.estado_validacion === 'validado' || i.asistencia_confirmada);
-                tr.innerHTML = `
-                    <td><strong>${i.anio}</strong> ${esValidado ? '✅' : '⏳'}</td>
-                    <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
-                    <td style="font-size:0.8rem">${i.instrumento || 'Instrumento'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            // EN LA TABLA HISTÓRICA SÍ SE MUESTRAN TODAS (INCLUIDA LA FUTURA DE 2027)
+            if (tbody) {
+                tbody.innerHTML = '';
+                inscripciones.forEach(i => {
+                    const tr = document.createElement('tr');
+                    const esValidado = (i.estado_validacion === 'validado' || i.asistencia_confirmada === true);
+                    tr.innerHTML = `
+                        <td style="padding: 8px; text-align: center;"><strong>${i.anio}</strong> ${esValidado ? '✅' : '⏳'}</td>
+                        <td style="font-size:0.8rem; padding: 8px; text-align: center;">${i.tuna_nombre || tunaNombre}</td>
+                        <td style="font-size:0.8rem; padding: 8px; text-align: center;">${i.instrumento || 'Guitarra'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
         } else {
             document.getElementById('pub-total-asistencias').innerText = '0';
             document.getElementById('pub-fajin-anio').innerText = '-';
             document.getElementById('pub-num-madrugas').innerText = '0';
             document.getElementById('pub-num-domingo-ramos').innerText = '0';
 
-            document.getElementById('pub-historico-body').innerHTML = `
-                <tr><td colspan="3" style="text-align:center; color:#aaa;">No hay registros públicos disponibles.</td></tr>
-            `;
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr><td colspan="3" style="text-align:center; color:#aaa; padding: 15px;">No hay registros públicos disponibles.</td></tr>
+                `;
+            }
         }
     } catch (e) {
         console.error("Error al cargar perfil público:", e);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ff4444;">Error al cargar datos.</td></tr>`;
+        }
     }
 };
 
