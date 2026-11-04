@@ -1702,8 +1702,6 @@ window.abrirModalPerfilPublico = async function(userId) {
             supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
 
-        const anioActualEnCurso = cfgAnio && cfgAnio.valor ? parseInt(cfgAnio.valor) : 2027;
-
         if (userMedallas && userMedallas.length > 0) {
             userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
         }
@@ -1738,22 +1736,23 @@ window.abrirModalPerfilPublico = async function(userId) {
         }
 
         if (inscripciones && inscripciones.length > 0) {
-            // MISMA FILTRADO EXACTO QUE EN PERFIL PERSONAL: solo cuenta si la inscripción está validada y es ANTERIOR a la edición activa en curso
+            // Contabiliza inscripciones validadas o con asistencia confirmada
             const asistenciasValidadasHistoricas = inscripciones.filter(i => 
-                i.asiste_madruga && 
-                i.estado_validacion === 'validado' && 
-                i.anio < anioActualEnCurso
+                i.estado_validacion === 'validado' || i.asistencia_confirmada
             );
 
             const totalSemanasSantas = asistenciasValidadasHistoricas.length;
-            const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => i.anio < 2011).length;
-            const numMadrugas = asistenciasValidadasHistoricas.filter(i => i.anio >= 2011).length;
+            const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => parseInt(i.anio) < 2011).length;
+            const numMadrugas = asistenciasValidadasHistoricas.filter(i => parseInt(i.anio) >= 2011).length;
 
             document.getElementById('pub-total-asistencias').innerText = totalSemanasSantas;
             document.getElementById('pub-num-madrugas').innerText = numMadrugas;
             document.getElementById('pub-num-domingo-ramos').innerText = numDomingoRamos;
 
-            const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
+            // Ordena cronológicamente para calcular el año de debut de forma exacta
+            const inscripcionesOrdenadas = [...inscripciones].sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
+            const primerReg = inscripcionesOrdenadas.find(i => i.primer_anio) || inscripcionesOrdenadas[0];
+            
             const elFajinAnio = document.getElementById('pub-fajin-anio');
             if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
 
@@ -1762,8 +1761,9 @@ window.abrirModalPerfilPublico = async function(userId) {
 
             inscripciones.forEach(i => {
                 const tr = document.createElement('tr');
+                const esValidado = (i.estado_validacion === 'validado' || i.asistencia_confirmada);
                 tr.innerHTML = `
-                    <td><strong>${i.anio}</strong> ${i.estado_validacion === 'validado' ? '✅' : '⏳'}</td>
+                    <td><strong>${i.anio}</strong> ${esValidado ? '✅' : '⏳'}</td>
                     <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
                     <td style="font-size:0.8rem">${i.instrumento || 'Instrumento'}</td>
                 `;
