@@ -244,3 +244,41 @@
 .tuna-dist-sal { background-color: #620a0a; color: #f1c232; font-weight: bold; text-align: center; }
 .tuna-uned-pon { background-color: #052681; color: #f1c232; font-weight: bold; text-align: center; }
 .tuna-der-ourense { background-color: #d11313; color: #f1c232; font-weight: bold; text-align: center; }
+
+/* --- CORRECCIÓN PERFIL PÚBLICO EN MÓVIL --- */
+@media (max-width: 600px) {
+    #modal-perfil-publico .perfil-card-header {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 10px !important;
+    }
+
+    #modal-perfil-publico .perfil-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 columnas en lugar de 4 comprimidas */
+        gap: 10px !important;
+        width: 100% !important;
+        margin-top: 15px !important;
+    }
+
+    #modal-perfil-publico .stat-item {
+        background: rgba(212, 175, 55, 0.05);
+        padding: 8px 4px !important;
+        border-radius: 6px;
+        border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    #modal-perfil-publico .stat-num {
+        font-size: 1.2rem !important;
+    }
+
+    #modal-perfil-publico .stat-label {
+        font-size: 0.62rem !important;
+        white-space: normal !important;
+    }
+
+    #modal-perfil-publico .tabla-contenedor-perfil {
+        max-height: 250px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
