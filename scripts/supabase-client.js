@@ -1802,3 +1802,96 @@ window.cerrarModalPerfilPublico = function() {
     const modal = document.getElementById('modal-perfil-publico');
     if (modal) modal.style.display = 'none';
 };
+
+/* ==========================================================================
+   SISTEMA DE NOTIFICACIONES PUSH Y SUSCRIPCIÓN EN NAVEGADOR Y PWA
+   ========================================================================== */
+
+// Registrar Service Worker globalmente
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker activo en scope:', reg.scope))
+            .catch(err => console.warn('Error al registrar Service Worker:', err));
+    });
+}
+
+// Solicitar permisos y registrar token Push en Supabase
+window.solicitarPermisoNotificaciones = async function() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        alert('Tu navegador o dispositivo no admite notificaciones push.');
+        return;
+    }
+
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+        alert('Has denegado los permisos de notificaciones.');
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Clave pública VAPID (Ejemplo / sustituir por tu clave de servidor Web Push)
+        const vapidPublicKey = 'TU_CLAVE_VAPID_PUBLICA_AQUI'; 
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+
+        const subJSON = subscription.toJSON();
+
+        if (supabaseClient) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const userId = session?.user?.id || null;
+
+            let esAdmin = false;
+            if (userId) {
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (profile && (profile.role === 'admin' || profile.role === 'gestor')) {
+                    esAdmin = true;
+                }
+            }
+
+            // Guardar en Supabase haciendo upsert por la clave única 'endpoint'
+            const payload = {
+                user_id: userId,
+                endpoint: subJSON.endpoint,
+                subscription_json: subJSON,
+                tipo: esAdmin ? 'admin' : 'publico',
+                updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabaseClient
+                .from('notificaciones_suscriptores')
+                .upsert(payload, { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error("Error al registrar suscripción en Supabase:", error);
+                alert("No se pudo guardar la suscripción push.");
+            } else {
+                alert('🔔 ¡Notificaciones activadas con éxito!');
+            }
+        }
+    } catch (error) {
+        console.error('Error al suscribir a notificaciones:', error);
+    }
+};
+
+// Conversor Auxiliar VAPID Key a Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
