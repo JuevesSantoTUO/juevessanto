@@ -160,3 +160,57 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+/* ==========================================================================
+   4. MANEJADOR DE NOTIFICACIONES PUSH & CLICS
+   ========================================================================== */
+
+// Recibir notificación push enviada por la web/servidor
+self.addEventListener('push', (event) => {
+    let data = { title: 'Jueves Santo Oviedo', body: 'Tienes una nueva actualización.', url: './index.html' };
+
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: './img/icons/icon-192x192.png',
+        badge: './img/favicon.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: data.url || './index.html'
+        },
+        actions: [
+            { action: 'open', title: 'Ver actualización' }
+        ]
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Al pulsar sobre la notificación recibida
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const targetUrl = event.notification.data.url || './index.html';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            for (let client of windowClients) {
+                if (client.url.includes(targetUrl) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
+        })
+    );
+});
