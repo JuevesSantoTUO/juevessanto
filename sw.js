@@ -21,7 +21,6 @@ const STATIC_ASSETS = [
     './participa.html',
     './prensa.html',
     './relacionado.html',
-    './saludo_final.html',
     './sucios.html',
     './admin_panel.html',
     './noticia.html',
