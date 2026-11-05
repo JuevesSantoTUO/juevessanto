@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev)
+   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev - UNIFICADO Y LIMPIO)
    ========================================================================== */
 
 const SUPABASE_URL = "https://nbfkwbdnhghtljgnpmng.supabase.co";
@@ -7,6 +7,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let supabaseClient = null;
 let currentAuthMode = 'login';
+let listaOtrasTunasTemporales = [];
 
 if (typeof supabase !== 'undefined') {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -20,30 +21,42 @@ document.addEventListener('DOMContentLoaded', () => {
     inyectarModalPerfilGlobal();
     inyectarModalAuthGlobal();
     comprobarTokenRecuperacionPassword();
+    cargarLibreriaHtml2Canvas();
 
     if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange(() => {
             comprobarEstadoSesion();
         });
     }
+
+    // SUGERENCIA DE NOTIFICACIONES PUSH A LOS 3 SECONDS
+    setTimeout(() => {
+        if (typeof window.mostrarPromptNotificaciones === 'function') {
+            window.mostrarPromptNotificaciones();
+        }
+    }, 3000);
 });
 
-/* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN DE CORREO --- */
-async function comprobarTokenRecuperacionPassword() {
-    if (!supabaseClient) return;
-
-    // Detectar hash de recuperación de Supabase en la URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-
-    if (type === 'recovery') {
-        setTimeout(() => {
-            abrirModalNuevaPasswordRecovery();
-        }, 300);
+/* --- CARGAR DINÁMICAMENTE HTML2CANVAS PARA GENERAR PNG --- */
+function cargarLibreriaHtml2Canvas() {
+    if (typeof html2canvas === 'undefined' && !document.getElementById('script-html2canvas')) {
+        const script = document.createElement('script');
+        script.id = 'script-html2canvas';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
     }
 }
 
-/* --- 1. GESTIÓN DE SESIÓN Y AUTOCOMPLETADO DE PERFIL --- */
+/* --- DETECTAR SI EL USUARIO LLEGA DESDE EL ENLACE DE RECUPERACIÓN --- */
+async function comprobarTokenRecuperacionPassword() {
+    if (!supabaseClient) return;
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.get('type') === 'recovery') {
+        setTimeout(() => abrirModalNuevaPasswordRecovery(), 300);
+    }
+}
+
+/* --- 1. GESTIÓN DE SESIÓN Y AUTOCOMPLETADO DESDE PROFILES --- */
 async function comprobarEstadoSesion() {
     if (!supabaseClient) return;
 
@@ -88,10 +101,10 @@ async function comprobarEstadoSesion() {
                 const inputMote = document.getElementById('p-mote');
                 const inputTuna = document.getElementById('p-tuna-search');
 
-                if (inputNombre && profile.nombre) { inputNombre.value = profile.nombre; }
-                if (inputApellidos && profile.apellidos) { inputApellidos.value = profile.apellidos; }
-                if (inputMote && profile.mote) { inputMote.value = profile.mote; }
-                if (inputTuna && profile.tuna_nombre) { inputTuna.value = profile.tuna_nombre; }
+                if (inputNombre && profile.nombre) inputNombre.value = profile.nombre;
+                if (inputApellidos && profile.apellidos) inputApellidos.value = profile.apellidos;
+                if (inputMote && profile.mote) inputMote.value = profile.mote;
+                if (inputTuna && profile.tuna_nombre) inputTuna.value = profile.tuna_nombre;
             }
 
             if (footerAdminContainer) {
@@ -138,12 +151,18 @@ async function comprobarEstadoSesion() {
     }
 }
 
-/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN (CON BOTÓN DE OLVIDÉ MI CONTRASEÑA) --- */
+/* --- 2. MODAL GLOBAL DE AUTENTICACIÓN --- */
 function inyectarModalAuthGlobal() {
-    if (document.getElementById('modal-auth')) return;
+    let modal = document.getElementById('modal-auth');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-auth';
+        modal.className = 'modal-interno';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+    }
 
-    const modalHTML = `
-    <div id="modal-auth" class="modal-interno" style="display: none;">
+    modal.innerHTML = `
         <div class="modal-contenido auth-modal-box">
             <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
             
@@ -163,7 +182,6 @@ function inyectarModalAuthGlobal() {
                     <label>Contraseña *</label>
                     <input type="password" id="auth-password" placeholder="••••••••" required minlength="6">
                     
-                    <!-- ENLACE DIRECTO RECUPERAR CONTRASEÑA -->
                     <div id="auth-forgot-link-box" style="text-align: right; margin-top: 5px;">
                         <button type="button" onclick="abrirModalRecuperarPasswordModal()" style="background:none; border:none; color:var(--color-acento); font-size:0.75rem; cursor:pointer; text-decoration:underline;">¿Olvidaste tu contraseña?</button>
                     </div>
@@ -192,18 +210,17 @@ function inyectarModalAuthGlobal() {
                         <ul id="auth-tuna-results-list" class="autocomplete-results" style="display:none; position:absolute; width:100%; z-index:99; max-height:150px; overflow-y:auto; background:#222; border:1px solid var(--color-acento); list-style:none; padding:0; margin:0;"></ul>
                     </div>
 
-                    <!-- CASILLAS LEGALES (LOPD & NEWSLETTER) -->
                     <div style="margin-top: 15px; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 12px;">
                         <div class="input-group-checkbox" style="margin-bottom: 10px;">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
                                 <input type="checkbox" id="auth-check-lopd" style="accent-color: var(--color-acento); margin-top: 2px;">
-                                <span>He leído y acepto la Términos Legales y Protección de Datos (LOPD/RGPD). *</span>
+                                <span>He leído y acepto los Términos Legales y Protección de Datos (LOPD/RGPD). *</span>
                             </label>
                         </div>
                         <div class="input-group-checkbox">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #ccc; cursor: pointer;">
                                 <input type="checkbox" id="auth-check-newsletter" style="accent-color: var(--color-acento); margin-top: 2px;">
-                                <span>Deseo recibir boletines e información sobre la Madrugá y eventos de la Tuna por correo.</span>
+                                <span>Deseo recibir boletines e información sobre la Semana Santa y eventos por correo.</span>
                             </label>
                         </div>
                     </div>
@@ -216,10 +233,8 @@ function inyectarModalAuthGlobal() {
                 <button type="submit" id="btn-auth-action" class="btn-tuna-ui full-width" style="margin-top: 15px;">Entrar</button>
                 <div id="auth-estado" class="mensaje-estado" style="text-align: center; margin-top: 15px;"></div>
             </form>
-        </div>
-    </div>`;
+        </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
     configurarBuscadorTunasModalAuth();
 }
 
@@ -284,7 +299,107 @@ window.cerrarModalAuth = function() {
     if (modal) modal.style.display = 'none';
 };
 
-/* MODAL DEDICADO PARA PEDIR CORREO DE RECUPERACIÓN */
+window.procesarAuth = async function(event) {
+    event.preventDefault();
+
+    const honeypot = document.getElementById('auth-website-field')?.value;
+    if (honeypot) return;
+
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const status = document.getElementById('auth-estado');
+
+    if (!supabaseClient) return;
+    if (status) status.innerText = "Procesando...";
+
+    if (currentAuthMode === 'login') {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+            if (status) status.innerText = "Error: Credenciales incorrectas o email pendiente de verificación.";
+        } else {
+            if (status) status.innerText = "¡Bienvenido!";
+            window.cerrarModalAuth();
+            comprobarEstadoSesion();
+        }
+    } else {
+        const nombre = document.getElementById('auth-nombre').value.trim();
+        const apellidos = document.getElementById('auth-apellidos').value.trim();
+        const mote = document.getElementById('auth-mote').value.trim();
+        const tunaNombre = document.getElementById('auth-tuna-search').value.trim();
+
+        const aceptaLopd = document.getElementById('auth-check-lopd').checked;
+        const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
+
+        if (!aceptaLopd) {
+            if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
+            return;
+        }
+
+        const currentRedirectUrl = window.location.origin + window.location.pathname;
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: currentRedirectUrl,
+                data: {
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    mote: mote,
+                    tuna_nombre: tunaNombre,
+                    acepta_lopd: aceptaLopd,
+                    acepta_newsletter: aceptaNewsletter
+                }
+            }
+        });
+        
+        if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes("already registered") || msg.includes("already exists") || error.status === 400) {
+                const modalContent = document.querySelector('#modal-auth .auth-modal-box');
+                if (modalContent) {
+                    modalContent.innerHTML = `
+                        <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
+                        <div style="text-align: center; padding: 10px 0;">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔑</span>
+                            <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Cuenta ya registrada!</h3>
+                            <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                                El correo <strong style="color: var(--color-acento);">${email}</strong> ya tiene una cuenta activa.
+                            </p>
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                                <button type="button" class="btn-tuna-ui full-width" onclick="abrirModalAuthConEmail('login', '${email}')">Iniciar Sesión</button>
+                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="abrirModalRecuperarPasswordModal()">¿Has olvidado tu contraseña?</button>
+                            </div>
+                            <div id="forgot-status" class="mensaje-estado" style="margin-top: 15px;"></div>
+                        </div>
+                    `;
+                }
+            } else {
+                if (status) status.innerText = "Error al registrar: " + error.message;
+            }
+        } else {
+            const modalContent = document.querySelector('#modal-auth .auth-modal-box');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
+                    <div style="text-align: center; padding: 10px 0;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 15px;">📩</span>
+                        <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Registro completado!</h3>
+                        <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                            Hemos enviado un correo de confirmación a:<br><strong style="color: var(--color-acento);">${email}</strong>
+                        </p>
+                        <p style="color: #aaa; font-size: 0.85rem; line-height: 1.5; margin-bottom: 25px;">
+                            Por motivos de seguridad, haz clic en el enlace de ese correo para activar tu cuenta.
+                        </p>
+                        <button type="button" class="btn-tuna-ui full-width" onclick="cerrarModalAuth()">Entendido</button>
+                    </div>
+                `;
+            }
+        }
+    }
+};
+
+/* --- 3. MODALES DE RECUPERACIÓN Y PERFIL --- */
 window.abrirModalRecuperarPasswordModal = function() {
     const currentEmail = document.getElementById('auth-email')?.value || '';
     cerrarModalAuth();
@@ -324,26 +439,17 @@ window.enviarSolicitudResetPassword = async function() {
     }
 
     if (status) status.innerText = "Enviando correo de restablecimiento...";
-
-    // Redirige al dominio/página actual
     const redirectUrl = window.location.origin + window.location.pathname;
 
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
-    });
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
 
     if (error) {
-        if (status) status.innerText = "Error: " + error.message;
-        if (status) status.style.color = "#ff4444";
+        if (status) { status.innerText = "Error: " + error.message; status.style.color = "#ff4444"; }
     } else {
-        if (status) {
-            status.innerText = "¡Enviado! Revisa tu bandeja de entrada o carpeta de SPAM.";
-            status.style.color = "#2ecc71";
-        }
+        if (status) { status.innerText = "¡Enviado! Revisa tu bandeja de entrada o carpeta de SPAM."; status.style.color = "#2ecc71"; }
     }
 };
 
-/* MODAL PARA CAMBIAR LA CONTRASEÑA TRAS HACER CLIC EN EL CORREO */
 function abrirModalNuevaPasswordRecovery() {
     inyectarModalAuthGlobal();
     const modalBox = document.querySelector('#modal-auth .auth-modal-box');
@@ -353,7 +459,7 @@ function abrirModalNuevaPasswordRecovery() {
                 <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔐</span>
                 <h3 class="protocolo-titulo" style="margin-bottom: 10px;">Crea tu Nueva Contraseña</h3>
                 <p style="color: #ccc; font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-                    Has accedido mediante el enlace de verificación. Escribe tu nueva clave de acceso a continuación.
+                    Escribe tu nueva clave de acceso a continuación.
                 </p>
                 <div class="input-group" style="text-align: left;">
                     <label>Nueva Contraseña *</label>
@@ -379,151 +485,1032 @@ window.guardarNuevaPasswordDesdeRecovery = async function() {
     }
 
     if (status) status.innerText = "Actualizando contraseña...";
-
     const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
 
     if (error) {
-        if (status) status.innerText = "Error actualizando clave: " + error.message;
-        if (status) status.style.color = "#ff4444";
+        if (status) { status.innerText = "Error actualizando clave: " + error.message; status.style.color = "#ff4444"; }
     } else {
-        if (status) {
-            status.innerText = "¡Contraseña cambiada con éxito! Redirigiendo...";
-            status.style.color = "#2ecc71";
-        }
+        if (status) { status.innerText = "¡Contraseña cambiada con éxito! Redirigiendo..."; status.style.color = "#2ecc71"; }
         setTimeout(() => {
-            window.location.hash = ''; // Limpiar el token de la URL
+            window.location.hash = '';
             cerrarModalAuth();
             comprobarEstadoSesion();
         }, 1500);
     }
 };
 
-window.procesarAuth = async function(event) {
+/* --- 4. CÓDIGO UNIFICADO PARA INSCRIPCIÓN DESDE PROFILES --- */
+window.registrarParticipante = async function(event) {
     event.preventDefault();
-
-    const honeypot = document.getElementById('auth-website-field')?.value;
-    if (honeypot) return;
-
-    const email = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-    const status = document.getElementById('auth-estado');
+    const statusBox = document.getElementById('participa-estado');
+    if (statusBox) statusBox.innerText = "Enviando inscripción...";
 
     if (!supabaseClient) return;
-    if (status) status.innerText = "Procesando...";
 
-    if (currentAuthMode === 'login') {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-            if (status) status.innerText = "Error: Credenciales incorrectas o email pendiente de verificación.";
-        } else {
-            if (status) status.innerText = "¡Bienvenido!";
-            window.cerrarModalAuth();
-            comprobarEstadoSesion();
-        }
-    } else {
-        const nombre = document.getElementById('auth-nombre').value.trim();
-        const apellidos = document.getElementById('auth-apellidos').value.trim();
-        const mote = document.getElementById('auth-mote').value.trim();
-        const tunaNombre = document.getElementById('auth-tuna-search').value.trim();
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) {
+        if (statusBox) statusBox.innerText = "Error: Debes iniciar sesión para inscribirte.";
+        return;
+    }
 
-        const aceptaLopd = document.getElementById('auth-check-lopd').checked;
-        const aceptaNewsletter = document.getElementById('auth-check-newsletter').checked;
-        const fechaAhora = new Date().toISOString();
+    try {
+        const { data: userProfile } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        if (!aceptaLopd) {
-            if (status) status.innerText = "Debes aceptar los Términos Legales para registrarte.";
+        if (userProfile && (userProfile.baneado || userProfile.vetado_inscripcion)) {
+            const motivo = userProfile.motivo_sancion ? ` Motivo: ${userProfile.motivo_sancion}` : '';
+            if (statusBox) {
+                statusBox.innerText = `⛔ Tu cuenta tiene restringida la inscripción para este año.${motivo}`;
+                statusBox.style.color = "#ff4444";
+            }
             return;
         }
 
-        const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        
+        let anioActivo = 2027;
+        const { data: cfgAnio } = await supabaseClient
+            .from('configuracion')
+            .select('valor')
+            .eq('clave', 'anio_edicion')
+            .maybeSingle();
+
+        if (cfgAnio && cfgAnio.valor) {
+            anioActivo = parseInt(cfgAnio.valor);
+        }
+
+        const nombreVal = document.getElementById('p-nombre')?.value.trim() || userProfile?.nombre || session.user.user_metadata?.nombre || '';
+        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || userProfile?.apellidos || session.user.user_metadata?.apellidos || '';
+        const moteVal = document.getElementById('p-mote')?.value.trim() || userProfile?.mote || session.user.user_metadata?.mote || '';
+        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || userProfile?.tuna_nombre || session.user.user_metadata?.tuna_nombre || '';
+        const deseaNewsletter = document.getElementById('p-check-newsletter')?.checked || false;
+
+        const payload = {
+            user_id: session.user.id,
+            anio: anioActivo,
+            nombre: nombreVal,
+            apellidos: apellidosVal,
+            mote: moteVal,
+            tuna_nombre: tunaVal,
+            telefono: document.getElementById('p-telefono').value.trim(),
+            email: session.user.email,
+            primer_anio: document.getElementById('p-primer-anio').value === 'Sí',
+            asiste_comida: document.getElementById('p-comida').value === 'Sí',
+            asiste_ronda: document.getElementById('p-ronda').value === 'Sí',
+            asiste_madruga: document.getElementById('p-madruga').value === 'Sí',
+            instrumento: document.getElementById('p-instrumento').value,
+            estado_validacion: 'pendiente'
+        };
+
+        const { error } = await supabaseClient.from('inscripciones').insert([payload]);
+
         if (error) {
-            const msg = error.message.toLowerCase();
-            if (msg.includes("already registered") || msg.includes("already exists") || error.status === 400) {
-                const modalContent = document.querySelector('#modal-auth .auth-modal-box');
-                if (modalContent) {
-                    modalContent.innerHTML = `
-                        <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
-                        <div style="text-align: center; padding: 10px 0;">
-                            <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔑</span>
-                            <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Cuenta ya registrada!</h3>
-                            <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
-                                El correo <strong style="color: var(--color-acento);">${email}</strong> ya tiene una cuenta activa.
-                            </p>
-                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                                <button type="button" class="btn-tuna-ui full-width" onclick="abrirModalAuthConEmail('login', '${email}')">Iniciar Sesión</button>
-                                <button type="button" class="btn-sutil-logout" style="padding: 12px; font-size: 0.85rem;" onclick="abrirModalRecuperarPasswordModal()">¿Has olvidado tu contraseña?</button>
-                            </div>
-                            <div id="forgot-status" class="mensaje-estado" style="margin-top: 15px;"></div>
-                        </div>
-                    `;
-                }
+            if (error.code === '23505') {
+                if (statusBox) statusBox.innerText = `Ya has enviado tu inscripción para la edición de ${anioActivo}.`;
             } else {
-                if (status) status.innerText = "Error al registrar: " + error.message;
+                if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
             }
         } else {
-            if (data && data.user) {
-                await supabaseClient.from('profiles').upsert({
-                    id: data.user.id,
-                    email: email,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    mote: mote,
-                    tuna_nombre: tunaNombre,
-                    role: 'user',
-                    acepta_lopd: aceptaLopd,
-                    acepta_newsletter: aceptaNewsletter,
-                    fecha_consentimiento: fechaAhora
-                });
+            await supabaseClient.from('profiles').upsert({
+                id: session.user.id,
+                email: session.user.email,
+                nombre: nombreVal,
+                apellidos: apellidosVal,
+                mote: moteVal,
+                tuna_nombre: tunaVal,
+                acepta_newsletter: deseaNewsletter,
+                fecha_consentimiento: new Date().toISOString()
+            });
 
-                if (aceptaNewsletter) {
-                    await supabaseClient.from('newsletter').upsert({
-                        email: email,
-                        user_id: data.user.id,
-                        estado: 'activo'
-                    }, { onConflict: 'email' });
-                }
+            if (deseaNewsletter) {
+                await supabaseClient.from('newsletter').upsert({
+                    email: session.user.email,
+                    user_id: session.user.id,
+                    estado: 'activo'
+                }, { onConflict: 'email' });
             }
 
-            const modalContent = document.querySelector('#modal-auth .auth-modal-box');
-            if (modalContent) {
-                modalContent.innerHTML = `
-                    <button class="cerrar-modal" onclick="cerrarModalAuth()">&times;</button>
-                    <div style="text-align: center; padding: 10px 0;">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 15px;">📩</span>
-                        <h3 class="protocolo-titulo" style="margin-bottom: 15px;">¡Registro completado!</h3>
-                        <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
-                            Hemos enviado un correo de confirmación a:<br><strong style="color: var(--color-acento);">${email}</strong>
-                        </p>
-                        <p style="color: #aaa; font-size: 0.85rem; line-height: 1.5; margin-bottom: 25px;">
-                            Por motivos de seguridad y para evitar registros automáticos, 
-                            <strong>haz clic en el enlace de ese correo</strong> para activar tu cuenta e inscribirte.
-                        </p>
-                        <button type="button" class="btn-tuna-ui full-width" onclick="cerrarModalAuth()">Entendido</button>
+            if (statusBox) statusBox.innerText = "¡Inscripción enviada con éxito! Queda pendiente de validación.";
+            document.getElementById('form-participa').reset();
+            comprobarEstadoSesion();
+        }
+    } catch (e) {
+        if (statusBox) statusBox.innerText = "Error procesando inscripción: " + e.message;
+    }
+};
+
+/* --- 5. MODAL PERFIL Y AUTOCOMPLETADO (AVATAR + MEDALLAS + OTRAS TUNAS) --- */
+function inyectarModalPerfilGlobal() {
+    if (document.getElementById('modal-perfil')) return;
+
+    const modalHTML = `
+    <style>
+        .perfil-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+            width: 100%;
+        }
+        @media (max-width: 480px) {
+            .perfil-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px 10px;
+            }
+        }
+    </style>
+    <div id="modal-perfil" class="modal-interno" style="display: none;">
+        <div class="modal-contenido perfil-modal-box">
+            <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
+
+            <!-- BOTÓN DESPLEGABLE COMPARTIR PERFIL -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px; margin-right: 25px; position: relative;">
+                <button type="button" class="btn-tuna-ui" onclick="toggleMenuCompartirPerfil(event)" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; border-color: var(--color-acento);">
+                    📤 Compartir Perfil
+                </button>
+                
+                <div id="menu-compartir-desplegable" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 5px; background: #1a1a1a; border: 1px solid var(--color-acento, #d4af37); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index: 1000; width: 220px; overflow: hidden;">
+                    <button type="button" onclick="compartirPerfilRedes('whatsapp')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: #fff; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        💬 WhatsApp
+                    </button>
+                    <button type="button" onclick="compartirPerfilRedes('facebook')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: #fff; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        📘 Facebook
+                    </button>
+                    <button type="button" onclick="compartirPerfilRedes('descargar')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--color-acento, #d4af37); font-weight: bold; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        💾 Guardar / Descargar PNG
+                    </button>
+                </div>
+            </div>
+
+            <div class="perfil-card-header" style="align-items: center; gap: 15px;">
+                <div class="perfil-avatar-wrapper" style="position: relative;">
+                    <div class="perfil-avatar" id="perfil-avatar-box" style="width: 75px; height: 75px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento);">
+                        <span id="perfil-mote-inicial">T</span>
+                        <img id="perfil-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; object-fit: cover;">
                     </div>
-                `;
+                </div>
+
+                <div class="perfil-datos-principal" style="width: 100%;">
+                    <h3 id="perfil-nombre-completo" style="margin: 0 0 5px 0;">Cargando...</h3>
+                    <p id="perfil-tuna-tag" class="perfil-tuna-badge" style="margin: 0 0 8px 0;">Tuna no especificada</p>
+                    
+                    <div id="perfil-otras-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
+
+                    <div class="perfil-stats-grid">
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">SEMANAS SANTAS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">AÑO DEBUT</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">MADRUGÁS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="perfil-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">DOM. RAMOS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: PREMIOS Y MEDALLAS -->
+            <div id="perfil-seccion-medallas" class="perfil-seccion" style="display: none; margin-top: 15px; margin-bottom: 15px; padding: 10px 0; border-top: 1px dashed rgba(212,175,55,0.2); border-bottom: 1px dashed rgba(212,175,55,0.2);">
+                <h4 class="perfil-subtitulo" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-acento); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    🏅 Distinciones & Medallas
+                </h4>
+                <div id="perfil-contenedor-medallas" style="display: flex; gap: 15px; overflow-x: auto; padding: 5px 0; scrollbar-width: thin;"></div>
+            </div>
+
+            <!-- SECCIÓN: NOTIFICACIONES PUSH EN EL NAVEGADOR -->
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">🔔 Notificaciones Push del Navegador</h4>
+                <div style="background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.85rem; color: #fff;">Recibir alertas de la PWA en este dispositivo</span>
+                    <button type="button" class="btn-tuna-ui" style="padding: 6px 14px; font-size: 0.78rem;" onclick="mostrarPromptNotificaciones()">
+                        Activar / Configurar
+                    </button>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">🖼️ Imagen de Avatar y Foto de Perfil</h4>
+                <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <label class="btn-sutil-logout" style="cursor: pointer; padding: 10px 16px; font-size: 0.85rem; border-color: var(--color-acento); color: var(--color-acento); display: flex; align-items: center; justify-content: center; gap: 8px; flex-grow: 1;">
+                            📁 Subir Foto / Archivo Local
+                            <input type="file" id="perfil-avatar-file-input" accept="image/*" style="display: none;" onchange="procesarSubidaArchivoAvatar(event)">
+                        </label>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 0.75rem; color: #aaa;">O pega la URL de una imagen externa</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="url" id="perfil-avatar-url-input" placeholder="https://ejemplo.com/mi-foto.jpg" style="flex-grow: 1;">
+                            <button type="button" class="btn-tuna-ui" style="padding: 8px 14px; font-size: 0.78rem; flex-shrink: 0;" onclick="guardarAvatarPerfil()">Guardar URL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 class="perfil-subtitulo" style="margin: 0;">📜 Histórico de Asistencias</h4>
+                    <button type="button" class="btn-tuna-ui" style="padding: 4px 10px; font-size: 0.7rem;" onclick="abrirModalAnadirAnioHistorico()">➕ Añadir Año</button>
+                </div>
+                <div class="tabla-contenedor-perfil">
+                    <table class="tabla-tunos">
+                        <thead>
+                            <tr><th>Año</th><th>Tuna</th><th>Comida</th><th>Ronda</th><th>Madrugá</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody id="perfil-historico-body">
+                            <tr><td colspan="6" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">🎓 Histórico de Otras Tunas de Pertenencia</h4>
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <p style="font-size: 0.78rem; color: #aaa; margin-bottom: 8px;">Añade otras tunas en las que hayas estado en el pasado:</p>
+                    
+                    <div class="input-group" style="position: relative; margin-bottom: 10px;">
+                        <input type="text" id="perfil-otratuna-search" placeholder="Buscar tuna para añadir..." autocomplete="off">
+                        <ul id="perfil-otratuna-results-list" class="autocomplete-results" style="display:none; position:absolute; width:100%; z-index:99; max-height:120px; overflow-y:auto; background:#222; border:1px solid var(--color-acento); list-style:none; padding:0; margin:0;"></ul>
+                    </div>
+
+                    <div id="perfil-pildoras-otras-tunas" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">📩 Preferencias de Comunicaciones (Boletín)</h4>
+                <div style="background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                        <span>Recibir boletines informativos y novedades por email</span>
+                        <input type="checkbox" id="perfil-check-newsletter" onchange="toggleSuscripcionNewsletterPerfil(this.checked)" style="accent-color: var(--color-acento); transform: scale(1.3); cursor: pointer;">
+                    </label>
+                    <p id="perfil-newsletter-status" style="font-size: 0.75rem; color: #aaa; margin-top: 8px; margin-bottom: 0;"></p>
+                </div>
+            </div>
+
+            <div class="perfil-seccion">
+                <h4 class="perfil-subtitulo">⚙️ Gestión de Datos Personales</h4>
+                <form id="form-actualizar-perfil" onsubmit="actualizarDatosPerfil(event)">
+                    <div class="form-grid-perfil">
+                        <div class="input-group"><label>Teléfono Móvil</label><input type="tel" id="perfil-edit-telefono" required></div>
+                        <div class="input-group">
+                            <label>Instrumento Principal</label>
+                            <select id="perfil-edit-instrumento" required>
+                                <option value="Guitarra">Guitarra</option>
+                                <option value="Bandurria">Bandurria</option>
+                                <option value="Laúd">Laúd</option>
+                                <option value="Contrabajo">Contrabajo / Bajo</option>
+                                <option value="Pandereta">Pandereta</option>
+                                <option value="Acordeón">Acordeón</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-tuna-ui full-width" style="margin-top:10px;">Guardar Cambios de Contacto</button>
+                </form>
+
+                <form id="form-cambiar-pass" onsubmit="actualizarPasswordPerfil(event)" style="margin-top: 15px;">
+                    <div class="input-group"><label>Nueva Contraseña</label><input type="password" id="perfil-nueva-pass" placeholder="••••••••" required minlength="6"></div>
+                    <button type="submit" class="btn-sutil-logout full-width" style="padding: 10px;">Cambiar Contraseña</button>
+                </form>
+                <div id="perfil-estado-msg" class="mensaje-estado"></div>
+            </div>
+
+            <button type="button" class="btn-sutil-logout full-width" onclick="cerrarSesionUsuario()" style="margin-top: 20px; color: #ff5555; border-color: #ff5555;">Cerrar Sesión Activa</button>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    configurarBuscadorOtrasTunasPerfil();
+
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('menu-compartir-desplegable');
+        if (menu && !e.target.closest('#menu-compartir-desplegable') && !e.target.closest('button[onclick*="toggleMenuCompartirPerfil"]')) {
+            menu.style.display = 'none';
+        }
+    });
+}
+
+window.toggleMenuCompartirPerfil = function(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('menu-compartir-desplegable');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+};
+
+/* --- LÓGICA DE GENERACIÓN PNG Y COMPARTIR EN REDES --- */
+window.compartirPerfilRedes = async function(plataforma) {
+    document.getElementById('menu-compartir-desplegable').style.display = 'none';
+
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) return;
+
+    await window.abrirModalPerfilPublico(session.user.id);
+    const modalPub = document.getElementById('modal-perfil-publico');
+    const pubContent = modalPub ? modalPub.querySelector('.perfil-modal-box') : null;
+
+    if (!pubContent) return;
+
+    if (typeof html2canvas === 'undefined') {
+        alert("Cargando motor de imagen... Inténtalo de nuevo en 2 segundos.");
+        return;
+    }
+
+    const watermarkHTML = `
+        <div id="temp-watermark-share" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(212,175,55,0.3); text-align: center;">
+            <p style="margin: 0; font-size: 0.78rem; color: #ddd; font-family: sans-serif;">
+                ✨ Mira mi perfil en la web de <strong>Jueves Santo Oviedo</strong>
+            </p>
+            <p style="margin: 3px 0 0 0; font-size: 0.72rem; color: var(--color-acento, #d4af37); font-weight: bold;">
+                Accede a la web: https://juevessantotuo.github.io/juevessanto/index.html
+            </p>
+        </div>
+    `;
+    pubContent.insertAdjacentHTML('beforeend', watermarkHTML);
+
+    try {
+        const canvas = await html2canvas(pubContent, {
+            backgroundColor: '#111111',
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+
+        document.getElementById('temp-watermark-share')?.remove();
+
+        const urlWeb = "https://juevessantotuo.github.io/juevessanto/index.html";
+        const textoShare = `✨ Mira mi perfil en la web de Jueves Santo Oviedo\nAccede a la web: ${urlWeb}`;
+
+        canvas.toBlob(async (blob) => {
+            if (plataforma === 'descargar') {
+                const link = document.createElement('a');
+                link.download = `Perfil_JuevesSanto_Tuno.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } else if (plataforma === 'whatsapp') {
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'perfil.png', { type: 'image/png' })] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Mi Perfil - Jueves Santo Oviedo',
+                            text: textoShare,
+                            files: [new File([blob], 'perfil.png', { type: 'image/png' })]
+                        });
+                    } catch (e) {}
+                } else {
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoShare)}`, '_blank');
+                    const link = document.createElement('a');
+                    link.download = `Perfil_JuevesSanto_Tuno.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }
+            } else if (plataforma === 'facebook') {
+                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlWeb)}&quote=${encodeURIComponent(textoShare)}`;
+                window.open(fbUrl, '_blank', 'width=600,height=400');
+                const link = document.createElement('a');
+                link.download = `Perfil_JuevesSanto_Tuno.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
             }
+        }, 'image/png');
+
+    } catch (err) {
+        document.getElementById('temp-watermark-share')?.remove();
+        console.error("Error al generar la imagen del perfil:", err);
+        alert("No se pudo generar la imagen para compartir.");
+    }
+};
+
+window.abrirModalPerfil = async function() {
+    if (!supabaseClient) return;
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) return;
+
+    inyectarModalPerfilGlobal();
+
+    const modal = document.getElementById('modal-perfil');
+    if (modal) modal.style.display = 'flex';
+
+    const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
+        supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
+        supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
+        supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false }),
+        supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', session.user.id).order('anio_conseguido', { ascending: true })
+    ]);
+
+    if (userMedallas && userMedallas.length > 0) {
+        userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
+    }
+
+    const anioActualEnCurso = cfgAnio && cfgAnio.valor ? parseInt(cfgAnio.valor) : 2027;
+    const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
+
+    const mote = profile?.mote || ultInscripcion?.mote || '';
+    const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna no especificada';
+
+    document.getElementById('perfil-nombre-completo').innerText = mote ? `"${mote}"` : session.user.email;
+    document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
+
+    renderizarMedallasPerfil('perfil-seccion-medallas', 'perfil-contenedor-medallas', userMedallas);
+
+    const avatarImg = document.getElementById('perfil-avatar-img');
+    const inicialTxt = document.getElementById('perfil-mote-inicial');
+    const inputUrlAvatar = document.getElementById('perfil-avatar-url-input');
+
+    if (profile && profile.avatar_url) {
+        if (avatarImg) { avatarImg.src = profile.avatar_url; avatarImg.style.display = 'block'; }
+        if (inicialTxt) inicialTxt.style.display = 'none';
+        if (inputUrlAvatar) inputUrlAvatar.value = profile.avatar_url;
+    } else {
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (inicialTxt) {
+            inicialTxt.style.display = 'block';
+            inicialTxt.innerText = (mote || 'T').charAt(0).toUpperCase();
+        }
+        if (inputUrlAvatar) inputUrlAvatar.value = '';
+    }
+
+    listaOtrasTunasTemporales = profile?.otras_tunas || [];
+    renderizarPildorasOtrasTunasPerfil();
+
+    const checkNews = document.getElementById('perfil-check-newsletter');
+    const statusNews = document.getElementById('perfil-newsletter-status');
+    const estaSuscrito = profile?.acepta_newsletter || false;
+
+    if (checkNews) checkNews.checked = estaSuscrito;
+    if (statusNews) {
+        statusNews.innerText = estaSuscrito ? "Estado: Suscrito activamente al boletín." : "Estado: No suscrito.";
+        statusNews.style.color = estaSuscrito ? "#2ecc71" : "#ffaa00";
+    }
+
+    if (inscripciones && inscripciones.length > 0) {
+        const asistenciasValidadasHistoricas = inscripciones.filter(i => 
+            i.asiste_madruga && 
+            i.estado_validacion === 'validado' && 
+            i.anio < anioActualEnCurso
+        );
+
+        const totalSemanasSantas = asistenciasValidadasHistoricas.length;
+        const numDomingoRamos = asistenciasValidadasHistoricas.filter(i => i.anio < 2011).length;
+        const numMadrugas = asistenciasValidadasHistoricas.filter(i => i.anio >= 2011).length;
+
+        const elTotalStat = document.getElementById('perfil-total-asistencias');
+        const elMadrugasStat = document.getElementById('perfil-num-madrugas');
+        const elDomRamosStat = document.getElementById('perfil-num-domingo-ramos');
+
+        if (elTotalStat) elTotalStat.innerText = totalSemanasSantas;
+        if (elMadrugasStat) elMadrugasStat.innerText = numMadrugas;
+        if (elDomRamosStat) elDomRamosStat.innerText = numDomingoRamos;
+
+        const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
+        const elFajinAnio = document.getElementById('perfil-fajin-anio');
+        if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
+
+        document.getElementById('perfil-edit-telefono').value = ultInscripcion.telefono || '';
+        document.getElementById('perfil-edit-instrumento').value = ultInscripcion.instrumento || 'Guitarra';
+
+        const tbody = document.getElementById('perfil-historico-body');
+        tbody.innerHTML = '';
+        
+        inscripciones.forEach(i => {
+            const tr = document.createElement('tr');
+            const botonCancelar = (i.anio >= 2026) 
+                ? `<button onclick="cancelarInscripcionActiva('${i.id}')" class="btn-cancelar-asistencia" title="Cancelar asistencia">Cancelar</button>`
+                : '';
+
+            let etiquetaEstado = '';
+            if (i.estado_validacion === 'validado') {
+                etiquetaEstado = '<span style="color:#2ecc71; font-size:0.75rem;">Validado</span>';
+            } else if (i.estado_validacion === 'rechazado') {
+                etiquetaEstado = '<span style="color:#ff4444; font-size:0.75rem;">Rechazado</span>';
+            } else {
+                etiquetaEstado = '<span style="color:#ffaa00; font-size:0.75rem;">Pendiente</span>';
+            }
+                
+            tr.innerHTML = `
+                <td><strong>${i.anio}</strong> ${botonCancelar}</td>
+                <td style="font-size:0.8rem">${i.tuna_nombre || tunaNombre}</td>
+                <td>${i.asiste_comida ? '✅' : '❌'}</td>
+                <td>${i.asiste_ronda ? '✅' : '❌'}</td>
+                <td>${i.asiste_madruga ? '✅' : '❌'}</td>
+                <td>${etiquetaEstado}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } else {
+        document.getElementById('perfil-total-asistencias').innerText = '0';
+        document.getElementById('perfil-fajin-anio').innerText = '-';
+        document.getElementById('perfil-num-madrugas').innerText = '0';
+        document.getElementById('perfil-num-domingo-ramos').innerText = '0';
+        
+        document.getElementById('perfil-historico-body').innerHTML = `
+            <tr><td colspan="6" style="text-align:center; color:#aaa;">Aún no tienes inscripciones registradas.</td></tr>
+        `;
+    }
+};
+
+/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS */
+function renderizarMedallasPerfil(idSeccion, idContenedor, listaMedallas) {
+    const sec = document.getElementById(idSeccion);
+    const container = document.getElementById(idContenedor);
+    if (!sec || !container) return;
+
+    if (!listaMedallas || listaMedallas.length === 0) {
+        sec.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    sec.style.display = 'block';
+    container.innerHTML = listaMedallas.map(m => {
+        const med = m.medallas || m;
+        if (!med) return '';
+
+        const urlImg = (med.imagen_url && med.imagen_url.trim() !== '') ? med.imagen_url.trim() : null;
+
+        const visualHtml = urlImg 
+            ? `<img src="${urlImg}" alt="${med.nombre || 'Medalla'}" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));">`
+            : `<div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(212,175,55,0.15); border: 1px solid var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🏅</div>`;
+
+        return `
+            <div title="${med.descripcion || ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 70px; flex-shrink: 0;">
+                <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
+                    ${visualHtml}
+                </div>
+                <span style="font-size: 0.7rem; font-weight: bold; color: #fff; line-height: 1.1;">${med.nombre || ''}</span>
+                <span style="font-size: 0.65rem; color: var(--color-acento); font-weight: bold; margin-top: 2px;">${m.anio_conseguido || ''}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+window.guardarAvatarPerfil = async function() {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const status = document.getElementById('perfil-estado-msg');
+    const avatarUrl = document.getElementById('perfil-avatar-url-input').value.trim();
+
+    if (status) status.innerText = "Guardando avatar...";
+
+    const { error } = await supabaseClient
+        .from('profiles')
+        .update({ avatar_url: avatarUrl || null })
+        .eq('id', session.user.id);
+
+    if (error) {
+        if (status) status.innerText = "Error guardando avatar: " + error.message;
+    } else {
+        if (status) status.innerText = "¡Avatar actualizado correctamente!";
+        window.abrirModalPerfil();
+    }
+};
+
+function comprimirImagenAvatar(file, maxDimension = 800, calidad = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Error al procesar el lienzo."));
+                    },
+                    'image/jpeg',
+                    calidad
+                );
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+}
+
+window.procesarSubidaArchivoAvatar = async function(event) {
+    const file = event.target.files[0];
+    if (!file || !supabaseClient) return;
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const status = document.getElementById('perfil-estado-msg');
+    if (status) status.innerText = "Optimizando y comprimiendo imagen...";
+
+    try {
+        const blobComprimido = await comprimirImagenAvatar(file, 800, 0.8);
+        if (status) status.innerText = "Subiendo avatar optimizado...";
+
+        const filePath = `avatars/${session.user.id}_avatar.jpg`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('avatars')
+            .upload(filePath, blobComprimido, {
+                contentType: 'image/jpeg',
+                upsert: true
+            });
+
+        if (uploadError) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Img = e.target.result;
+                await supabaseClient.from('profiles').update({ avatar_url: base64Img }).eq('id', session.user.id);
+                if (status) status.innerText = "¡Avatar guardado!";
+                window.abrirModalPerfil();
+            };
+            reader.readAsDataURL(blobComprimido);
+        } else {
+            const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
+            const publicUrlWithCache = `${publicUrl}?v=${Date.now()}`;
+
+            await supabaseClient.from('profiles').update({ avatar_url: publicUrlWithCache }).eq('id', session.user.id);
+            if (status) status.innerText = "¡Avatar actualizado con éxito!";
+            window.abrirModalPerfil();
+        }
+    } catch (e) {
+        if (status) status.innerText = "Error procesando imagen: " + e.message;
+    }
+};
+
+function configurarBuscadorOtrasTunasPerfil() {
+    const searchInput = document.getElementById('perfil-otratuna-search');
+    const resultsList = document.getElementById('perfil-otratuna-results-list');
+    if (!searchInput || !resultsList) return;
+
+    let timeout = null;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        const query = e.target.value.trim();
+        if (query.length < 2) { resultsList.style.display = 'none'; return; }
+
+        timeout = setTimeout(async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('tunas')
+                .select('nombre')
+                .ilike('nombre', `%${query}%`)
+                .limit(6);
+
+            if (!error && data && data.length > 0) {
+                resultsList.innerHTML = '';
+                data.forEach(tuna => {
+                    const li = document.createElement('li');
+                    li.innerText = tuna.nombre;
+                    li.style.padding = '8px 12px';
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        agregarOtraTunaAlPerfil(tuna.nombre);
+                        searchInput.value = '';
+                        resultsList.style.display = 'none';
+                    });
+                    resultsList.appendChild(li);
+                });
+                resultsList.style.display = 'block';
+            } else { resultsList.style.display = 'none'; }
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+}
+
+async function agregarOtraTunaAlPerfil(nombreTuna) {
+    if (!listaOtrasTunasTemporales.includes(nombreTuna)) {
+        listaOtrasTunasTemporales.push(nombreTuna);
+        await guardarOtrasTunasBaseDatos();
+    }
+}
+
+async function eliminarOtraTunaDelPerfil(nombreTuna) {
+    listaOtrasTunasTemporales = listaOtrasTunasTemporales.filter(t => t !== nombreTuna);
+    await guardarOtrasTunasBaseDatos();
+}
+
+async function guardarOtrasTunasBaseDatos() {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    await supabaseClient
+        .from('profiles')
+        .update({ otras_tunas: listaOtrasTunasTemporales })
+        .eq('id', session.user.id);
+
+    renderizarPildorasOtrasTunasPerfil();
+}
+
+function renderizarPildorasOtrasTunasPerfil() {
+    const contenedorEdit = document.getElementById('perfil-pildoras-otras-tunas');
+    const contenedorHeader = document.getElementById('perfil-otras-tunas-header');
+
+    if (contenedorEdit) {
+        contenedorEdit.innerHTML = listaOtrasTunasTemporales.map(t => `
+            <span style="background: rgba(212,175,55,0.15); border: 1px solid var(--color-acento); color: var(--color-acento); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 6px;">
+                ${t}
+                <button type="button" onclick="eliminarOtraTunaDelPerfil('${t}')" style="background:none; border:none; color:#ff5555; cursor:pointer; font-weight:bold; font-size:0.8rem; padding:0;">&times;</button>
+            </span>
+        `).join('');
+    }
+
+    if (contenedorHeader) {
+        contenedorHeader.innerHTML = listaOtrasTunasTemporales.map(t => `
+            <span style="background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                🎓 ${t}
+            </span>
+        `).join('');
+    }
+}
+
+/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO (CORREGIDO Y SIN VALORES HARDCODEADOS) --- */
+window.abrirModalAnadirAnioHistorico = async function() {
+    let modalHist = document.getElementById('modal-historico-input');
+    if (!modalHist) {
+        modalHist = document.createElement('div');
+        modalHist.id = 'modal-historico-input';
+        modalHist.className = 'modal-interno';
+        modalHist.innerHTML = `
+            <div class="modal-contenido auth-modal-box" style="max-width: 450px !important;">
+                <button class="cerrar-modal" onclick="document.getElementById('modal-historico-input').style.display='none'">&times;</button>
+                <h3 class="protocolo-titulo" style="text-align: center; margin-bottom: 15px;">📜 Añadir Año al Histórico</h3>
+                <form id="form-historico-anadir" onsubmit="procesarAnadirAnioHistoricoModal(event)">
+                    <div class="input-group">
+                        <label>AÑO DE LA SEMANA SANTA *</label>
+                        <input type="number" id="hist-anio-input" placeholder="Ej: 2025" min="1950" max="2035" required style="width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #fff; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div class="input-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="hist-nombre-input" placeholder="Nombre" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Apellidos *</label>
+                            <input type="text" id="hist-apellidos-input" placeholder="Apellidos" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>INSTRUMENTO TOCADO *</label>
+                        <select id="hist-instrumento-input" required>
+                            <option value="Bandurria">Bandurria</option>
+                            <option value="Guitarra">Guitarra</option>
+                            <option value="Laúd">Laúd</option>
+                            <option value="Contrabajo">Contrabajo / Bajo</option>
+                            <option value="Pandereta">Pandereta</option>
+                            <option value="Acordeón">Acordeón</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="btn-submit-historico" class="btn-tuna-ui full-width" style="margin-top: 15px;">ENVIAR SOLICITUD</button>
+                    <div id="historico-modal-status" class="mensaje-estado" style="text-align: center; margin-top: 12px; font-size: 0.85rem; line-height: 1.4;"></div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modalHist);
+    }
+
+    document.getElementById('hist-anio-input').value = new Date().getFullYear() - 1;
+
+    // Autocompletar con los datos reales del usuario logueado
+    if (supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+            const { data: profile } = await supabaseClient.from('profiles').select('nombre, apellidos').eq('id', session.user.id).maybeSingle();
+            const nomInput = document.getElementById('hist-nombre-input');
+            const apeInput = document.getElementById('hist-apellidos-input');
+            if (nomInput) nomInput.value = profile?.nombre || session.user.user_metadata?.nombre || '';
+            if (apeInput) apeInput.value = profile?.apellidos || session.user.user_metadata?.apellidos || '';
+        }
+    }
+
+    const statusBox = document.getElementById('historico-modal-status');
+    if (statusBox) statusBox.innerText = '';
+    modalHist.style.display = 'flex';
+};
+
+window.procesarAnadirAnioHistoricoModal = async function(e) {
+    e.preventDefault();
+    const anio = parseInt(document.getElementById('hist-anio-input').value);
+    const instrumento = document.getElementById('hist-instrumento-input').value;
+    const nombreVal = document.getElementById('hist-nombre-input').value.trim();
+    const apellidosVal = document.getElementById('hist-apellidos-input').value.trim();
+    const statusBox = document.getElementById('historico-modal-status');
+
+    if (statusBox) {
+        statusBox.style.color = "var(--color-acento)";
+        statusBox.innerText = "Procesando solicitud...";
+    }
+
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const [{ data: profile }, { data: inscripciones }] = await Promise.all([
+        supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
+        supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false })
+    ]);
+
+    const ultIns = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
+
+    const moteVal = profile?.mote || ultIns?.mote || session.user.user_metadata?.mote || '';
+    const tunaVal = profile?.tuna_nombre || ultIns?.tuna_nombre || session.user.user_metadata?.tuna_nombre || '';
+    const telefonoVal = ultIns?.telefono || '';
+
+    const payload = {
+        user_id: session.user.id,
+        anio: anio,
+        nombre: nombreVal,
+        apellidos: apellidosVal,
+        mote: moteVal,
+        tuna_nombre: tunaVal,
+        telefono: telefonoVal,
+        email: session.user.email,
+        primer_anio: false,
+        asiste_comida: true,
+        asiste_ronda: true,
+        asiste_madruga: true,
+        instrumento: instrumento,
+        estado_validacion: 'pendiente',
+        asistencia_confirmada: false
+    };
+
+    const { error } = await supabaseClient.from('inscripciones').insert([payload]);
+
+    if (error) {
+        if (statusBox) {
+            statusBox.style.color = "#ff4444";
+            if (error.code === '23505') {
+                statusBox.innerText = `⚠️ Ya tienes un registro o solicitud para el año ${anio}.`;
+            } else {
+                statusBox.innerText = "Error: " + error.message;
+            }
+        }
+    } else {
+        await supabaseClient.from('profiles').upsert({
+            id: session.user.id,
+            email: session.user.email,
+            nombre: nombreVal,
+            apellidos: apellidosVal,
+            mote: moteVal,
+            tuna_nombre: tunaVal
+        });
+
+        if (statusBox) {
+            statusBox.style.color = "#2ecc71";
+            statusBox.innerText = `✨ ¡Solicitud enviada! El año ${anio} quedará reflejado en cuanto el Administrador lo valide.`;
+        }
+        setTimeout(() => {
+            const modalH = document.getElementById('modal-historico-input');
+            if (modalH) modalH.style.display = 'none';
+            if (typeof window.abrirModalPerfil === 'function') window.abrirModalPerfil();
+        }, 2200);
+    }
+};
+
+window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const statusNews = document.getElementById('perfil-newsletter-status');
+    if (statusNews) statusNews.innerText = "Guardando preferencia...";
+
+    await supabaseClient.from('profiles').update({
+        acepta_newsletter: nuevoEstado,
+        fecha_consentimiento: new Date().toISOString()
+    }).eq('id', session.user.id);
+
+    if (nuevoEstado) {
+        await supabaseClient.from('newsletter').upsert({
+            email: session.user.email,
+            user_id: session.user.id,
+            estado: 'activo',
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'email' });
+        if (statusNews) {
+            statusNews.innerText = "Estado: Suscrito activamente al boletín.";
+            statusNews.style.color = "#2ecc71";
+        }
+    } else {
+        await supabaseClient.from('newsletter').update({
+            estado: 'cancelado',
+            updated_at: new Date().toISOString()
+        }).eq('email', session.user.email);
+
+        if (statusNews) {
+            statusNews.innerText = "Estado: No suscrito.";
+            statusNews.style.color = "#ffaa00";
         }
     }
 };
 
-window.abrirModalAuthConEmail = function(modo, email) {
-    window.abrirModalAuth(modo);
-    setTimeout(() => {
-        const inputEmail = document.getElementById('auth-email');
-        if (inputEmail) inputEmail.value = email;
-    }, 50);
+window.cerrarModalPerfil = function() {
+    const modal = document.getElementById('modal-perfil');
+    if (modal) modal.style.display = 'none';
 };
 
-window.cerrarSesionUsuario = async function() {
-    if (supabaseClient) {
-        await supabaseClient.auth.signOut();
-        window.cerrarModalPerfil();
+window.gestionarBotonPerfil = async function() {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+        window.abrirModalPerfil();
+    } else {
+        window.abrirModalAuth('login');
+    }
+};
+
+window.cancelarInscripcionActiva = async function(idInscripcion) {
+    if (!confirm("¿Estás seguro de que deseas cancelar tu asistencia?")) return;
+    if (!supabaseClient) return;
+
+    const { error } = await supabaseClient.from('inscripciones').delete().eq('id', idInscripcion);
+
+    if (error) {
+        alert("Error al cancelar la inscripción: " + error.message);
+    } else {
+        alert("Tu asistencia ha sido cancelada correctamente.");
+        if (document.getElementById('modal-perfil')?.style.display === 'flex') window.abrirModalPerfil();
         comprobarEstadoSesion();
     }
 };
 
-/* --- 3. BUSCADOR PREDICTIVO DE TUNAS --- */
+window.actualizarDatosPerfil = async function(event) {
+    event.preventDefault();
+    const status = document.getElementById('perfil-estado-msg');
+    status.innerText = "Guardando cambios...";
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const tel = document.getElementById('perfil-edit-telefono').value;
+    const inst = document.getElementById('perfil-edit-instrumento').value;
+
+    const { error } = await supabaseClient
+        .from('inscripciones')
+        .update({ telefono: tel, instrumento: inst })
+        .eq('user_id', session.user.id);
+
+    if (error) {
+        status.innerText = "Error al actualizar los datos.";
+    } else {
+        status.innerText = "¡Datos actualizados con éxito!";
+        window.abrirModalPerfil();
+    }
+};
+
+window.actualizarPasswordPerfil = async function(event) {
+    event.preventDefault();
+    const status = document.getElementById('perfil-estado-msg');
+    const newPass = document.getElementById('perfil-nueva-pass').value;
+
+    status.innerText = "Cambiando contraseña...";
+
+    const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+
+    if (error) {
+        status.innerText = "Error al cambiar la contraseña: " + error.message;
+    } else {
+        status.innerText = "¡Contraseña cambiada correctamente!";
+        document.getElementById('perfil-nueva-pass').value = '';
+    }
+};
+
 function configurarBuscadorTunas() {
     const searchInput = document.getElementById('p-tuna-search');
     const resultsList = document.getElementById('tuna-results-list');
@@ -612,373 +1599,350 @@ function configurarBuscadorTunasModalAuth() {
     });
 }
 
-/* --- 4. ENVÍO DE INSCRIPCIÓN Y REGISTRO/SINCRONIZACIÓN AUTOMÁTICA EN PROFILES --- */
-window.registrarParticipante = async function(event) {
-    event.preventDefault();
-    const statusBox = document.getElementById('participa-estado');
-    if (statusBox) statusBox.innerText = "Enviando inscripción...";
+window.abrirModalAuthConEmail = function(modo, email) {
+    window.abrirModalAuth(modo);
+    setTimeout(() => {
+        const inputEmail = document.getElementById('auth-email');
+        if (inputEmail) inputEmail.value = email;
+    }, 50);
+};
 
-    if (!supabaseClient) return;
-
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session || !session.user) {
-        if (statusBox) statusBox.innerText = "Error: Debes iniciar sesión para inscribirte.";
-        return;
-    }
-
-    try {
-        const { data: userProfile } = await supabaseClient
-            .from('profiles')
-            .select('baneado, vetado_inscripcion, motivo_sancion')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-        if (userProfile && (userProfile.baneado || userProfile.vetado_inscripcion)) {
-            const motivo = userProfile.motivo_sancion ? ` Motivo: ${userProfile.motivo_sancion}` : '';
-            if (statusBox) {
-                statusBox.innerText = `⛔ Tu cuenta tiene restringida la inscripción para este año.${motivo}`;
-                statusBox.style.color = "#ff4444";
-            }
-            return;
-        }
-
-        let anioActivo = 2027;
-        const { data: cfgAnio } = await supabaseClient
-            .from('configuracion')
-            .select('valor')
-            .eq('clave', 'anio_edicion')
-            .maybeSingle();
-
-        if (cfgAnio && cfgAnio.valor) {
-            anioActivo = parseInt(cfgAnio.valor);
-        }
-
-        const nombreVal = document.getElementById('p-nombre')?.value.trim() || '';
-        const apellidosVal = document.getElementById('p-apellidos')?.value.trim() || '';
-        const moteVal = document.getElementById('p-mote')?.value.trim() || '';
-        const tunaVal = document.getElementById('p-tuna-search')?.value.trim() || '';
-        const deseaNewsletter = document.getElementById('p-check-newsletter')?.checked || false;
-
-        const payload = {
-            user_id: session.user.id,
-            anio: anioActivo,
-            nombre: nombreVal,
-            apellidos: apellidosVal,
-            mote: moteVal,
-            tuna_nombre: tunaVal,
-            telefono: document.getElementById('p-telefono').value.trim(),
-            email: session.user.email,
-            primer_anio: document.getElementById('p-primer-anio').value === 'Sí',
-            asiste_comida: document.getElementById('p-comida').value === 'Sí',
-            asiste_ronda: document.getElementById('p-ronda').value === 'Sí',
-            asiste_madruga: document.getElementById('p-madruga').value === 'Sí',
-            instrumento: document.getElementById('p-instrumento').value
-        };
-
-        const { error } = await supabaseClient.from('inscripciones').insert([payload]);
-
-        if (error) {
-            if (error.code === '23505') {
-                if (statusBox) statusBox.innerText = `Ya has enviado tu inscripción para la edición de ${anioActivo}.`;
-            } else {
-                if (statusBox) statusBox.innerText = "Error al guardar la inscripción: " + error.message;
-            }
-        } else {
-            await supabaseClient.from('profiles').upsert({
-                id: session.user.id,
-                email: session.user.email,
-                nombre: nombreVal,
-                apellidos: apellidosVal,
-                mote: moteVal,
-                tuna_nombre: tunaVal,
-                acepta_newsletter: deseaNewsletter,
-                fecha_consentimiento: new Date().toISOString()
-            });
-
-            if (deseaNewsletter) {
-                await supabaseClient.from('newsletter').upsert({
-                    email: session.user.email,
-                    user_id: session.user.id,
-                    estado: 'activo'
-                }, { onConflict: 'email' });
-            }
-
-            if (statusBox) statusBox.innerText = "¡Inscripción enviada con éxito! Nos vemos en la Madrugá.";
-            document.getElementById('form-participa').reset();
-            comprobarEstadoSesion();
-        }
-    } catch (e) {
-        if (statusBox) statusBox.innerText = "Error procesando inscripción: " + e.message;
+window.cerrarSesionUsuario = async function() {
+    if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+        window.cerrarModalPerfil();
+        comprobarEstadoSesion();
     }
 };
 
-/* --- 5. MODAL GLOBAL DE PERFIL Y GESTIÓN DE SUSCRIPCIÓN --- */
-function inyectarModalPerfilGlobal() {
-    if (document.getElementById('modal-perfil')) return;
+/* ==========================================================================
+   MODAL DE PERFIL PÚBLICO DE TUNOS (CORREGIDO PARA SINCRONIZAR AÑO ACTIVO)
+   ========================================================================== */
+function inyectarModalPerfilPublicoGlobal() {
+    if (document.getElementById('modal-perfil-publico')) return;
 
     const modalHTML = `
-    <div id="modal-perfil" class="modal-interno" style="display: none;">
-        <div class="modal-contenido perfil-modal-box">
-            <button class="cerrar-modal" onclick="cerrarModalPerfil()">&times;</button>
+    <div id="modal-perfil-publico" class="modal-interno" style="display: none;">
+        <div class="modal-contenido perfil-modal-box" style="max-width: 550px !important;">
+            <button class="cerrar-modal" onclick="cerrarModalPerfilPublico()">&times;</button>
 
-            <div class="perfil-card-header">
-                <div class="perfil-avatar"><span id="perfil-mote-inicial">T</span></div>
-                <div class="perfil-datos-principal">
-                    <h3 id="perfil-nombre-completo">Cargando...</h3>
-                    <p id="perfil-tuna-tag" class="perfil-tuna-badge">Tuna no especificada</p>
-                    <div class="perfil-stats">
-                        <div class="stat-item"><span id="perfil-total-asistencias" class="stat-num">0</span><span class="stat-label">Madrugás</span></div>
-                        <div class="stat-item"><span id="perfil-fajin-anio" class="stat-num">-</span><span class="stat-label">Año Debut</span></div>
+            <div class="perfil-card-header" style="align-items: center; gap: 15px; margin-bottom: 15px;">
+                <div class="perfil-avatar" id="pub-avatar-box" style="width: 70px; height: 70px; border-radius: 50%; overflow: hidden; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; color: #000; border: 2px solid var(--color-acento); flex-shrink: 0;">
+                    <span id="pub-mote-inicial">T</span>
+                    <img id="pub-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                </div>
+
+                <div class="perfil-datos-principal" style="width: 100%;">
+                    <h3 id="pub-nombre-mote" style="margin: 0 0 4px 0; color: #fff; font-size: 1.2rem;">Cargando...</h3>
+                    <p id="pub-tuna-tag" class="perfil-tuna-badge" style="margin: 0 0 8px 0; color: var(--color-acento); font-size: 0.82rem; font-weight: bold;">Tuna no especificada</p>
+                    
+                    <div id="pub-personas-tunas-header" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;"></div>
+
+                    <div class="perfil-stats-grid">
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-total-asistencias" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">SEMANAS SANTAS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-fajin-anio" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">-</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">AÑO DEBUT</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-num-madrugas" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">MADRUGÁS</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <span id="pub-num-domingo-ramos" class="stat-num" style="color: var(--color-acento, #d4af37); font-size: 1.4rem; font-weight: bold; line-height: 1.1;">0</span>
+                            <span class="stat-label" style="font-size: 0.68rem; color: #ccc; margin-top: 3px;">DOM. RAMOS</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- SECCIÓN: PREMIOS Y MEDALLAS PÚBLICAS -->
+            <div id="pub-seccion-medallas" class="perfil-seccion" style="display: none; margin-top: 10px; margin-bottom: 10px; padding: 10px 0; border-top: 1px dashed rgba(212,175,55,0.2); border-bottom: 1px dashed rgba(212,175,55,0.2);">
+                <h4 class="perfil-subtitulo" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-acento); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    🏅 Distinciones & Medallas
+                </h4>
+                <div id="pub-contenedor-medallas" style="display: flex; gap: 15px; overflow-x: auto; padding: 5px 0; scrollbar-width: thin;"></div>
+            </div>
+
             <div class="perfil-seccion">
-                <h4 class="perfil-subtitulo">📜 Histórico de Asistencias</h4>
-                <div class="tabla-contenedor-perfil">
+                <h4 class="perfil-subtitulo" style="color: var(--color-acento); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">📜 Histórico de Asistencias Validadas</h4>
+                <div class="tabla-contenedor-perfil" style="max-height: 200px; overflow-y: auto;">
                     <table class="tabla-tunos">
                         <thead>
-                            <tr><th>Año</th><th>Tuna</th><th>Comida</th><th>Ronda</th><th>Madrugá</th><th>Instrumento</th></tr>
+                            <tr><th>Año</th><th>Tuna</th><th>Instrumento</th></tr>
                         </thead>
-                        <tbody id="perfil-historico-body">
-                            <tr><td colspan="6" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
+                        <tbody id="pub-historico-body">
+                            <tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <div class="perfil-seccion">
-                <h4 class="perfil-subtitulo">📩 Preferencias de Comunicaciones (Boletín)</h4>
-                <div style="background: rgba(212,175,55,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.2);">
-                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fff; font-size: 0.85rem;">
-                        <span>Recibir boletines informativos y novedades por email</span>
-                        <input type="checkbox" id="perfil-check-newsletter" onchange="toggleSuscripcionNewsletterPerfil(this.checked)" style="accent-color: var(--color-acento); transform: scale(1.3); cursor: pointer;">
-                    </label>
-                    <p id="perfil-newsletter-status" style="font-size: 0.75rem; color: #aaa; margin-top: 8px; margin-bottom: 0;"></p>
-                </div>
-            </div>
-
-            <div class="perfil-seccion">
-                <h4 class="perfil-subtitulo">⚙️ Gestión de Datos Personales</h4>
-                <form id="form-actualizar-perfil" onsubmit="actualizarDatosPerfil(event)">
-                    <div class="form-grid-perfil">
-                        <div class="input-group"><label>Teléfono Móvil</label><input type="tel" id="perfil-edit-telefono" required></div>
-                        <div class="input-group">
-                            <label>Instrumento Principal</label>
-                            <select id="perfil-edit-instrumento" required>
-                                <option value="Guitarra">Guitarra</option>
-                                <option value="Bandurria">Bandurria</option>
-                                <option value="Laúd">Laúd</option>
-                                <option value="Contrabajo">Contrabajo / Bajo</option>
-                                <option value="Pandereta">Pandereta</option>
-                                <option value="Acordeón">Acordeón</option>
-                                <option value="Otros">Otros</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-tuna-ui full-width" style="margin-top:10px;">Guardar Cambios de Contacto</button>
-                </form>
-
-                <form id="form-cambiar-pass" onsubmit="actualizarPasswordPerfil(event)" style="margin-top: 15px;">
-                    <div class="input-group"><label>Nueva Contraseña</label><input type="password" id="perfil-nueva-pass" placeholder="••••••••" required minlength="6"></div>
-                    <button type="submit" class="btn-sutil-logout full-width" style="padding: 10px;">Cambiar Contraseña</button>
-                </form>
-                <div id="perfil-estado-msg" class="mensaje-estado"></div>
-            </div>
-
-            <button type="button" class="btn-sutil-logout full-width" onclick="cerrarSesionUsuario()" style="margin-top: 20px; color: #ff5555; border-color: #ff5555;">Cerrar Sesión Activa</button>
         </div>
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-window.abrirModalPerfil = async function() {
-    if (!supabaseClient) return;
+window.abrirModalPerfilPublico = async function(userId) {
+    if (!supabaseClient || !userId) return;
 
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session || !session.user) return;
+    inyectarModalPerfilPublicoGlobal();
 
-    inyectarModalPerfilGlobal();
+    const modal = document.getElementById('modal-perfil-publico');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.offsetHeight; 
+    }
 
-    const modal = document.getElementById('modal-perfil');
-    if (modal) modal.style.display = 'flex';
-
-    const [{ data: profile }, { data: inscripciones }] = await Promise.all([
-        supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
-        supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false })
-    ]);
-
-    const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
-
-    const nombreCompleto = profile?.nombre 
-        ? `${profile.nombre} ${profile.apellidos || ''}` 
-        : (ultInscripcion ? `${ultInscripcion.nombre} ${ultInscripcion.apellidos}` : session.user.email);
-
-    const mote = profile?.mote || ultInscripcion?.mote || '';
-    const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna no especificada';
-
-    document.getElementById('perfil-nombre-completo').innerText = mote ? `${nombreCompleto} ("${mote}")` : nombreCompleto;
-    document.getElementById('perfil-tuna-tag').innerText = tunaNombre;
+    document.getElementById('pub-nombre-mote').innerText = "Cargando perfil...";
+    document.getElementById('pub-tuna-tag').innerText = "";
+    document.getElementById('pub-total-asistencias').innerText = "0";
+    document.getElementById('pub-fajin-anio').innerText = "-";
+    document.getElementById('pub-num-madrugas').innerText = "0";
+    document.getElementById('pub-num-domingo-ramos').innerText = "0";
     
-    const inicial = (mote || nombreCompleto || 'T').charAt(0).toUpperCase();
-    document.getElementById('perfil-mote-inicial').innerText = inicial;
+    const containerOtras = document.getElementById('pub-personas-tunas-header');
+    if (containerOtras) containerOtras.innerHTML = "";
+    
+    const tbody = document.getElementById('pub-historico-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Cargando histórico...</td></tr>`;
 
-    const checkNews = document.getElementById('perfil-check-newsletter');
-    const statusNews = document.getElementById('perfil-newsletter-status');
-    const estaSuscrito = profile?.acepta_newsletter || false;
+    const avatarImg = document.getElementById('pub-avatar-img');
+    const inicialTxt = document.getElementById('pub-mote-inicial');
+    if (avatarImg) avatarImg.style.display = 'none';
+    if (inicialTxt) { inicialTxt.style.display = 'block'; inicialTxt.innerText = "T"; }
 
-    if (checkNews) checkNews.checked = estaSuscrito;
-    if (statusNews) {
-        statusNews.innerText = estaSuscrito 
-            ? "Estado: Suscrito activamente al boletín." 
-            : "Estado: No suscrito o has cancelado las comunicaciones.";
-        statusNews.style.color = estaSuscrito ? "#2ecc71" : "#ffaa00";
-    }
+    try {
+        const [{ data: cfgAnio }, { data: profile }, { data: inscripciones }, { data: userMedallas }] = await Promise.all([
+            supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
+            supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
+            supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false }),
+            supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
+        ]);
 
-    if (inscripciones && inscripciones.length > 0) {
-        document.getElementById('perfil-total-asistencias').innerText = inscripciones.length;
+        const anioActualEnCurso = (cfgAnio && cfgAnio.valor) ? parseInt(cfgAnio.valor) : 2027;
 
-        const primerReg = inscripciones.find(i => i.primer_anio) || inscripciones[inscripciones.length - 1];
-        document.getElementById('perfil-fajin-anio').innerText = primerReg ? primerReg.anio : '-';
+        if (userMedallas && userMedallas.length > 0) {
+            userMedallas.sort((a, b) => (a.anio_conseguido || 0) - (b.anio_conseguido || 0));
+        }
 
-        document.getElementById('perfil-edit-telefono').value = ultInscripcion.telefono || '';
-        document.getElementById('perfil-edit-instrumento').value = ultInscripcion.instrumento || 'Guitarra';
+        const ultInscripcion = (inscripciones && inscripciones.length > 0) ? inscripciones[0] : null;
+        const mote = profile?.mote || ultInscripcion?.mote || 'Tuno';
+        const tunaNombre = profile?.tuna_nombre || ultInscripcion?.tuna_nombre || 'Tuna Universitaria';
 
-        const tbody = document.getElementById('perfil-historico-body');
-        tbody.innerHTML = '';
-        
-        inscripciones.forEach(i => {
-            const tr = document.createElement('tr');
-            const botonCancelar = (i.anio >= 2026) 
-                ? `<button onclick="cancelarInscripcionActiva('${i.id}')" class="btn-cancelar-asistencia" title="Cancelar asistencia">Cancelar</button>`
-                : '';
-                
-            tr.innerHTML = `
-                <td><strong>${i.anio}</strong> ${botonCancelar}</td>
-                <td style="font-size:0.8rem">${i.tuna_nombre}</td>
-                <td>${i.asiste_comida ? '✅' : '❌'}</td>
-                <td>${i.asiste_ronda ? '✅' : '❌'}</td>
-                <td>${i.asiste_madruga ? '✅' : '❌'}</td>
-                <td>${i.instrumento}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } else {
-        document.getElementById('perfil-total-asistencias').innerText = '0';
-        document.getElementById('perfil-fajin-anio').innerText = '-';
-        document.getElementById('perfil-historico-body').innerHTML = `
-            <tr><td colspan="6" style="text-align:center; color:#aaa;">Aún no tienes inscripciones registradas.</td></tr>
-        `;
+        document.getElementById('pub-nombre-mote').innerText = `"${mote}"`;
+        document.getElementById('pub-tuna-tag').innerText = tunaNombre;
+
+        renderizarMedallasPerfil('pub-seccion-medallas', 'pub-contenedor-medallas', userMedallas);
+
+        if (profile && profile.avatar_url) {
+            if (avatarImg) { avatarImg.src = profile.avatar_url; avatarImg.style.display = 'block'; }
+            if (inicialTxt) inicialTxt.style.display = 'none';
+        } else {
+            if (inicialTxt) {
+                inicialTxt.style.display = 'block';
+                inicialTxt.innerText = mote.charAt(0).toUpperCase();
+            }
+        }
+
+        const otrasTunas = profile?.otras_tunas || [];
+        if (containerOtras && otrasTunas.length > 0) {
+            containerOtras.innerHTML = otrasTunas.map(t => `
+                <span style="background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid #555; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                    🎓 ${t}
+                </span>
+            `).join('');
+        }
+
+        if (inscripciones && inscripciones.length > 0) {
+            const asistenciasValidadasPasadas = inscripciones.filter(i => 
+                (i.estado_validacion === 'validado' || i.asistencia_confirmada === true) && 
+                parseInt(i.anio) < anioActualEnCurso
+            );
+
+            const totalSemanasSantas = asistenciasValidadasPasadas.length;
+            const numDomingoRamos = asistenciasValidadasPasadas.filter(i => parseInt(i.anio) < 2011).length;
+            const numMadrugas = asistenciasValidadasPasadas.filter(i => parseInt(i.anio) >= 2011).length;
+
+            document.getElementById('pub-total-asistencias').innerText = totalSemanasSantas;
+            document.getElementById('pub-num-madrugas').innerText = numMadrugas;
+            document.getElementById('pub-num-domingo-ramos').innerText = numDomingoRamos;
+
+            const inscripcionesOrdenadas = [...inscripciones].sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
+            const primerReg = inscripcionesOrdenadas.find(i => i.primer_anio) || inscripcionesOrdenadas[0];
+            
+            const elFajinAnio = document.getElementById('pub-fajin-anio');
+            if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
+
+            if (tbody) {
+                tbody.innerHTML = '';
+                inscripciones.forEach(i => {
+                    const tr = document.createElement('tr');
+                    const esValidado = (i.estado_validacion === 'validado' || i.asistencia_confirmada === true);
+                    tr.innerHTML = `
+                        <td style="padding: 8px; text-align: center;"><strong>${i.anio}</strong> ${esValidado ? '✅' : '⏳'}</td>
+                        <td style="font-size:0.8rem; padding: 8px; text-align: center;">${i.tuna_nombre || tunaNombre}</td>
+                        <td style="font-size:0.8rem; padding: 8px; text-align: center;">${i.instrumento || 'Guitarra'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        } else {
+            document.getElementById('pub-total-asistencias').innerText = '0';
+            document.getElementById('pub-fajin-anio').innerText = '-';
+            document.getElementById('pub-num-madrugas').innerText = '0';
+            document.getElementById('pub-num-domingo-ramos').innerText = '0';
+
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr><td colspan="3" style="text-align:center; color:#aaa; padding: 15px;">No hay registros públicos disponibles.</td></tr>
+                `;
+            }
+        }
+    } catch (e) {
+        console.error("Error al cargar perfil público:", e);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ff4444;">Error al cargar datos.</td></tr>`;
+        }
     }
 };
 
-window.toggleSuscripcionNewsletterPerfil = async function(nuevoEstado) {
-    if (!supabaseClient) return;
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return;
-
-    const statusNews = document.getElementById('perfil-newsletter-status');
-    if (statusNews) statusNews.innerText = "Guardando preferencia...";
-
-    await supabaseClient.from('profiles').update({
-        acepta_newsletter: nuevoEstado,
-        fecha_consentimiento: new Date().toISOString()
-    }).eq('id', session.user.id);
-
-    if (nuevoEstado) {
-        await supabaseClient.from('newsletter').upsert({
-            email: session.user.email,
-            user_id: session.user.id,
-            estado: 'activo',
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'email' });
-        if (statusNews) {
-            statusNews.innerText = "Estado: Suscrito activamente al boletín.";
-            statusNews.style.color = "#2ecc71";
-        }
-    } else {
-        await supabaseClient.from('newsletter').update({
-            estado: 'cancelado',
-            updated_at: new Date().toISOString()
-        }).eq('email', session.user.email);
-
-        if (statusNews) {
-            statusNews.innerText = "Estado: No suscrito o has cancelado las comunicaciones.";
-            statusNews.style.color = "#ffaa00";
-        }
-    }
-};
-
-window.cerrarModalPerfil = function() {
-    const modal = document.getElementById('modal-perfil');
+window.cerrarModalPerfilPublico = function() {
+    const modal = document.getElementById('modal-perfil-publico');
     if (modal) modal.style.display = 'none';
 };
 
-window.gestionarBotonPerfil = async function() {
-    if (!supabaseClient) return;
+/* ==========================================================================
+   SISTEMA DE NOTIFICACIONES PUSH Y SUSCRIPCIÓN EN NAVEGADOR Y PWA
+   ========================================================================== */
 
-    const { data: { session } } = await supabaseClient.auth.getSession();
+// Registrar Service Worker globalmente
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker activo en scope:', reg.scope))
+            .catch(err => console.warn('Error al registrar Service Worker:', err));
+    });
+}
 
-    if (session && session.user) {
-        window.abrirModalPerfil();
+// 1. Mostrar modal elegante de la propia web (Soft Prompt) con la marca oficial Jueves Santo Oviedo
+window.mostrarPromptNotificaciones = function() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+    let modal = document.getElementById('modal-prompt-push');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-prompt-push';
+        modal.className = 'modal-interno';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-contenido auth-modal-box" style="max-width: 420px; text-align: center; padding: 25px;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 10px;">🔔</span>
+                <h3 class="protocolo-titulo" style="margin-bottom: 12px; color: var(--color-acento);">Jueves Santo Oviedo</h3>
+                <p style="color: #ddd; font-size: 0.88rem; line-height: 1.5; margin-bottom: 20px;">
+                    ¿Quieres recibir notificaciones Push en tu dispositivo sobre actualizaciones del Blog, cambios en los itinerarios y avisos de la Madrugá?
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="button" class="btn-tuna-ui full-width" onclick="aceptarPromptPush()">Activar Avisos</button>
+                    <button type="button" class="btn-sutil-logout full-width" onclick="cerrarPromptPush()" style="padding: 10px;">Ahora no</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     } else {
-        window.abrirModalAuth('login');
+        modal.style.display = 'flex';
     }
 };
 
-window.cancelarInscripcionActiva = async function(idInscripcion) {
-    if (!confirm("¿Estás seguro de que deseas cancelar tu asistencia? Liberará tu plaza.")) return;
-    if (!supabaseClient) return;
+window.aceptarPromptPush = function() {
+    window.cerrarPromptPush();
+    window.solicitarPermisoNotificaciones();
+};
 
-    const { error } = await supabaseClient.from('inscripciones').delete().eq('id', idInscripcion);
+window.cerrarPromptPush = function() {
+    const modal = document.getElementById('modal-prompt-push');
+    if (modal) modal.style.display = 'none';
+};
 
-    if (error) {
-        alert("Error al cancelar la inscripción: " + error.message);
-    } else {
-        alert("Tu asistencia ha sido cancelada correctamente.");
-        if (document.getElementById('modal-perfil')?.style.display === 'flex') window.abrirModalPerfil();
-        comprobarEstadoSesion();
+// 2. Solicitar permisos nativos y registrar token Push en Supabase
+window.solicitarPermisoNotificaciones = async function() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        alert('Tu navegador o dispositivo no admite notificaciones push.');
+        return;
+    }
+
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+        alert('Has denegado los permisos de notificaciones.');
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Clave pública VAPID (Sustituir por tu clave Web Push)
+        const vapidPublicKey = 'TU_CLAVE_VAPID_PUBLICA_AQUI'; 
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+
+        const subJSON = subscription.toJSON();
+
+        if (supabaseClient) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const userId = session?.user?.id || null;
+
+            let esAdmin = false;
+            if (userId) {
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (profile && (profile.role === 'admin' || profile.role === 'gestor')) {
+                    esAdmin = true;
+                }
+            }
+
+            const payload = {
+                user_id: userId,
+                endpoint: subJSON.endpoint,
+                subscription_json: subJSON,
+                tipo: esAdmin ? 'admin' : 'publico',
+                updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabaseClient
+                .from('notificaciones_suscriptores')
+                .upsert(payload, { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error("Error al registrar suscripción en Supabase:", error);
+                alert("No se pudo guardar la suscripción push.");
+            } else {
+                alert('🔔 ¡Notificaciones activadas con éxito!');
+            }
+        }
+    } catch (error) {
+        console.error('Error al suscribir a notificaciones:', error);
     }
 };
 
-window.actualizarDatosPerfil = async function(event) {
-    event.preventDefault();
-    const status = document.getElementById('perfil-estado-msg');
-    status.innerText = "Guardando cambios...";
-
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return;
-
-    const tel = document.getElementById('perfil-edit-telefono').value;
-    const inst = document.getElementById('perfil-edit-instrumento').value;
-
-    const { error } = await supabaseClient
-        .from('inscripciones')
-        .update({ telefono: tel, instrumento: inst })
-        .eq('user_id', session.user.id);
-
-    if (error) {
-        status.innerText = "Error al actualizar los datos.";
-    } else {
-        status.innerText = "¡Datos actualizados con éxito!";
-        window.abrirModalPerfil();
+// Conversor Auxiliar VAPID Key a Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
     }
-};
-
-window.actualizarPasswordPerfil = async function(event) {
-    event.preventDefault();
-    const status = document.getElementById('perfil-estado-msg');
-    const newPass = document.getElementById('perfil-nueva-pass').value;
-
-    status.innerText = "Cambiando contraseña...";
-
-    const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-
-    if (error) {
-        status.innerText = "Error al cambiar la contraseña: " + error.message;
-    } else {
-        status.innerText = "¡Contraseña cambiada correctamente!";
-        document.getElementById('perfil-nueva-pass').value = '';
-    }
-};
+    return outputArray;
+}
