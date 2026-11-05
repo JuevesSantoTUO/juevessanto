@@ -21,7 +21,6 @@ const STATIC_ASSETS = [
     './participa.html',
     './prensa.html',
     './relacionado.html',
-    './sucios.html',
     './admin_panel.html',
     './noticia.html',
     './blog.html',
@@ -33,7 +32,7 @@ const STATIC_ASSETS = [
 
     // Estilos CSS
     './css/style.css',
-    './css/amin.css',
+    './css/admin.css',
     './css/asistentes.css',
     './css/blog.css',
     './css/cancionero.css',
