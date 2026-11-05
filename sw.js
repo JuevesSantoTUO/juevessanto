@@ -1,9 +1,9 @@
 /* ==========================================================================
-   SERVICE WORKER - JUEVES SANTO OVIEDO (v2.2)
+   SERVICE WORKER - JUEVES SANTO OVIEDO (v2.4 - COMPLETO Y CORREGIDO)
    ========================================================================== */
 
-const CACHE_NAME = 'jueves-santo-cache-v2.3';
-const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.3';
+const CACHE_NAME = 'jueves-santo-cache-v2.4';
+const AUDIO_CACHE_NAME = 'jueves-santo-audio-v2.4';
 
 // Recursos críticos para precachear (App Shell)
 const STATIC_ASSETS = [
@@ -82,30 +82,35 @@ const AUDIO_ASSETS = [
     './audio/Virgen_de_Amor.mp3'
 ];
 
-/* --- 1. INSTALACIÓN --- */
+/* --- 1. INSTALACIÓN BLINDADA (SIN DESPLIEGUES BLOQUEADOS) --- */
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
     event.waitUntil(
         Promise.all([
             caches.open(CACHE_NAME).then((cache) => {
-                console.log('[SW v2.1] Precacheando App Shell y assets estáticos...');
-                return cache.addAll(STATIC_ASSETS);
+                console.log('[SW v2.4] Precacheando App Shell de forma segura...');
+                return Promise.allSettled(
+                    STATIC_ASSETS.map(url => cache.add(url).catch(err => console.warn(`Asset no precacheado: ${url}`, err)))
+                );
             }),
             caches.open(AUDIO_CACHE_NAME).then((cache) => {
-                console.log('[SW v2.1] Precacheando repertorio de audio...');
-                return cache.addAll(AUDIO_ASSETS).catch(err => console.warn('Audio no cacheado por completo:', err));
+                console.log('[SW v2.4] Precacheando audios...');
+                return Promise.allSettled(
+                    AUDIO_ASSETS.map(url => cache.add(url).catch(err => console.warn(`Audio no precacheado: ${url}`, err)))
+                );
             })
-        ]).then(() => self.skipWaiting())
+        ])
     );
 });
 
-/* --- 2. ACTIVACIÓN Y LIMPIEZA DE CACHÉS ANTIGUAS --- */
+/* --- 2. ACTIVACIÓN Y PURGA DE CACHÉS ANTIGUAS --- */
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cache) => {
                     if (cache !== CACHE_NAME && cache !== AUDIO_CACHE_NAME) {
-                        console.log('[SW v2.1] Purgando caché obsoleta:', cache);
+                        console.log('[SW v2.4] Eliminando caché obsoleta:', cache);
                         return caches.delete(cache);
                     }
                 })
@@ -114,33 +119,35 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-/* --- 3. ESTRATEGIA DE INTERCEPTACIÓN DE PETICIONES (FETCH) --- */
+/* --- 3. ESTRATEGIA DE PETICIONES (FETCH) --- */
 self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
 
-    // Bypass / Network-First para consultas a Supabase y CDN externas
-    if (requestUrl.hostname.includes('supabase.co') || requestUrl.hostname.includes('jsdelivr.net')) {
+    // Bypass directo para llamadas API a Supabase y CDN externas
+    if (requestUrl.hostname.includes('supabase.co') || requestUrl.hostname.includes('jsdelivr.net') || requestUrl.hostname.includes('cdnjs.cloudflare.com')) {
         event.respondWith(
             fetch(event.request).catch(() => caches.match(event.request))
         );
         return;
     }
 
-    // Estrategia Cache-First para audios
+    // Estrategia Cache-First para audios MP3
     if (event.request.destination === 'audio' || requestUrl.pathname.endsWith('.mp3')) {
         event.respondWith(
             caches.open(AUDIO_CACHE_NAME).then(async (cache) => {
                 const response = await cache.match(event.request);
                 if (response) return response;
                 const fetchResponse = await fetch(event.request);
-                cache.put(event.request, fetchResponse.clone());
+                if (fetchResponse && fetchResponse.status === 200) {
+                    cache.put(event.request, fetchResponse.clone());
+                }
                 return fetchResponse;
             })
         );
         return;
     }
 
-    // Estrategia Stale-While-Revalidate para el resto de archivos estáticos (HTML/CSS/JS/Imágenes)
+    // Estrategia Stale-While-Revalidate para assets estáticos
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -151,21 +158,14 @@ self.addEventListener('fetch', (event) => {
                     });
                 }
                 return networkResponse;
-            }).catch(() => {
-                // Si la red falla y no hay caché, se devuelve la versión en caché que exista
-                return cachedResponse;
-            });
+            }).catch(() => cachedResponse);
 
             return cachedResponse || fetchPromise;
         })
     );
 });
 
-/* ==========================================================================
-   4. MANEJADOR DE NOTIFICACIONES PUSH & CLICS
-   ========================================================================== */
-
-// Recibir notificación push enviada por la web/servidor
+/* --- 4. RECEPCIÓ DE NOTIFICACIONES PUSH Y CLIC --- */
 self.addEventListener('push', (event) => {
     let data = { title: 'Jueves Santo Oviedo', body: 'Tienes una nueva actualización.', url: './index.html' };
 
@@ -186,7 +186,7 @@ self.addEventListener('push', (event) => {
             url: data.url || './index.html'
         },
         actions: [
-            { action: 'open', title: 'Ver actualización' }
+            { action: 'open', title: 'Ver' }
         ]
     };
 
@@ -195,7 +195,6 @@ self.addEventListener('push', (event) => {
     );
 });
 
-// Al pulsar sobre la notificación recibida
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
