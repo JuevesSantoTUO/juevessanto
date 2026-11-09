@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jusacalles - Jueves Santo Oviedo</title>
+
+    <link rel="icon" type="image/png" href="img/logo_jusa.png">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Supabase JS CDN y Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-client.js" defer></script>
+    <script src="scripts/jusacalles.js" defer></script>
+</head>
+<body class="bg-oscuro">
+
+    <!-- HEADER GLOBAL -->
+    <div id="header-container"></div>
+
+    <main class="contenedor-principal" style="max-width: 680px; margin: 0 auto; padding: 15px 10px;">
+        
+        <!-- BANNER DE MARCA JUSACALLES -->
+        <section class="jusacalles-hero-banner" style="text-align: center; margin-bottom: 25px; padding: 20px 15px; background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.25); border-radius: 12px;">
+            <div style="width: 75px; height: 75px; margin: 0 auto 12px auto; background: var(--color-acento, #d4af37); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <span style="font-family: serif; font-size: 2.8rem; color: #000; font-weight: bold; font-style: italic; line-height: 1;">J</span>
+            </div>
+            <h1 style="color: var(--color-acento, #d4af37); font-size: 1.8rem; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 1px;">Jusacalles</h1>
+            <p style="color: #ccc; font-size: 0.88rem; margin: 0; font-style: italic;">"El Pasa Calles de Jueves Santo, de tunos para tunos"</p>
+        </section>
+
+        <!-- CARRUSEL DE HISTORIAS 24H -->
+        <section class="jusacalles-historias-seccion" style="margin-bottom: 25px;">
+            <h3 style="font-size: 0.85rem; color: var(--color-acento); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                Historias de la Madrugá (24h)
+            </h3>
+            <div id="historias-carrusel" style="display: flex; gap: 12px; overflow-x: auto; padding: 8px 4px; scrollbar-width: thin;">
+                
+                <!-- INPUT INVISIBLE PARA SUBIDA DE HISTORIAS DE GALERÍA -->
+                <input type="file" id="file-input-historia" accept="image/*,video/*" style="display: none;" onchange="subirHistoriaDesdeGaleria(event)">
+
+                <!-- TARJETA CREAR HISTORIA -->
+                <div id="btn-anadir-historia-card" onclick="abrirModalNuevaHistoria()" style="display: none; width: 110px; height: 170px; border-radius: 12px; overflow: hidden; background: #1c1c1e; border: 1px solid rgba(212,175,55,0.3); position: relative; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <div id="card-historia-user-bg" style="width: 100%; height: 115px; background: var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                        <span id="card-historia-inicial" style="font-size: 2.5rem; font-weight: bold; color: #000; display: block;">T</span>
+                        <img id="card-historia-img" src="" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="position: absolute; top: 97px; left: 50%; transform: translateX(-50%); width: 34px; height: 34px; border-radius: 50%; background: var(--color-acento, #d4af37); border: 3px solid #1c1c1e; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6); z-index: 2;">
+                        <span style="font-size: 1.3rem; font-weight: bold; color: #000; line-height: 1;">+</span>
+                    </div>
+                    <div style="height: 55px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: #fff; text-align: center;">Crear historia</span>
+                    </div>
+                </div>
+
+                <div id="lista-historias-items" style="display: flex; gap: 12px;"></div>
+            </div>
+        </section>
+
+        <!-- CAJÓN DE PUBLICAR CON MULTIMEDIA MÚLTIPLE -->
+        <section id="cajon-crear-post" class="perfil-seccion" style="display: none; margin-bottom: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.25); padding: 14px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+            <form id="form-crear-post" onsubmit="publicarEnJusacalles(event)">
+                
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                    <div id="post-user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-acento, #d4af37); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; overflow: hidden;">T</div>
+                    <textarea id="post-texto" placeholder="¿Qué estás pensando o recordando, Tuno?..." rows="2" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: #fff; padding: 10px 16px; font-size: 0.9rem; resize: none; outline: none; font-family: inherit;"></textarea>
+                </div>
+
+                <div id="preview-multimedia-container" style="display: none; position: relative; margin-bottom: 12px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(212,175,55,0.3); background: #000; max-height: 250px; text-align: center;">
+                    <button type="button" onclick="cancelarMediaAdjunto()" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; z-index: 5;">✕</button>
+                    <img id="preview-img" src="" style="display: none; width: 100%; max-height: 250px; object-fit: contain;">
+                    <video id="preview-video" src="" controls style="display: none; width: 100%; max-height: 250px;"></video>
+                </div>
+
+                <input type="file" id="file-input-post" accept="image/*,video/*" multiple style="display: none;" onchange="manejarArchivosSeleccionados(event, 'post')">
+                <input type="file" id="file-input-reel" accept="video/*" style="display: none;" onchange="manejarArchivosSeleccionados(event, 'reel')">
+                <input type="hidden" id="post-tipo-subida" value="post">
+
+                <div style="border-top: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;"></div>
+
+                <!-- BOTONES DE ACCIÓN CON SVGS VECTORIALES -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="document.getElementById('file-input-post').click()" style="background: transparent; border: none; color: #ccc; font-size: 0.82rem; font-weight: 600; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#45bd62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            Foto / vídeo
+                        </button>
+                        <button type="button" onclick="document.getElementById('file-input-reel').click()" style="background: transparent; border: none; color: #ccc; font-size: 0.82rem; font-weight: 600; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f7b928" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                            Reel
+                        </button>
+                    </div>
+
+                    <button type="submit" id="btn-submit-post" class="btn-tuna-ui" style="padding: 6px 20px; font-size: 0.82rem; border-radius: 18px;">Publicar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- AVISO NO LOGUEADOS -->
+        <div id="aviso-jusacalles-no-logged" style="text-align: center; padding: 15px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; margin-bottom: 25px;">
+            <p style="margin: 0 0 10px 0; color: #ddd; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Para publicar historias, compartir en el muro o comentar, debes tener sesión iniciada.
+            </p>
+            <button type="button" class="btn-tuna-ui" onclick="abrirModalAuth('login')" style="padding: 6px 14px; font-size: 0.8rem;">Iniciar Sesión / Registrarme</button>
+        </div>
+
+        <!-- MURO DE PUBLICACIONES -->
+        <section class="jusacalles-muro">
+            <h3 style="font-size: 0.85rem; color: var(--color-acento); text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                Pasafeed de Tunos
+            </h3>
+            <div id="muro-publicaciones-lista" style="display: flex; flex-direction: column; gap: 18px;">
+                <p style="text-align: center; color: #888; font-size: 0.85rem;">Cargando publicaciones de Jusacalles...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL VISOR DE HISTORIAS COMPLETO ESTILO FACEBOOK -->
+    <div id="jusa-stories-viewer-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0b0e; z-index: 99999; color: #fff;">
+        
+        <!-- BOTÓN X CERRAR -->
+        <button onclick="cerrarVisorHistorias()" style="position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.3rem; z-index: 100; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+
+        <div style="display: flex; width: 100%; height: 100%;">
+            
+            <!-- LATERAL IZQUIERDA: LISTA DE HISTORIAS DE AMIGOS -->
+            <div id="story-sidebar-list" style="width: 320px; background: #141418; border-right: 1px solid rgba(255,255,255,0.08); padding: 70px 15px 20px 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;">
+                <h3 style="color: var(--color-acento, #d4af37); font-size: 1.1rem; margin: 0 0 10px 0;">Historias</h3>
+                <div id="story-sidebar-items" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+            <!-- ÁREA CENTRAL VISOR HISTORIA -->
+            <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: #000; padding: 20px;">
+                
+                <div style="position: relative; width: 100%; max-width: 420px; height: 100%; max-height: 750px; background: #18181c; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                    
+                    <!-- BARRA DE PROGRESO SUPERIOR -->
+                    <div style="position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 4px; z-index: 20;">
+                        <div id="story-progress-bar" style="flex-grow: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
+                            <div id="story-progress-fill" style="width: 0%; height: 100%; background: #fff; transition: width 0.1s linear;"></div>
+                        </div>
+                    </div>
+
+                    <!-- CABECERA DEL AUTOR DE LA HISTORIA -->
+                    <div style="position: absolute; top: 22px; left: 12px; right: 12px; display: flex; align-items: center; gap: 10px; z-index: 20;">
+                        <div id="story-author-avatar" style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--color-acento, #d4af37); overflow: hidden; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold;">T</div>
+                        <div>
+                            <span id="story-author-name" style="font-weight: bold; font-size: 0.9rem; color: #fff; display: block; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Tuno</span>
+                            <span id="story-time-ago" style="font-size: 0.72rem; color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Hace un momento</span>
+                        </div>
+                    </div>
+
+                    <!-- REPRODUCTOR MULTIMEDIA (SIN ATRIBUTO MUTED PARA PERMITIR SONIDO NATIVO) -->
+                    <div style="flex-grow: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative;">
+                        <img id="story-display-img" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                        <video id="story-display-video" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;" playsinline autoplay></video>
+                    </div>
+
+                    <!-- REACCIONES Y MENSAJE INFERIOR (ESTILO FB) -->
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 15px 12px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); display: flex; align-items: center; gap: 8px; z-index: 20;">
+                        <input type="text" id="story-reply-input" placeholder="Enviar mensaje..." style="flex-grow: 1; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 8px 14px; font-size: 0.85rem; color: #fff; outline: none;">
+                        <div style="display: flex; gap: 6px;">
+                            <span onclick="enviarReaccionHistoria('me_gusta')" style="font-size: 1.4rem; cursor: pointer; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">👍</span>
+                            <span onclick="enviarReaccionHistoria('me_encanta')" style="font-size: 1.4rem; cursor: pointer; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">❤️</span>
+                            <span onclick="enviarReaccionHistoria('me_divierte')" style="font-size: 1.4rem; cursor: pointer; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">😆</span>
+                            <span onclick="enviarReaccionHistoria('me_asombra')" style="font-size: 1.4rem; cursor: pointer; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">😮</span>
+                        </div>
+                    </div>
+
+                    <!-- NAVEGACIÓN ANTERIOR / SIGUIENTE -->
+                    <button onclick="historiaNavegar(-1)" style="position: absolute; top: 50%; left: 10px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 30;">❮</button>
+                    <button onclick="historiaNavegar(1)" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 30;">❯</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VISOR LIGHTBOX -->
+    <div id="jusa-lightbox-modal" class="jusa-lightbox-modal">
+        <button onclick="cerrarLightboxModal()" style="position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.2rem; z-index: 10;">✕</button>
+        
+        <div class="jusa-lightbox-media-container">
+            <button id="lb-btn-prev" onclick="cambiarImagenLightbox(-1)" class="jusa-lightbox-btn-nav" style="left: 15px;">❮</button>
+            <img id="lb-img-display" src="" alt="Vista previa">
+            <button id="lb-btn-next" onclick="cambiarImagenLightbox(1)" class="jusa-lightbox-btn-nav" style="right: 15px;">❯</button>
+        </div>
+
+        <div class="jusa-lightbox-sidebar">
+            <div class="jusa-lb-header-top">
+                <div style="display: flex; gap: 12px; color: #aaa; align-items: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </div>
+                <div id="lb-logged-user-avatar" class="jusa-lb-user-icon">T</div>
+            </div>
+
+            <div class="jusa-lb-origin-bar">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Esta foto es de una publicación.
+                </span>
+                <span class="jusa-lb-link-ver-post" onclick="abrirSubModalVerPublicacion()">Ver publicación</span>
+            </div>
+
+            <div id="lb-author-box" style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;"></div>
+            <p id="lb-caption-text" style="color: #eee; font-size: 0.88rem; margin: 0 0 12px 0; line-height: 1.4;"></p>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 8px 0;"></div>
+
+            <div id="lb-interactions-box" style="margin-bottom: 12px;"></div>
+            <div id="lb-comments-container" style="flex-grow: 1; overflow-y: auto;"></div>
+            <div id="lb-comment-input-box" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);"></div>
+        </div>
+    </div>
+
+    <!-- SUB-MODAL "VER PUBLICACIÓN" -->
+    <div id="jusa-post-detail-modal" class="jusa-post-detail-overlay" onclick="if(event.target===this) cerrarSubModalVerPublicacion()">
+        <div class="jusa-post-detail-card">
+            <div class="jusa-post-detail-header">
+                <h3 id="submodal-post-title">Publicación</h3>
+                <button onclick="cerrarSubModalVerPublicacion()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+            <div id="submodal-post-body" class="jusa-post-detail-body"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DESGLOSE DE REACCIONES (ESTILO FACEBOOK) -->
+    <div id="jusa-modal-reacciones-detalle" class="jusa-post-detail-overlay" style="display:none;" onclick="if(event.target===this) cerrarModalReaccionesDetalle()">
+        <div class="jusa-post-detail-card" style="max-width: 440px; width: 90%; height: 480px; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box;">
+            
+            <!-- HEADER DE PESTAÑAS CON ESPACIADO INTERNO -->
+            <div class="jusa-post-detail-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <div id="tabs-filtro-reacciones" style="display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;"></div>
+                <button onclick="cerrarModalReaccionesDetalle()" style="background: none; border: none; color: #aaa; font-size: 1.2rem; cursor: pointer; padding: 0 4px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>
+            </div>
+
+            <!-- LISTA DE USUARIOS CON PADDING INTERNO PARA EVITAR DESBORDAMIENTOS -->
+            <div id="lista-usuarios-reacciones-modal" style="flex-grow: 1; overflow-y: auto; padding: 12px 4px 4px 4px; display: flex; flex-direction: column; gap: 4px;">
+                <!-- Carga dinámica de usuarios -->
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER GLOBAL -->
+    <div id="footer-container"></div>
+
+    <script>
+        fetch('assets/header.html').then(r => r.text()).then(html => document.getElementById('header-container').innerHTML = html);
+        fetch('assets/footer.html').then(r => r.text()).then(html => document.getElementById('footer-container').innerHTML = html);
+    </script>
+</body>
+</html>
