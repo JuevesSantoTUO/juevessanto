@@ -19,5 +19,20 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Jusacalles",
+      "short_name": "Jusacalles",
+      "description": "Acceso directo a la red social y feed de la comunidad",
+      "url": "./jusacalles.html",
+      "icons": [
+        {
+          "src": "./img/icons/icon-jusa-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
