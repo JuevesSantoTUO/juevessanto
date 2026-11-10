@@ -17,10 +17,11 @@ let datosReaccionesModalActual = [];
 let hoverTimerPost = null;
 let hoverTimerComment = null;
 
-// ESTADO GLOBAL DE HISTORIAS
+// ESTADO GLOBAL DE HISTORIAS Y SEGUIMIENTO DE VISTAS
 let historiasActivasGlobal = [];
 let historiaIndiceActual = 0;
 let historiaTimerProgreso = null;
+let historiasVistasMap = JSON.parse(localStorage.getItem('historias_vistas_jusa') || '{}');
 
 // COLECCIÓN DE ICONOS VECTORIALES SVG (REACCIONES Y UI)
 const SVG_ICONS = {
@@ -214,7 +215,7 @@ async function comprimirImagen(file, maxAncho = 1920, calidad = 0.75) {
     });
 }
 
-/* --- HISTORIAS 24H CON TARJETAS VERTICALES Y VISOR MODAL ESTILO FACEBOOK --- */
+/* --- HISTORIAS 24H CON REORDENACIÓN Y ARO VISTO/NO VISTO --- */
 async function cargarHistoriasActivas() {
     const contenedor = document.getElementById('lista-historias-items');
     if (!contenedor || !supabaseClient) return;
@@ -231,12 +232,20 @@ async function cargarHistoriasActivas() {
         return;
     }
 
+    // Ordenar: primero las NO vistas, al final las YA vistas
+    historias.sort((a, b) => {
+        const vistaA = historiasVistasMap[a.id] ? 1 : 0;
+        const vistaB = historiasVistasMap[b.id] ? 1 : 0;
+        return vistaA - vistaB;
+    });
+
     historiasActivasGlobal = historias;
 
     contenedor.innerHTML = historias.map((h, idx) => {
         const mote = h.profiles?.mote || 'Tuno';
         const inicial = mote.charAt(0).toUpperCase();
         const avatarUrl = h.profiles?.avatar_url;
+        const esVista = !!historiasVistasMap[h.id];
 
         const avatarInner = (avatarUrl && avatarUrl.trim() !== '')
             ? `<img src="${avatarUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
@@ -247,24 +256,29 @@ async function cargarHistoriasActivas() {
             ? `<video src="${h.media_url}" style="width:100%; height:100%; object-fit:cover;" muted></video>`
             : `<img src="${h.media_url}" style="width:100%; height:100%; object-fit:cover;">`;
 
+        // Aro dorado si no se ha visto; aro apagado/gris si ya fue vista
+        const borderAvatar = esVista 
+            ? '2px solid rgba(255,255,255,0.3)' 
+            : '2px solid var(--color-acento, #d4af37)';
+
         return `
-            <div onclick="abrirVisorHistoriasModal(${idx})" style="width: 110px; height: 170px; border-radius: 12px; overflow: hidden; background: #000; position: relative; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(212,175,55,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+            <div onclick="abrirVisorHistoriasModal(${idx})" style="width: 110px; height: 170px; border-radius: 12px; overflow: hidden; background: #000; position: relative; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid ${esVista ? 'rgba(255,255,255,0.1)' : 'rgba(212,175,55,0.3)'}; transition: transform 0.2s; opacity: ${esVista ? '0.75' : '1'};" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
                 ${mediaBg}
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85) 100%);"></div>
                 
-                <div style="position: absolute; top: 10px; left: 10px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--color-acento, #d4af37); background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 2;">
+                <div style="position: absolute; top: 10px; left: 10px; width: 34px; height: 34px; border-radius: 50%; border: ${borderAvatar}; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 2;">
                     ${avatarInner}
                 </div>
 
                 <div style="position: absolute; bottom: 10px; left: 8px; right: 8px; z-index: 2;">
-                    <span style="font-size: 0.78rem; font-weight: bold; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${mote}</span>
+                    <span style="font-size: 0.78rem; font-weight: bold; color: ${esVista ? '#aaa' : '#fff'}; text-shadow: 0 1px 4px rgba(0,0,0,0.9); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${mote}</span>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-/* --- LOGICA VISOR MODAL DE HISTORIAS CON AUDIO ACTIVO --- */
+/* --- LOGICA VISOR MODAL DE HISTORIAS Y CONTROL DE DURACIÓN HASTA 30S --- */
 window.abrirVisorHistoriasModal = function(index) {
     if (!historiasActivasGlobal || historiasActivasGlobal.length === 0) return;
 
@@ -285,14 +299,19 @@ function renderizarSidebarHistoriasVisor() {
         const inicial = mote.charAt(0).toUpperCase();
         const avatarUrl = h.profiles?.avatar_url;
         const esActiva = idx === historiaIndiceActual;
+        const esVista = !!historiasVistasMap[h.id];
 
         const avatarInner = (avatarUrl && avatarUrl.trim() !== '')
             ? `<img src="${avatarUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
             : `<span style="font-weight:bold; color:#000; font-size:0.75rem;">${inicial}</span>`;
 
+        const borderAvatar = esActiva 
+            ? 'var(--color-acento, #d4af37)' 
+            : (esVista ? '#444' : '#888');
+
         return `
-            <div onclick="cargarHistoriaEnVisor(${idx})" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; cursor: pointer; background: ${esActiva ? 'rgba(212,175,55,0.15)' : 'transparent'}; border: 1px solid ${esActiva ? 'rgba(212,175,55,0.4)' : 'transparent'}; transition: background 0.2s;">
-                <div style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${esActiva ? 'var(--color-acento, #d4af37)' : '#555'}; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            <div onclick="cargarHistoriaEnVisor(${idx})" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; cursor: pointer; background: ${esActiva ? 'rgba(212,175,55,0.15)' : 'transparent'}; border: 1px solid ${esActiva ? 'rgba(212,175,55,0.4)' : 'transparent'}; transition: background 0.2s; opacity: ${esVista && !esActiva ? '0.6' : '1'};">
+                <div style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${borderAvatar}; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
                     ${avatarInner}
                 </div>
                 <div style="overflow: hidden;">
@@ -311,9 +330,16 @@ async function cargarHistoriaEnVisor(index) {
     }
 
     historiaIndiceActual = index;
+    const historia = historiasActivasGlobal[index];
+
+    // Marcar como vista
+    if (historia && historia.id) {
+        historiasVistasMap[historia.id] = true;
+        localStorage.setItem('historias_vistas_jusa', JSON.stringify(historiasVistasMap));
+    }
+
     renderizarSidebarHistoriasVisor();
 
-    const historia = historiasActivasGlobal[index];
     const mote = historia.profiles?.mote || 'Tuno';
     const inicial = mote.charAt(0).toUpperCase();
     const avatarUrl = historia.profiles?.avatar_url;
@@ -353,6 +379,19 @@ async function cargarHistoriaEnVisor(index) {
         videoDisplay.muted = false;
         videoDisplay.volume = 1.0;
 
+        // EVENTOS DE CONTROL DE TIEMPO (MÁXIMO 30 SEGUNDOS POR HISTORIA VÍDEO)
+        videoDisplay.ontimeupdate = () => {
+            const duracionSegundos = Math.min(videoDisplay.duration || 30, 30);
+            const porcentaje = (videoDisplay.currentTime / duracionSegundos) * 100;
+            if (fillBar) fillBar.style.width = `${Math.min(porcentaje, 100)}%`;
+
+            // Si supera los 30 segundos, cortar y pasar a la siguiente historia
+            if (videoDisplay.currentTime >= 30) {
+                videoDisplay.pause();
+                historiaNavegar(1);
+            }
+        };
+
         try {
             await videoDisplay.play();
             if (btnSound) btnSound.innerText = '🔊';
@@ -367,20 +406,27 @@ async function cargarHistoriaEnVisor(index) {
     } else {
         videoDisplay.style.display = 'none';
         videoDisplay.pause();
+        videoDisplay.ontimeupdate = null;
         if (btnSound) btnSound.style.display = 'none';
 
         imgDisplay.style.display = 'block';
         imgDisplay.src = historia.media_url;
 
-        let porcentaje = 0;
+        // DURACIÓN DE HISTORIA EN FOTO: 15 SEGUNDOS
+        let transcurrido = 0;
+        const duracionTotalFotoMs = 15000;
+        const intervaloMs = 100;
+
         historiaTimerProgreso = setInterval(() => {
-            porcentaje += 2;
+            transcurrido += intervaloMs;
+            const porcentaje = (transcurrido / duracionTotalFotoMs) * 100;
             if (fillBar) fillBar.style.width = `${porcentaje}%`;
-            if (porcentaje >= 100) {
+
+            if (transcurrido >= duracionTotalFotoMs) {
                 clearInterval(historiaTimerProgreso);
                 historiaNavegar(1);
             }
-        }, 100);
+        }, intervaloMs);
     }
 }
 
@@ -408,11 +454,15 @@ window.cerrarVisorHistorias = function() {
     const videoDisplay = document.getElementById('story-display-video');
     if (videoDisplay) {
         videoDisplay.pause();
+        videoDisplay.ontimeupdate = null;
         videoDisplay.src = '';
     }
 
     const modal = document.getElementById('jusa-stories-viewer-modal');
     if (modal) modal.style.display = 'none';
+
+    // Recargar la lista del carrusel para actualizar aros e historias vistas
+    cargarHistoriasActivas();
 };
 
 window.enviarReaccionHistoria = function(tipo) {

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev - UNIFICADO Y LIMPIO)
+   CONFIGURACIÓN Y CLIENTE DE SUPABASE (v2-dev - UNIFICADO Y CORREGIDO)
    ========================================================================== */
 
 const SUPABASE_URL = "https://nbfkwbdnhghtljgnpmng.supabase.co";
@@ -141,6 +141,14 @@ async function comprobarEstadoSesion() {
     const badge = document.getElementById('user-badge');
     if (badge) {
         badge.style.display = (session && session.user) ? 'block' : 'none';
+    }
+
+    const bannerJusacallesIndex = document.getElementById('banner-acceso-jusacalles');
+
+    if (session && session.user) {
+        if (bannerJusacallesIndex) bannerJusacallesIndex.style.display = 'block';
+    } else {
+        if (bannerJusacallesIndex) bannerJusacallesIndex.style.display = 'none';
     }
 }
 
@@ -699,6 +707,14 @@ function inyectarModalPerfilGlobal() {
                 </div>
             </div>
 
+            <!-- ACCESO DESTACADO A JUSACALLES DENTRO DEL PERFIL -->
+            <div style="background: rgba(212,175,55,0.06); border: 1px solid var(--color-acento); border-radius: 10px; padding: 12px 15px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <img src="img/jusacalles_logo_nombre.png" alt="Jusacalles" style="max-height: 32px; width: auto;">
+                <a href="jusacalles.html" class="btn-tuna-ui" style="text-decoration: none; padding: 6px 14px; font-size: 0.78rem; border-radius: 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    Entrar a Jusacalles ➔
+                </a>
+            </div>
+
             <div class="perfil-seccion">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <h4 class="perfil-subtitulo" style="margin: 0;">📜 Histórico de Asistencias</h4>
@@ -890,7 +906,7 @@ window.abrirModalPerfil = async function() {
         supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
         supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
         supabaseClient.from('inscripciones').select('*').eq('user_id', session.user.id).order('anio', { ascending: false }),
-        supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', session.user.id).order('anio_conseguido', { ascending: true })
+        supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas:medalla_id(nombre, descripcion, imagen_url)').eq('user_id', session.user.id).order('anio_conseguido', { ascending: true })
     ]);
 
     if (userMedallas && userMedallas.length > 0) {
@@ -1004,36 +1020,53 @@ window.abrirModalPerfil = async function() {
     }
 };
 
-/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS */
+/* FUNCIÓN AUXILIAR PARA RENDERIZAR LAS MEDALLAS (CORREGIDA Y ROBUSTA) */
 function renderizarMedallasPerfil(idSeccion, idContenedor, listaMedallas) {
     const sec = document.getElementById(idSeccion);
     const container = document.getElementById(idContenedor);
     if (!sec || !container) return;
 
-    if (!listaMedallas || listaMedallas.length === 0) {
+    if (!listaMedallas || !Array.isArray(listaMedallas) || listaMedallas.length === 0) {
         sec.style.display = 'none';
         container.innerHTML = '';
         return;
     }
 
-    sec.style.display = 'block';
-    container.innerHTML = listaMedallas.map(m => {
-        const med = m.medallas || m;
-        if (!med) return '';
+    // Filtrar registros válidos
+    const medallasValidas = listaMedallas.filter(m => m && (m.medallas || m.medalla_id || m.nombre));
 
-        const urlImg = (med.imagen_url && med.imagen_url.trim() !== '') ? med.imagen_url.trim() : null;
+    if (medallasValidas.length === 0) {
+        sec.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    // Usar cadena vacía para que herede la maquetación CSS/Flex sin colapsar
+    sec.style.display = '';
+    
+    container.innerHTML = medallasValidas.map(m => {
+        // Extrae el objeto independientemente del alias o relación FK
+        let med = m.medallas || m.medalla_id || m;
+        
+        // Si Supabase devuelve un array de 1 elemento por la FK, tomamos la primera posición
+        if (Array.isArray(med)) med = med[0];
+
+        const nombre = med?.nombre || m?.nombre || 'Medalla';
+        const descripcion = med?.descripcion || m?.descripcion || '';
+        const urlRaw = med?.imagen_url || m?.imagen_url || null;
+        const urlImg = (urlRaw && typeof urlRaw === 'string' && urlRaw.trim() !== '') ? urlRaw.trim() : null;
 
         const visualHtml = urlImg 
-            ? `<img src="${urlImg}" alt="${med.nombre || 'Medalla'}" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));">`
+            ? `<img src="${urlImg}" alt="${nombre}" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); display: block;">`
             : `<div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(212,175,55,0.15); border: 1px solid var(--color-acento, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🏅</div>`;
 
         return `
-            <div title="${med.descripcion || ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 70px; flex-shrink: 0;">
+            <div title="${descripcion}" style="display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70px; width: 70px; flex-shrink: 0;">
                 <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
                     ${visualHtml}
                 </div>
-                <span style="font-size: 0.7rem; font-weight: bold; color: #fff; line-height: 1.1;">${med.nombre || ''}</span>
-                <span style="font-size: 0.65rem; color: var(--color-acento); font-weight: bold; margin-top: 2px;">${m.anio_conseguido || ''}</span>
+                <span style="font-size: 0.7rem; font-weight: bold; color: #fff; line-height: 1.1;">${nombre}</span>
+                <span style="font-size: 0.65rem; color: var(--color-acento, #d4af37); font-weight: bold; margin-top: 2px;">${m.anio_conseguido || ''}</span>
             </div>
         `;
     }).join('');
@@ -1241,7 +1274,7 @@ function renderizarPildorasOtrasTunasPerfil() {
     }
 }
 
-/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO (CORREGIDO Y SIN VALORES HARDCODEADOS) --- */
+/* --- MODAL WEB PARA AÑADIR AÑO HISTÓRICO --- */
 window.abrirModalAnadirAnioHistorico = async function() {
     let modalHist = document.getElementById('modal-historico-input');
     if (!modalHist) {
@@ -1289,7 +1322,6 @@ window.abrirModalAnadirAnioHistorico = async function() {
 
     document.getElementById('hist-anio-input').value = new Date().getFullYear() - 1;
 
-    // Autocompletar con los datos reales del usuario logueado
     if (supabaseClient) {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.user) {
@@ -1364,7 +1396,6 @@ window.procesarAnadirAnioHistoricoModal = async function(e) {
             }
         }
     } else {
-        // Aseguramos que el perfil del usuario mantenga su nombre y apellidos correctos
         await supabaseClient.from('profiles').upsert({
             id: session.user.id,
             email: session.user.email,
@@ -1599,7 +1630,7 @@ window.cerrarSesionUsuario = async function() {
 };
 
 /* ==========================================================================
-   MODAL DE PERFIL PÚBLICO DE TUNOS (CORREGIDO PARA SINCRONIZAR AÑO ACTIVO)
+   MODAL DE PERFIL PÚBLICO DE TUNOS
    ========================================================================== */
 function inyectarModalPerfilPublicoGlobal() {
     if (document.getElementById('modal-perfil-publico')) return;
@@ -1677,10 +1708,9 @@ window.abrirModalPerfilPublico = async function(userId) {
     const modal = document.getElementById('modal-perfil-publico');
     if (modal) {
         modal.style.display = 'flex';
-        modal.offsetHeight; // Forzar reflow para asegurar renderizado en navegadores móviles
+        modal.offsetHeight;
     }
 
-    // Reset de valores en interfaz
     document.getElementById('pub-nombre-mote').innerText = "Cargando perfil...";
     document.getElementById('pub-tuna-tag').innerText = "";
     document.getElementById('pub-total-asistencias').innerText = "0";
@@ -1704,10 +1734,9 @@ window.abrirModalPerfilPublico = async function(userId) {
             supabaseClient.from('configuracion').select('valor').eq('clave', 'anio_edicion').maybeSingle(),
             supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabaseClient.from('inscripciones').select('*').eq('user_id', userId).order('anio', { ascending: false }),
-            supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
+            supabaseClient.from('usuarios_medallas').select('anio_conseguido, medallas:medalla_id(nombre, descripcion, imagen_url)').eq('user_id', userId).order('anio_conseguido', { ascending: true })
         ]);
 
-        // Año de la edición activa en curso (ej. 2027)
         const anioActualEnCurso = (cfgAnio && cfgAnio.valor) ? parseInt(cfgAnio.valor) : 2027;
 
         if (userMedallas && userMedallas.length > 0) {
@@ -1743,7 +1772,6 @@ window.abrirModalPerfilPublico = async function(userId) {
         }
 
         if (inscripciones && inscripciones.length > 0) {
-            // SOLO SUMAR A LOS CONTADORES EDICIONES PASADAS (anio < anioActualEnCurso) Y VALIDADAS
             const asistenciasValidadasPasadas = inscripciones.filter(i => 
                 (i.estado_validacion === 'validado' || i.asistencia_confirmada === true) && 
                 parseInt(i.anio) < anioActualEnCurso
@@ -1757,14 +1785,12 @@ window.abrirModalPerfilPublico = async function(userId) {
             document.getElementById('pub-num-madrugas').innerText = numMadrugas;
             document.getElementById('pub-num-domingo-ramos').innerText = numDomingoRamos;
 
-            // Año de debut (el año de la inscripción más antigua)
             const inscripcionesOrdenadas = [...inscripciones].sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
             const primerReg = inscripcionesOrdenadas.find(i => i.primer_anio) || inscripcionesOrdenadas[0];
             
             const elFajinAnio = document.getElementById('pub-fajin-anio');
             if (elFajinAnio) elFajinAnio.innerText = primerReg ? primerReg.anio : '-';
 
-            // EN LA TABLA HISTÓRICA SÍ SE MUESTRAN TODAS (INCLUIDA LA FUTURA DE 2027)
             if (tbody) {
                 tbody.innerHTML = '';
                 inscripciones.forEach(i => {
@@ -1807,7 +1833,6 @@ window.cerrarModalPerfilPublico = function() {
    SISTEMA DE NOTIFICACIONES PUSH Y SUSCRIPCIÓN EN NAVEGADOR Y PWA
    ========================================================================== */
 
-// Registrar Service Worker globalmente
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -1816,7 +1841,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Solicitar permisos y registrar token Push en Supabase
 window.solicitarPermisoNotificaciones = async function() {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         alert('Tu navegador o dispositivo no admite notificaciones push.');
@@ -1831,8 +1855,6 @@ window.solicitarPermisoNotificaciones = async function() {
 
     try {
         const registration = await navigator.serviceWorker.ready;
-        
-        // Clave pública VAPID (Ejemplo / sustituir por tu clave de servidor Web Push)
         const vapidPublicKey = 'TU_CLAVE_VAPID_PUBLICA_AQUI'; 
 
         const subscription = await registration.pushManager.subscribe({
@@ -1859,7 +1881,6 @@ window.solicitarPermisoNotificaciones = async function() {
                 }
             }
 
-            // Guardar en Supabase haciendo upsert por la clave única 'endpoint'
             const payload = {
                 user_id: userId,
                 endpoint: subJSON.endpoint,
@@ -1884,7 +1905,6 @@ window.solicitarPermisoNotificaciones = async function() {
     }
 };
 
-// Conversor Auxiliar VAPID Key a Uint8Array
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
