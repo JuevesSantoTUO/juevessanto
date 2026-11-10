@@ -88,11 +88,16 @@ function inicializarEventosGlobales() {
 
 async function comprobarEstadoSesionJusacalles() {
     if (!supabaseClient) return;
+    
+    miUsuarioPerfilCache = null;
     const { data: { session } } = await supabaseClient.auth.getSession();
     
     const cajonPost = document.getElementById('cajon-crear-post');
     const avisoNoLogged = document.getElementById('aviso-jusacalles-no-logged');
     const cardHistoriaBtn = document.getElementById('btn-anadir-historia-card');
+    const inicialTxt = document.getElementById('card-historia-inicial');
+    const imgAvatar = document.getElementById('card-historia-img');
+    const postAvatarBox = document.getElementById('post-user-avatar');
 
     if (session && session.user) {
         if (cajonPost) cajonPost.style.display = 'block';
@@ -107,11 +112,7 @@ async function comprobarEstadoSesionJusacalles() {
 
         miUsuarioPerfilCache = profile || { mote: session.user.email || 'Tuno' };
         const mote = miUsuarioPerfilCache.mote;
-        const inicial = mote.charAt(0).toUpperCase();
-        
-        const inicialTxt = document.getElementById('card-historia-inicial');
-        const imgAvatar = document.getElementById('card-historia-img');
-        const postAvatarBox = document.getElementById('post-user-avatar');
+        const inicial = mote ? mote.charAt(0).toUpperCase() : 'T';
 
         if (profile && profile.avatar_url && profile.avatar_url.trim() !== '') {
             if (imgAvatar) { imgAvatar.src = profile.avatar_url; imgAvatar.style.display = 'block'; }
@@ -120,7 +121,7 @@ async function comprobarEstadoSesionJusacalles() {
                 postAvatarBox.innerHTML = `<img src="${profile.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
             }
         } else {
-            if (imgAvatar) imgAvatar.style.display = 'none';
+            if (imgAvatar) { imgAvatar.src = ''; imgAvatar.style.display = 'none'; }
             if (inicialTxt) { inicialTxt.innerText = inicial; inicialTxt.style.display = 'block'; }
             if (postAvatarBox) { postAvatarBox.innerText = inicial; }
         }
@@ -128,6 +129,9 @@ async function comprobarEstadoSesionJusacalles() {
         if (cajonPost) cajonPost.style.display = 'none';
         if (avisoNoLogged) avisoNoLogged.style.display = 'block';
         if (cardHistoriaBtn) cardHistoriaBtn.style.display = 'none';
+        
+        if (imgAvatar) { imgAvatar.src = ''; imgAvatar.style.display = 'none'; }
+        if (postAvatarBox) { postAvatarBox.innerText = 'T'; }
     }
 }
 
@@ -240,7 +244,7 @@ async function cargarHistoriasActivas() {
 
         const esVideo = h.tipo_media === 'video' || (h.media_url && h.media_url.match(/\.(mp4|webm|mov)$/i));
         const mediaBg = esVideo 
-            ? `<video src="${h.media_url}" style="width:100%; height:100%; object-fit:cover;"></video>`
+            ? `<video src="${h.media_url}" style="width:100%; height:100%; object-fit:cover;" muted></video>`
             : `<img src="${h.media_url}" style="width:100%; height:100%; object-fit:cover;">`;
 
         return `
@@ -260,7 +264,7 @@ async function cargarHistoriasActivas() {
     }).join('');
 }
 
-/* --- LOGICA VISOR MODAL DE HISTORIAS --- */
+/* --- LOGICA VISOR MODAL DE HISTORIAS CON AUDIO ACTIVO --- */
 window.abrirVisorHistoriasModal = function(index) {
     if (!historiasActivasGlobal || historiasActivasGlobal.length === 0) return;
 
@@ -300,7 +304,7 @@ function renderizarSidebarHistoriasVisor() {
     }).join('');
 }
 
-function cargarHistoriaEnVisor(index) {
+async function cargarHistoriaEnVisor(index) {
     if (index < 0 || index >= historiasActivasGlobal.length) {
         cerrarVisorHistorias();
         return;
@@ -330,6 +334,7 @@ function cargarHistoriaEnVisor(index) {
     // Cargar Media
     const imgDisplay = document.getElementById('story-display-img');
     const videoDisplay = document.getElementById('story-display-video');
+    const btnSound = document.getElementById('btn-toggle-sound-story');
 
     if (historiaTimerProgreso) clearInterval(historiaTimerProgreso);
     const fillBar = document.getElementById('story-progress-fill');
@@ -340,13 +345,30 @@ function cargarHistoriaEnVisor(index) {
     if (esVideo) {
         imgDisplay.style.display = 'none';
         videoDisplay.style.display = 'block';
+        if (btnSound) btnSound.style.display = 'flex';
+
         videoDisplay.src = historia.media_url;
-        videoDisplay.play();
+        videoDisplay.currentTime = 0;
+        
+        videoDisplay.muted = false;
+        videoDisplay.volume = 1.0;
+
+        try {
+            await videoDisplay.play();
+            if (btnSound) btnSound.innerText = '🔊';
+        } catch (err) {
+            console.warn("Autoplay con audio bloqueado por el navegador. Iniciando silenciado:", err);
+            videoDisplay.muted = true;
+            await videoDisplay.play();
+            if (btnSound) btnSound.innerText = '🔇';
+        }
 
         videoDisplay.onended = () => historiaNavegar(1);
     } else {
         videoDisplay.style.display = 'none';
         videoDisplay.pause();
+        if (btnSound) btnSound.style.display = 'none';
+
         imgDisplay.style.display = 'block';
         imgDisplay.src = historia.media_url;
 
@@ -362,6 +384,21 @@ function cargarHistoriaEnVisor(index) {
     }
 }
 
+window.toggleSonidoHistoria = function() {
+    const videoDisplay = document.getElementById('story-display-video');
+    const btnSound = document.getElementById('btn-toggle-sound-story');
+    if (!videoDisplay) return;
+
+    if (videoDisplay.muted) {
+        videoDisplay.muted = false;
+        videoDisplay.volume = 1.0;
+        if (btnSound) btnSound.innerText = '🔊';
+    } else {
+        videoDisplay.muted = true;
+        if (btnSound) btnSound.innerText = '🔇';
+    }
+};
+
 window.historiaNavegar = function(direccion) {
     cargarHistoriaEnVisor(historiaIndiceActual + direccion);
 };
@@ -369,7 +406,10 @@ window.historiaNavegar = function(direccion) {
 window.cerrarVisorHistorias = function() {
     if (historiaTimerProgreso) clearInterval(historiaTimerProgreso);
     const videoDisplay = document.getElementById('story-display-video');
-    if (videoDisplay) videoDisplay.pause();
+    if (videoDisplay) {
+        videoDisplay.pause();
+        videoDisplay.src = '';
+    }
 
     const modal = document.getElementById('jusa-stories-viewer-modal');
     if (modal) modal.style.display = 'none';
